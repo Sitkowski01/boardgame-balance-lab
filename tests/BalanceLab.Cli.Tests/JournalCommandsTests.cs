@@ -113,6 +113,156 @@ public sealed partial class JournalCommandsTests(JournalDatabase postgres) : ICl
         Assert.Equal("Powtorka nie zgadza sie z dziennikiem: Po ruchu nr 3 powtorka daje inny hash niz dziennik.", error.Trim());
     }
 
+    [Fact]
+    public async Task Header_problem_without_a_move_number_is_reported_too()
+    {
+        var db = await postgres.CreateAsync();
+        var id = MatchId(Run("play", "--game", "connectfour", "--bots", "random", "random", "--db", db).Output);
+        await ExecuteAsync(db, "ALTER TABLE matches DISABLE TRIGGER USER; UPDATE matches SET final_hash = 0");
+
+        var (code, output, _) = Run("replay", "--match", id, "--db", db);
+
+        Assert.Equal(1, code);
+        Assert.Contains("Weryfikacja: NIEZGODNA\n", output.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Unknown_match_and_unknown_game_in_the_database_are_runtime_errors()
+    {
+        var db = await postgres.CreateAsync();
+        var id = MatchId(Run("play", "--game", "connectfour", "--bots", "random", "random", "--db", db).Output);
+        var unknown = Guid.NewGuid().ToString();
+        await ExecuteAsync(db, "ALTER TABLE matches DISABLE TRIGGER USER; UPDATE matches SET game = 'szachy'");
+
+        var missing = Run("replay", "--match", unknown, "--db", db);
+        var chess = Run("replay", "--match", id, "--db", db);
+
+        Assert.Equal((1, $"Nie ma partii {unknown}."), (missing.Code, missing.Error.Trim()));
+        Assert.Equal(1, chess.Code);
+        Assert.StartsWith("Nieznana gra 'szachy'", chess.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Replay_on_a_database_without_the_journal_says_to_play_first()
+    {
+        var db = await postgres.CreateAsync();
+
+        var (code, _, error) = Run("replay", "--match", Guid.NewGuid().ToString(), "--db", db);
+
+        Assert.Equal((1, "Baza nie ma jeszcze dziennika partii - najpierw zapisz partie poleceniem play."), (code, error.Trim()));
+    }
+
+    [Fact]
+    public async Task Database_refusing_the_write_is_a_runtime_error_with_its_reason()
+    {
+        var db = await postgres.CreateAsync();
+        Run("play", "--game", "connectfour", "--bots", "random", "random", "--max-moves", "2", "--db", db);
+        await ExecuteAsync(db, """
+            CREATE FUNCTION refuse() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'dysk pelny'; END $$;
+            CREATE TRIGGER refuse BEFORE INSERT ON matches FOR EACH ROW EXECUTE FUNCTION refuse();
+            """);
+
+        var (code, output, error) = Run("play", "--game", "connectfour", "--bots", "random", "random", "--db", db);
+
+        Assert.Equal((1, ""), (code, output));
+        Assert.Contains("dysk pelny", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Moves_beyond_the_end_of_the_match_are_a_usage_error()
+    {
+        var db = await postgres.CreateAsync();
+        var id = MatchId(Run("play", "--game", "connectfour", "--bots", "random", "random", "--max-moves", "3", "--db", db).Output);
+
+        var (code, _, error) = Run("replay", "--match", id, "--at", "4", "--db", db);
+
+        Assert.Equal((2, "--at: partia ma tylko 3 ruchow."), (code, error.Trim()));
+        Assert.Equal(0, Run("replay", "--match", id, "--at", "3", "--db", db).Code);
+    }
+
+    [Theory]
+    [InlineData("replay --match 00000000-0000-0000-0000-000000000001 --at -1 --db x", "--at: liczba ruchow nie moze byc ujemna.")]
+    [InlineData("replay --match 00000000-0000-0000-0000-000000000001 --db  ", "--db: podaj polaczenie z baza albo ustaw zmienna BALANCE_LAB_DB.")]
+    [InlineData("play --game connectfour --bots random random --db  ", "--db: podaj polaczenie z baza albo ustaw zmienna BALANCE_LAB_DB.")]
+    [InlineData("play --game szachy --bots random random --db x", "Nieznana gra 'szachy'")]
+    [InlineData("play --game connectfour --bots random --db x", "ConnectFour to gra dla 2-2 graczy, a uczestnikow jest 1.")]
+    [InlineData("play --game connectfour --bots random random --max-moves 0 --db x", "Limit ruchow musi byc wiekszy od 0.")]
+    public void Bad_arguments_are_usage_errors_before_touching_the_database(string args, string message)
+    {
+        // Pusty --db: ostatni argument to pusty napis, a nie brak wartosci.
+        var parts = args.EndsWith("--db  ", StringComparison.Ordinal) ? [.. args.TrimEnd().Split(' '), " "] : args.Split(' ');
+
+        var (code, _, error) = Run(parts);
+
+        Assert.Equal(2, code);
+        Assert.Contains(message, error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Database_that_cannot_be_reached_is_a_runtime_error_with_its_message()
+    {
+        var (code, _, error) = Run("play", "--game", "connectfour", "--bots", "random", "random", "--db", "Host=127.0.0.1;Port=1;Timeout=2;Username=x;Password=x");
+
+        Assert.Equal(1, code);
+        Assert.Contains("127.0.0.1", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task State_at_zero_moves_is_the_deal_and_shows_no_moves()
+    {
+        var db = await postgres.CreateAsync();
+        var id = MatchId(Run("play", "--game", "connectfour", "--bots", "random", "random", "--db", db).Output);
+
+        var (code, output, _) = Run("replay", "--match", id, "--at", "0", "--db", db);
+
+        Assert.Equal(0, code);
+        Assert.Equal(0, MoveLine().Count(output));
+        Assert.Matches("Stan po ruchu 0: hash [0-9a-f]{16}", output);
+    }
+
+    [Fact]
+    public async Task Database_comes_from_the_environment_when_db_is_not_given()
+    {
+        var db = await postgres.CreateAsync();
+        var id = MatchId(Run("play", "--game", "connectfour", "--bots", "random", "random", "--db", db).Output);
+        Environment.SetEnvironmentVariable(JournalCommands.DatabaseVariable, db);
+        try
+        {
+            var (code, output, _) = Run("replay", "--match", id);
+
+            Assert.Equal(0, code);
+            Assert.Contains("Weryfikacja: zgodna", output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(JournalCommands.DatabaseVariable, null);
+        }
+    }
+
+    [Fact]
+    public void Replay_needs_a_match_id()
+    {
+        var (code, _, error) = Run("replay", "--db", "x");
+
+        Assert.Equal(2, code);
+        Assert.Contains("--match", error, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("play", "Rozgrywa jedna partie botow i zapisuje ja do dziennika w bazie.")]
+    [InlineData("play", "Limit ruchow; partia, ktora go przekroczy, zapisuje sie jako przerwana.")]
+    [InlineData("play", "Polaczenie z PostgreSQL (domyslnie ze zmiennej BALANCE_LAB_DB).")]
+    [InlineData("replay", "Odtwarza partie z dziennika i sprawdza hash stanu po kazdym ruchu.")]
+    [InlineData("replay", "Id partii (wypisuje je play).")]
+    [InlineData("replay", "Stan po tylu ruchach")]
+    public void Help_describes_the_command_and_its_options(string command, string text)
+    {
+        var (code, output, _) = Run(command, "--help");
+
+        Assert.Equal(0, code);
+        Assert.Contains(text, output, StringComparison.Ordinal);
+    }
+
     private static string MatchId(string output) => PlayedId().Match(output).Groups[1].Value;
 
     private static async Task ExecuteAsync(string db, string sql)
