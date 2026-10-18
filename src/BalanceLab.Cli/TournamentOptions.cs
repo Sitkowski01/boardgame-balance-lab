@@ -112,7 +112,7 @@ internal sealed class TournamentOptions
     }
 
     /// <summary>Komunikat bez technicznych dopiskow .NET typu "(Parameter 'spec')" i "Actual value was 0.".</summary>
-    private static string UserMessage(Exception ex)
+    internal static string UserMessage(Exception ex)
     {
         // .NET skleja komunikat znakami nowej linii systemu (na Windowsie \r\n) — bierzemy tylko pierwsza linie.
         var message = ex.Message.ReplaceLineEndings("\n").Split('\n')[0];
