@@ -27,6 +27,77 @@ public sealed partial class MatchJournal<TState, TMove>
         }
     }
 
+    /// <summary>
+    /// Stan po <paramref name="moves"/> ruchach (0 = rozdanie): najblizsza wczesniejsza migawka i reszta
+    /// ruchow powtorzona przez zasady gry, z hashem sprawdzanym po kazdym.
+    /// </summary>
+    /// <exception cref="JournalMismatchException">Powtorka nie zgadza sie z dziennikiem.</exception>
+    public async Task<TState> StateAtAsync(Guid match, int moves, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        await using var read = await ConsistentReadAsync(db, cancellationToken);
+        var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
+        ArgumentOutOfRangeException.ThrowIfNegative(moves);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(moves, row.Moves);
+        return await StateAtAsync(db, row, _rules(row.Variant), moves, cancellationToken);
+    }
+
+    private static async Task<TState> StateAtAsync(JournalDbContext db, MatchRow row, StoredGame<TState, TMove> rules, int moves, CancellationToken cancellationToken)
+    {
+        var snapshot = await db.Snapshots.AsNoTracking()
+            .Where(s => s.MatchId == row.Id && s.Seq <= moves)
+            .OrderByDescending(s => s.Seq)
+            .FirstOrDefaultAsync(cancellationToken);
+        var from = snapshot?.Seq ?? 0;
+        // Z ruchem, po ktorym zrobiono migawke: jej hash musi byc tym z lancucha ruchow, a nie tylko
+        // zgadzac sie sam ze soba — inaczej podmieniona para (stan, hash) przeszlaby jako prawdziwa.
+        var tail = await MovesAsync(db, row.Id, Math.Max(from - 1, 0), moves, cancellationToken);
+        if (snapshot is not null)
+        {
+            if (tail.Count == 0 || tail[0].Seq != from || tail[0].HashAfter != snapshot.Hash)
+            {
+                throw new JournalMismatchException($"Migawka po ruchu nr {from} partii {row.Id} nie zgadza sie z dziennikiem ruchow.");
+            }
+
+            tail.RemoveAt(0);
+        }
+
+        if (tail.Count != moves - from)
+        {
+            throw new JournalMismatchException($"W dzienniku partii {row.Id} brakuje ruchow miedzy {from} a {moves}.");
+        }
+
+        // Blad w zapisanym ruchu albo migawce to uszkodzony dziennik, a nie nielegalny ruch wolajacego.
+        ReplayResult<TState> replay;
+        try
+        {
+            var start = snapshot is null ? rules.Game.Setup(SetupOf(row)) : FromSnapshot(rules, snapshot, row.Id);
+            replay = Replay.Run(rules.Game, start, [.. tail.Select(m => Decode(rules, m))], from);
+        }
+        catch (Exception ex) when (ex is FormatException or IllegalMoveException)
+        {
+            throw new JournalMismatchException($"Dziennik partii {row.Id} nie daje sie odtworzyc: {ex.Message}", ex);
+        }
+
+        for (var i = 0; i < tail.Count; i++)
+        {
+            if (replay.Hashes[i] != unchecked((ulong)tail[i].HashAfter))
+            {
+                throw new JournalMismatchException($"Po ruchu nr {tail[i].Seq} partii {row.Id} powtorka daje inny hash niz dziennik.");
+            }
+        }
+
+        return replay.FinalState;
+    }
+
+    private static TState FromSnapshot(StoredGame<TState, TMove> rules, SnapshotRow snapshot, Guid match)
+    {
+        var state = rules.States.DecodeState(snapshot.State);
+        return rules.Game.Hash(state) == unchecked((ulong)snapshot.Hash)
+            ? state
+            : throw new JournalMismatchException($"Migawka po ruchu nr {snapshot.Seq} partii {match} nie zgadza sie ze swoim hashem.");
+    }
+
     private static TMove Decode(StoredGame<TState, TMove> rules, MoveRow move)
     {
         try

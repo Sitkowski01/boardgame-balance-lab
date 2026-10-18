@@ -30,6 +30,29 @@ public sealed record MatchInfo(
 public sealed record MatchLog<TMove>(MatchInfo Match, ImmutableArray<TMove> Moves, ImmutableArray<ulong> Hashes)
     where TMove : notnull;
 
+/// <summary>Wynik dopisania ruchu: ile ruchow ma teraz partia i czy sie skonczyla.</summary>
+public sealed record AppendResult(int Moves, ulong Hash, bool Finished);
+
+/// <summary>
+/// Ktos inny dopisal ruch pierwszy albo partia juz sie skonczyla. Wolajacy powinien wczytac
+/// partie od nowa i zdecydowac, czy jego ruch jest nadal aktualny.
+/// </summary>
+public sealed class JournalConflictException : Exception
+{
+    public JournalConflictException()
+    {
+    }
+
+    public JournalConflictException(string message)
+        : base(message)
+    {
+    }
+
+    public JournalConflictException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}
 
 /// <summary>Stan odtworzony z dziennika nie zgadza sie z zapisanym hashem (zmienione zasady albo uszkodzone dane).</summary>
 public sealed class JournalMismatchException : Exception

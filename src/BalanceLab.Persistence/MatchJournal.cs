@@ -1,5 +1,6 @@
 using BalanceLab.Engine;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace BalanceLab.Persistence;
 
@@ -31,7 +32,7 @@ public sealed partial class MatchJournal<TState, TMove>
 
     public int SnapshotEvery { get; }
 
-    /// <summary>Zaklada partie bez ruchow; ruchy dochodza pozniej.</summary>
+    /// <summary>Zaklada partie bez ruchow; ruchy dochodza przez <see cref="AppendAsync"/>.</summary>
     /// <param name="players">Nazwy graczy wedlug miejsc przy stole.</param>
     public async Task<Guid> StartAsync(GameSetup setup, IReadOnlyList<string> players, string? variant = null, CancellationToken cancellationToken = default)
     {
@@ -61,6 +62,41 @@ public sealed partial class MatchJournal<TState, TMove>
         Close(row, rules, state, abandoned: !rules.Game.IsTerminal(state));
         await db.SaveChangesAsync(cancellationToken);
         return row.Id;
+    }
+
+    /// <summary>
+    /// Dopisuje ruch, jesli partia ma dokladnie <paramref name="expectedMoves"/> ruchow — tak dwa
+    /// rownolegle zapisy tego samego ruchu nie przejda oba (drugi dostaje <see cref="JournalConflictException"/>).
+    /// </summary>
+    /// <exception cref="IllegalMoveException">Ruch nielegalny; nic nie zostaje zapisane.</exception>
+    /// <exception cref="JournalMismatchException">Zapisana czesc partii nie daje sie odtworzyc; nic nie zostaje zapisane.</exception>
+    public async Task<AppendResult> AppendAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        var row = await FindAsync(db.Matches, match, cancellationToken);
+        if (row.Status != MatchStatus.InProgress)
+        {
+            throw new JournalConflictException($"Partia {match} jest juz zakonczona ({row.Status}).");
+        }
+
+        if (row.Moves != expectedMoves)
+        {
+            throw new JournalConflictException($"Partia {match} ma {row.Moves} ruchow, a dopisujacy zakladal {expectedMoves}.");
+        }
+
+        var rules = _rules(row.Variant);
+        var state = Write(db, rules, row, await StateAtAsync(db, row, rules, row.Moves, cancellationToken), [move]);
+        Close(row, rules, state, abandoned: false);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex is DbUpdateConcurrencyException || ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            throw new JournalConflictException($"Ruch nr {row.Moves} partii {match} dopisal ktos inny.", ex);
+        }
+
+        return new AppendResult(row.Moves, rules.Game.Hash(state), row.Status == MatchStatus.Finished);
     }
 
     private (MatchRow Row, StoredGame<TState, TMove> Rules, TState Start) NewMatch(GameSetup setup, IReadOnlyList<string> players, string? variant)
