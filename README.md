@@ -263,3 +263,7 @@ Na Windowsie z Visual Studio 2022 Stryker może wybrać MSBuild bez .NET 10 — 
 ## Stack
 
 .NET 10, System.CommandLine, System.Text.Json, xUnit, FsCheck, NetArchTest, Stryker.NET, BenchmarkDotNet.
+
+## Licencja
+
+MIT — [LICENSE](LICENSE).
