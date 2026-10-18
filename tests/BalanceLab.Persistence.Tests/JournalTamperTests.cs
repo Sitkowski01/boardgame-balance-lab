@@ -99,4 +99,107 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
         await Assert.ThrowsAsync<JournalMismatchException>(() => journal.AppendAsync(id, 4, Moves[4]));
         Assert.Equal(4, (await journal.VerifyAsync(id)).FirstBadMove);
     }
+
+    [Fact]
+    public async Task Broken_recorded_move_is_a_damaged_journal_not_an_illegal_move_of_the_caller()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        var id = await journal.StartAsync(new GameSetup(2, 1), ["a", "b"]);
+        for (var i = 0; i < 4; i++)
+        {
+            await journal.AppendAsync(id, i, Moves[i]);
+        }
+
+        await db.TamperAsync("match_moves", "UPDATE match_moves SET move = '9' WHERE seq = 2");
+        var illegal = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.AppendAsync(id, 4, Moves[4]));
+        await db.TamperAsync("match_moves", "UPDATE match_moves SET move = 'zzz' WHERE seq = 2");
+        var unreadable = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 3));
+
+        Assert.Contains("Ruch nr 2 (kolumna 9) jest nielegalny.", illegal.Message, StringComparison.Ordinal);
+        Assert.IsType<IllegalMoveException>(illegal.InnerException);
+        Assert.Contains("nie daje sie odtworzyc: Ruch nr 2 ('zzz'): 'zzz' to nie numer kolumny.", unreadable.Message, StringComparison.Ordinal);
+        var load = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.LoadAsync(id));
+        Assert.Contains("nieczytelny ruch: Ruch nr 2 ('zzz')", load.Message, StringComparison.Ordinal);
+        Assert.Equal(4L, await db.ScalarAsync<long>("SELECT count(*) FROM match_moves"));
+    }
+
+    [Fact]
+    public async Task Snapshot_hash_column_is_checked_too()
+    {
+        var (db, journal, id) = await RecordAsync(postgres);
+        await using var _ = db;
+        await db.TamperAsync("match_snapshots", "UPDATE match_snapshots SET hash = hash + 1 WHERE seq = 2");
+
+        Assert.Equal((int?)2, (await journal.VerifyAsync(id)).FirstBadMove);
+        await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 2));
+    }
+
+    [Fact]
+    public async Task Snapshot_in_an_unknown_shape_is_reported_as_unreadable()
+    {
+        var (db, journal, id) = await RecordAsync(postgres);
+        await using var _ = db;
+        await db.TamperAsync("match_snapshots", """UPDATE match_snapshots SET state = '{"rows":[]}' WHERE seq = 6""");
+
+        var verification = await journal.VerifyAsync(id);
+
+        Assert.Equal(6, verification.FirstBadMove);
+        Assert.StartsWith("Migawka po ruchu nr 6 jest nieczytelna: ", verification.Problem, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Missing_moves_are_found_by_count_and_by_gap()
+    {
+        var (db, journal, id) = await RecordAsync(postgres);
+        await using var _ = db;
+        await db.TamperAsync("match_moves", "DELETE FROM match_moves WHERE seq = 5");
+
+        Assert.Equal(new JournalVerification(5, 3, null, "Naglowek mowi o 6 ruchach, a w dzienniku jest 5."), await journal.VerifyAsync(id));
+        var ex = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 5));
+        Assert.Contains("brakuje ruchow miedzy 4 a 5", ex.Message, StringComparison.Ordinal);
+
+        // Luka przy zgodnej liczbie: ruch nr 5 zastapiony ruchem nr 7.
+        await db.TamperAsync("match_moves", $"INSERT INTO match_moves (match_id, seq, move, hash_after) VALUES ('{id}', 7, '6', 0)");
+        Assert.Equal(new JournalVerification(6, 3, 5, "Brakuje ruchu nr 5."), await journal.VerifyAsync(id));
+    }
+
+    [Fact]
+    public async Task Snapshot_after_a_move_that_is_not_in_the_journal_is_found()
+    {
+        var (db, journal, id) = await RecordAsync(postgres);
+        await using var _ = db;
+        await db.TamperAsync("match_snapshots", $"INSERT INTO match_snapshots (match_id, seq, state, hash) SELECT match_id, 8, state, hash FROM match_snapshots WHERE seq = 6");
+
+        Assert.Equal(new JournalVerification(6, 4, null, "Migawka po ruchu, ktorego nie ma w dzienniku."), await journal.VerifyAsync(id));
+    }
+
+    [Theory]
+    [InlineData("status = 'Finished'", "Naglowek mowi, ze partia sie skonczyla, a powtorka nie doszla do konca.")]
+    [InlineData("status = 'Abandoned', final_hash = 0", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    [InlineData("status = 'Abandoned', scores = '{1,0}'", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    public async Task Header_that_disagrees_with_an_unfinished_replay_is_found(string change, string problem)
+    {
+        var (db, journal, id) = await RecordAsync(postgres);
+        await using var _ = db;
+        await db.TamperAsync("matches", $"UPDATE matches SET {change}");
+
+        Assert.Equal(problem, (await journal.VerifyAsync(id)).Problem);
+    }
+
+    [Theory]
+    [InlineData("status = 'InProgress'", "Powtorka doszla do konca partii, a naglowek mowi: InProgress.")]
+    [InlineData("status = 'Abandoned'", "Powtorka doszla do konca partii, a naglowek mowi: Abandoned.")]
+    [InlineData("final_hash = final_hash + 1", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    [InlineData("scores = '{0,1}'", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    [InlineData("scores = NULL", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    public async Task Header_that_disagrees_with_a_finished_replay_is_found(string change, string problem)
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        var id = await journal.RecordAsync(new GameSetup(2, 1), ["a", "b"], [new(0), new(1), new(0), new(1), new(0), new(1), new(0)]);
+        await db.TamperAsync("matches", $"UPDATE matches SET {change}");
+
+        Assert.Equal(problem, (await journal.VerifyAsync(id)).Problem);
+    }
 }
