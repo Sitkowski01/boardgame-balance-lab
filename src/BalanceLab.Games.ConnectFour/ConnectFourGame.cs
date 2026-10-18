@@ -4,7 +4,7 @@ using BalanceLab.Engine;
 namespace BalanceLab.Games.ConnectFour;
 
 /// <summary>Czworki: dwoch graczy wrzuca zetony, wygrywa cztery w linii. Bez losowosci.</summary>
-public sealed class ConnectFourGame : IGame<ConnectFourState, ConnectFourMove>
+public sealed partial class ConnectFourGame : IGame<ConnectFourState, ConnectFourMove>
 {
     private const int H = ConnectFourState.ColumnHeight;
     private const ulong ColumnCells = (1UL << ConnectFourState.Rows) - 1;
