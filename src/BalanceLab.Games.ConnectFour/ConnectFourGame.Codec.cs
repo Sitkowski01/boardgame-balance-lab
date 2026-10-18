@@ -50,8 +50,36 @@ public sealed partial class ConnectFourGame : IMoveCodec<ConnectFourMove>, IStat
             }
         }
 
+        EnsureReachable(first, second);
         var winner = HasFour(first) ? 0 : HasFour(second) ? 1 : (int?)null;
         return new ConnectFourState(first, second, (int)ulong.PopCount(first | second), winner);
+    }
+
+    /// <summary>
+    /// Plansza, ktora moze powstac w partii: zetony leza na dnie albo na innych, X ma tyle samo albo o jeden
+    /// wiecej niz O (zaczyna), a czworke ma najwyzej jeden gracz. Inaczej gracz na ruchu wyszedlby zly.
+    /// </summary>
+    private static void EnsureReachable(ulong first, ulong second)
+    {
+        for (var column = 0; column < ConnectFourState.Columns; column++)
+        {
+            var cells = ((first | second) >> (column * H)) & ColumnCells;
+            if ((cells & (cells + 1)) != 0)
+            {
+                throw new FormatException($"W kolumnie {column} zeton wisi nad pustym polem.");
+            }
+        }
+
+        var difference = (int)ulong.PopCount(first) - (int)ulong.PopCount(second);
+        if (difference is not (0 or 1))
+        {
+            throw new FormatException($"X ma o {difference} zetonow wiecej niz O; mozliwe jest 0 albo 1.");
+        }
+
+        if (HasFour(first) && HasFour(second))
+        {
+            throw new FormatException("Czworke maja obaj gracze - partia skonczylaby sie wczesniej.");
+        }
     }
 
     private static Snapshot Deserialize(string text)

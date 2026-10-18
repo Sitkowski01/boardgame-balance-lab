@@ -98,4 +98,33 @@ public sealed class CodecTests
 
         Assert.Contains(message, ex.Message, StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("...X...", ".......", "W kolumnie 3 zeton wisi nad pustym polem.")]
+    [InlineData(".......", "OO.....", "X ma o -2 zetonow wiecej niz O; mozliwe jest 0 albo 1.")]
+    [InlineData(".......", "XX.....", "X ma o 2 zetonow wiecej niz O; mozliwe jest 0 albo 1.")]
+    public void Board_that_no_game_can_reach_is_a_format_error(string second, string bottom, string message)
+    {
+        var text = $$"""{"rows":[".......",".......",".......",".......","{{second}}","{{bottom}}"]}""";
+
+        var ex = Assert.Throws<FormatException>(() => Game.DecodeState(text));
+
+        Assert.Equal(message, ex.Message);
+    }
+
+    [Fact]
+    public void Board_where_both_players_have_four_is_a_format_error()
+    {
+        var both = Game.EncodeState(Board.Parse(".......", ".......", "X..O...", "X..O...", "X..O...", "X..O..."));
+
+        Assert.Contains("Czworke maja obaj gracze", Assert.Throws<FormatException>(() => Game.DecodeState(both)).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Full_column_and_one_extra_x_are_fine()
+    {
+        var state = Board.Parse("X......", "O......", "X......", "O......", "X......", "O.....X");
+
+        Assert.Equal(state, Game.DecodeState(Game.EncodeState(state)));
+    }
 }
