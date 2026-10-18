@@ -1,0 +1,9 @@
+{
+  "stryker-config": {
+    "project": "BalanceLab.Persistence.csproj",
+    "test-projects": [ "tests/BalanceLab.Persistence.Tests/BalanceLab.Persistence.Tests.csproj" ],
+    "mutate": [ "!**/Migrations/**/*.cs", "!**/JournalDbContextFactory.cs" ],
+    "reporters": [ "html", "progress", "cleartext", "json" ],
+    "thresholds": { "high": 90, "low": 90, "break": 90 }
+  }
+}

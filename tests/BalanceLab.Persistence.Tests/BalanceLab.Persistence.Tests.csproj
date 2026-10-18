@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <!-- Dziennik testowany na prawdziwych grach i botach: tak bedzie uzywany w CLI i na serwerze. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BalanceLab.Persistence\BalanceLab.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\BalanceLab.Games.ConnectFour\BalanceLab.Games.ConnectFour.csproj" />
+    <ProjectReference Include="..\..\src\BalanceLab.Games.Klejnoty\BalanceLab.Games.Klejnoty.csproj" />
+    <ProjectReference Include="..\..\src\BalanceLab.Bots\BalanceLab.Bots.csproj" />
+  </ItemGroup>
+
+</Project>
