@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using BalanceLab.Engine;
 
 namespace BalanceLab.Persistence;
@@ -9,3 +10,41 @@ namespace BalanceLab.Persistence;
 public sealed record StoredGame<TState, TMove>(IGame<TState, TMove> Game, IMoveCodec<TMove> Moves, IStateCodec<TState> States)
     where TState : notnull
     where TMove : notnull;
+
+/// <summary>Naglowek partii z dziennika.</summary>
+/// <param name="Scores">Wyniki graczy; puste, dopoki partia nie jest <see cref="MatchStatus.Finished"/>.</param>
+public sealed record MatchInfo(
+    Guid Id,
+    string Game,
+    string? Variant,
+    GameSetup Setup,
+    ImmutableArray<string> Players,
+    MatchStatus Status,
+    int Moves,
+    ulong? FinalHash,
+    ImmutableArray<double> Scores,
+    DateTimeOffset StartedAt,
+    DateTimeOffset? FinishedAt);
+
+/// <summary>Partia z dziennika: naglowek, ruchy po kolei i hash stanu po kazdym ruchu.</summary>
+public sealed record MatchLog<TMove>(MatchInfo Match, ImmutableArray<TMove> Moves, ImmutableArray<ulong> Hashes)
+    where TMove : notnull;
+
+
+/// <summary>Stan odtworzony z dziennika nie zgadza sie z zapisanym hashem (zmienione zasady albo uszkodzone dane).</summary>
+public sealed class JournalMismatchException : Exception
+{
+    public JournalMismatchException()
+    {
+    }
+
+    public JournalMismatchException(string message)
+        : base(message)
+    {
+    }
+
+    public JournalMismatchException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}

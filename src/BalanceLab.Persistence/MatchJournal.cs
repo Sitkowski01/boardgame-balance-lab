@@ -120,4 +120,15 @@ public sealed partial class MatchJournal<TState, TMove>
         row.Scores = abandoned ? null : [.. rules.Game.Scores(state)];
         row.FinishedAt = _clock.GetUtcNow();
     }
+
+    private async Task<MatchRow> FindAsync(IQueryable<MatchRow> matches, Guid match, CancellationToken cancellationToken)
+    {
+        var row = await matches.SingleOrDefaultAsync(m => m.Id == match, cancellationToken)
+            ?? throw new KeyNotFoundException($"Nie ma partii {match}.");
+        return row.Game == _game
+            ? row
+            : throw new InvalidOperationException($"Partia {match} to gra '{row.Game}', a ten dziennik jest dla '{_game}'.");
+    }
+
+    private static GameSetup SetupOf(MatchRow row) => new(row.PlayerCount, unchecked((ulong)row.Seed));
 }
