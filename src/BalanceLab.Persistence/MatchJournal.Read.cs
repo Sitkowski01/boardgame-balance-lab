@@ -42,6 +42,21 @@ public sealed partial class MatchJournal<TState, TMove>
         return await StateAtAsync(db, row, _rules(row.Variant), moves, cancellationToken);
     }
 
+    /// <summary>
+    /// Powtarza cala partie od rozdania i porownuje z dziennikiem: hash po kazdym ruchu, kazda migawke
+    /// i wynik w naglowku. Rozjazd oznacza, ze zasady gry zmienily sie od zapisu albo dane sa uszkodzone.
+    /// </summary>
+    public async Task<JournalVerification> VerifyAsync(Guid match, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        await using var read = await ConsistentReadAsync(db, cancellationToken);
+        var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
+        var moves = await MovesAsync(db, match, 0, int.MaxValue, cancellationToken);
+        var snapshots = await db.Snapshots.AsNoTracking().Where(s => s.MatchId == match).ToDictionaryAsync(s => s.Seq, cancellationToken);
+        var (bad, problem) = Check(row, _rules(row.Variant), moves, snapshots);
+        return new JournalVerification(moves.Count, snapshots.Count, bad, problem);
+    }
+
     private static async Task<TState> StateAtAsync(JournalDbContext db, MatchRow row, StoredGame<TState, TMove> rules, int moves, CancellationToken cancellationToken)
     {
         var snapshot = await db.Snapshots.AsNoTracking()
@@ -122,6 +137,82 @@ public sealed partial class MatchJournal<TState, TMove>
             .Where(m => m.MatchId == match && m.Seq > after && m.Seq <= upTo)
             .OrderBy(m => m.Seq)
             .ToListAsync(cancellationToken);
+
+    private static (int? Move, string? Problem) Check(MatchRow row, StoredGame<TState, TMove> rules, List<MoveRow> moves, Dictionary<int, SnapshotRow> snapshots)
+    {
+        if (moves.Count != row.Moves)
+        {
+            return (null, $"Naglowek mowi o {row.Moves} ruchach, a w dzienniku jest {moves.Count}.");
+        }
+
+        var state = rules.Game.Setup(SetupOf(row));
+        for (var i = 0; i < moves.Count; i++)
+        {
+            var seq = i + 1;
+            if (moves[i].Seq != seq)
+            {
+                return (seq, $"Brakuje ruchu nr {seq}.");
+            }
+
+            try
+            {
+                state = rules.Game.Apply(state, rules.Moves.DecodeMove(moves[i].Move));
+            }
+            catch (Exception ex) when (ex is FormatException or IllegalMoveException)
+            {
+                return (seq, $"Ruch nr {seq} ('{moves[i].Move}'): {ex.Message}");
+            }
+
+            var hash = rules.Game.Hash(state);
+            if (hash != unchecked((ulong)moves[i].HashAfter))
+            {
+                return (seq, $"Po ruchu nr {seq} powtorka daje inny hash niz dziennik.");
+            }
+
+            if (snapshots.TryGetValue(seq, out var snapshot) && SnapshotProblem(rules, snapshot, hash) is { } problem)
+            {
+                return (seq, problem);
+            }
+        }
+
+        if (snapshots.Keys.Any(seq => seq > moves.Count))
+        {
+            return (null, "Migawka po ruchu, ktorego nie ma w dzienniku.");
+        }
+
+        return (null, HeaderProblem(row, rules.Game, state));
+    }
+
+    private static string? SnapshotProblem(StoredGame<TState, TMove> rules, SnapshotRow snapshot, ulong hash)
+    {
+        try
+        {
+            return unchecked((ulong)snapshot.Hash) == hash && rules.Game.Hash(rules.States.DecodeState(snapshot.State)) == hash
+                ? null
+                : $"Migawka po ruchu nr {snapshot.Seq} nie zgadza sie z powtorka.";
+        }
+        catch (FormatException ex)
+        {
+            return $"Migawka po ruchu nr {snapshot.Seq} jest nieczytelna: {ex.Message}";
+        }
+    }
+
+    private static string? HeaderProblem(MatchRow row, IGame<TState, TMove> game, TState state)
+    {
+        var terminal = game.IsTerminal(state);
+        if ((row.Status == MatchStatus.Finished) != terminal)
+        {
+            return terminal ? $"Powtorka doszla do konca partii, a naglowek mowi: {row.Status}." : "Naglowek mowi, ze partia sie skonczyla, a powtorka nie doszla do konca.";
+        }
+
+        if (row.Status == MatchStatus.InProgress)
+        {
+            return null;
+        }
+
+        var scoresMatch = row.Status == MatchStatus.Abandoned ? row.Scores is null : row.Scores is { } s && s.SequenceEqual(game.Scores(state));
+        return row.FinalHash == unchecked((long)game.Hash(state)) && scoresMatch ? null : "Wynik w naglowku nie zgadza sie z powtorka.";
+    }
 
     private static MatchInfo Info(MatchRow row) => new(
         row.Id,

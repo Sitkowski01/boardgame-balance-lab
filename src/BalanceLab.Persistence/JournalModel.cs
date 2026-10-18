@@ -34,6 +34,16 @@ public sealed record MatchLog<TMove>(MatchInfo Match, ImmutableArray<TMove> Move
 public sealed record AppendResult(int Moves, ulong Hash, bool Finished);
 
 /// <summary>
+/// Wynik powtorki calej partii. <see cref="Problem"/> opisuje pierwsza niezgodnosc (np. inny hash
+/// po ruchu, czyli zmiana zasad gry od czasu zapisu); null oznacza, ze dziennik sie zgadza.
+/// </summary>
+/// <param name="FirstBadMove">Numer ruchu, na ktorym powtorka rozeszla sie z dziennikiem, jesli dotyczy.</param>
+public sealed record JournalVerification(int Moves, int Snapshots, int? FirstBadMove, string? Problem)
+{
+    public bool Ok => Problem is null;
+}
+
+/// <summary>
 /// Ktos inny dopisal ruch pierwszy albo partia juz sie skonczyla. Wolajacy powinien wczytac
 /// partie od nowa i zdecydowac, czy jego ruch jest nadal aktualny.
 /// </summary>
