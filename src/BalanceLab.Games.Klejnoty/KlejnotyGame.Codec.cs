@@ -81,6 +81,17 @@ public sealed partial class KlejnotyGame : IMoveCodec<KlejnotyMove>, IStateCodec
             throw new FormatException($"Migawka jest z wariantu '{s.Variant}', a gra ma wariant '{Variant.Name}'.");
         }
 
+        // Serializator pilnuje null tylko w polach, nie w elementach list — te sprawdzamy sami.
+        if (s.Players.Any(p => p is null || p.Reserved.Any(r => r is null)) || s.Decks.Any(d => d is null))
+        {
+            throw new FormatException("Migawka ma pusty (null) element na liscie graczy, rezerwacji albo talii.");
+        }
+
+        if (s.Players.Length is < KlejnotyRules.MinPlayers or > KlejnotyRules.MaxPlayers || s.ToMove < 0 || s.ToMove >= s.Players.Length)
+        {
+            throw new FormatException($"Migawka ma {s.Players.Length} graczy i gracza na ruchu nr {s.ToMove} - takiej partii nie ma.");
+        }
+
         try
         {
             return new KlejnotyState(

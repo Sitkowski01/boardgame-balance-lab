@@ -139,4 +139,37 @@ public sealed class CodecTests
         Assert.Contains("ma miec 6 liczb", ex.Message, StringComparison.Ordinal);
         Assert.Contains("Bledna migawka", Assert.Throws<FormatException>(() => Game.DecodeState(tooMany.ToJsonString())).Message, StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("players", "pusty (null) element")]
+    [InlineData("reserved", "pusty (null) element")]
+    [InlineData("decks", "pusty (null) element")]
+    [InlineData("toMove", "gracza na ruchu nr 2")]
+    [InlineData("onePlayer", "ma 1 graczy")]
+    public void Snapshot_with_holes_or_an_impossible_table_is_a_format_error(string damage, string message)
+    {
+        var json = JsonNode.Parse(Game.EncodeState(Start(2, 1).Play(KlejnotyMove.Reserve(Start(2, 1).FirstOnMarket(1).Id))))!;
+        switch (damage)
+        {
+            case "players": json["players"]!.AsArray()[1] = null; break;
+            case "reserved": json["players"]![0]!["reserved"]!.AsArray()[0] = null; break;
+            case "decks": json["decks"]!.AsArray()[2] = null; break;
+            case "toMove": json["toMove"] = 2; break;
+            default: json["players"]!.AsArray().RemoveAt(1); json["toMove"] = 0; break;
+        }
+
+        var ex = Assert.Throws<FormatException>(() => Game.DecodeState(json.ToJsonString()));
+
+        Assert.Contains(message, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Last_seat_may_be_on_the_move_but_not_a_negative_one()
+    {
+        var json = JsonNode.Parse(Game.EncodeState(Start(4, 1)))!;
+        json["toMove"] = 3;
+        Assert.Equal(3, Game.DecodeState(json.ToJsonString()).ToMove);
+        json["toMove"] = -1;
+        Assert.Throws<FormatException>(() => Game.DecodeState(json.ToJsonString()));
+    }
 }
