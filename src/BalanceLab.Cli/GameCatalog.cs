@@ -1,6 +1,7 @@
 using BalanceLab.Engine;
 using BalanceLab.Games.ConnectFour;
 using BalanceLab.Games.Klejnoty;
+using BalanceLab.Persistence;
 using BalanceLab.Simulation;
 
 namespace BalanceLab.Cli;
@@ -10,8 +11,9 @@ internal static class GameCatalog
 {
     private static readonly Dictionary<string, IGameEntry> Games = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["connectfour"] = new GameEntry<ConnectFourState, ConnectFourMove>(new ConnectFourGame()),
-        ["klejnoty"] = new GameEntry<KlejnotyState, KlejnotyMove>(
+        ["connectfour"] = new GameEntry<ConnectFourState, ConnectFourMove, ConnectFourGame>("connectfour", new ConnectFourGame()),
+        ["klejnoty"] = new GameEntry<KlejnotyState, KlejnotyMove, KlejnotyGame>(
+            "klejnoty",
             new KlejnotyGame(),
             new GreedyProfiles<KlejnotyState>(
                 new KlejnotyEvaluator(),
@@ -38,20 +40,31 @@ internal interface IGameEntry
     Func<LeagueReport> PrepareLeague(IReadOnlyList<string> bots, TournamentSpec perPair, string? variant);
 
     Func<ComparisonReport> PrepareComparison(IReadOnlyList<string> bots, TournamentSpec spec, string variant);
+
+    /// <summary>Jedna partia botow zapisana do dziennika w bazie.</summary>
+    /// <param name="spec">Ziarno partii i limit ruchow; liczba partii jest pomijana.</param>
+    Func<Task<PlayedMatch>> PreparePlay(IReadOnlyList<string> bots, TournamentSpec spec, string? variant, JournalDb db);
+
+    /// <summary>Partia z dziennika, powtorzona i sprawdzona; <paramref name="at"/> — stan po tylu ruchach.</summary>
+    Task<ReplayedMatch> ReplayAsync(JournalDb db, Guid match, int? at);
 }
 
 /// <summary>Oceny pozycji dla bota greedy: domyslna i nazwane profile strategii.</summary>
 internal sealed record GreedyProfiles<TState>(IEvaluator<TState> Default, IReadOnlyDictionary<string, IEvaluator<TState>> Named)
     where TState : notnull;
 
+/// <param name="key">Nazwa gry w linii polecen i w dzienniku partii.</param>
+/// <param name="game">Gra razem z kodekami ruchow i stanow (do dziennika).</param>
 /// <param name="profiles">Oceny pozycji dla bota greedy, jesli gra je ma.</param>
 /// <param name="variants">Tworzy gre z wariantem zasad z tekstu, jesli gra ma warianty.</param>
-internal sealed class GameEntry<TState, TMove>(
-    IGame<TState, TMove> game,
+internal sealed partial class GameEntry<TState, TMove, TGame>(
+    string key,
+    TGame game,
     GreedyProfiles<TState>? profiles = null,
-    Func<string, IGame<TState, TMove>>? variants = null) : IGameEntry
+    Func<string, TGame>? variants = null) : IGameEntry
     where TState : notnull
     where TMove : notnull
+    where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>
 {
     public Func<TournamentResult> Prepare(IReadOnlyList<string> bots, TournamentSpec spec, string? variant)
     {
@@ -86,7 +99,7 @@ internal sealed class GameEntry<TState, TMove>(
         return [.. bots.Select((bot, i) => BotSpec.Parse<TState, TMove>(bot, names[i], profiles))];
     }
 
-    private IGame<TState, TMove> WithVariant(string? variant) => (variant, variants) switch
+    private TGame WithVariant(string? variant) => (variant, variants) switch
     {
         (null, _) => game,
         (_, null) => throw new FormatException($"{game.Name} nie ma wariantow zasad."),

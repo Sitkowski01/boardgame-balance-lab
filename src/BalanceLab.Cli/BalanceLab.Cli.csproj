@@ -13,13 +13,14 @@
     <InternalsVisibleTo Include="BalanceLab.Cli.Tests" />
   </ItemGroup>
 
-  <!-- Jedyne miejsce, ktore zna wszystko: gry, boty i symulator sklada dopiero CLI. -->
+  <!-- Jedyne miejsce, ktore zna wszystko: gry, boty, symulator i dziennik sklada dopiero CLI. -->
   <ItemGroup>
     <ProjectReference Include="..\BalanceLab.Simulation\BalanceLab.Simulation.csproj" />
     <ProjectReference Include="..\BalanceLab.Reporting\BalanceLab.Reporting.csproj" />
     <ProjectReference Include="..\BalanceLab.Bots\BalanceLab.Bots.csproj" />
     <ProjectReference Include="..\BalanceLab.Games.ConnectFour\BalanceLab.Games.ConnectFour.csproj" />
     <ProjectReference Include="..\BalanceLab.Games.Klejnoty\BalanceLab.Games.Klejnoty.csproj" />
+    <ProjectReference Include="..\BalanceLab.Persistence\BalanceLab.Persistence.csproj" />
   </ItemGroup>
 
 </Project>
