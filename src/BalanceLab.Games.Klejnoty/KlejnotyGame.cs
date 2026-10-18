@@ -16,7 +16,7 @@ namespace BalanceLab.Games.Klejnoty;
 /// Elementami dla raportu balansu sa kupione karty (zarezerwowane, ale niekupione, sie nie licza).
 /// </remarks>
 /// <param name="variant">Zasady partii; domyslnie <see cref="KlejnotyVariant.Standard"/>.</param>
-public sealed class KlejnotyGame(KlejnotyVariant? variant = null) : IGame<KlejnotyState, KlejnotyMove>, IItemTracking<KlejnotyState>
+public sealed partial class KlejnotyGame(KlejnotyVariant? variant = null) : IGame<KlejnotyState, KlejnotyMove>, IItemTracking<KlejnotyState>
 {
     public KlejnotyVariant Variant { get; } = variant ?? KlejnotyVariant.Standard;
 
