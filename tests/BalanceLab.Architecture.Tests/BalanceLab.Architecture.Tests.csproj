@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\src\BalanceLab.Simulation\BalanceLab.Simulation.csproj" />
     <ProjectReference Include="..\..\src\BalanceLab.Reporting\BalanceLab.Reporting.csproj" />
     <ProjectReference Include="..\..\src\BalanceLab.Cli\BalanceLab.Cli.csproj" />
+    <ProjectReference Include="..\..\src\BalanceLab.Persistence\BalanceLab.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

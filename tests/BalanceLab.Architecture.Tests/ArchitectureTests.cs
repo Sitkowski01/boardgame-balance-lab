@@ -47,21 +47,28 @@ public sealed class ArchitectureTests
     [Fact]
     public void Bots_work_on_the_contract_not_on_a_concrete_game()
     {
-        AssertNoDependency("BalanceLab.Bots", "BalanceLab.Games");
+        AssertNoDependency("BalanceLab.Bots", "BalanceLab.Games", "BalanceLab.Persistence");
     }
 
     [Fact]
     public void Simulator_runs_any_game_with_any_player()
     {
         // Gry i boty sklada dopiero CLI; symulator zna tylko kontrakt silnika.
-        AssertNoDependency("BalanceLab.Simulation", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Cli", "BalanceLab.Reporting");
+        AssertNoDependency("BalanceLab.Simulation", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Cli", "BalanceLab.Reporting", "BalanceLab.Persistence");
     }
 
     [Fact]
     public void Report_shows_simulation_results_without_knowing_games_or_bots()
     {
         // Raport HTML dziala dla kazdej gry: zna tylko liczby z symulatora, nie zasady ani boty.
-        AssertNoDependency("BalanceLab.Reporting", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Cli");
+        AssertNoDependency("BalanceLab.Reporting", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Cli", "BalanceLab.Persistence");
+    }
+
+    [Fact]
+    public void Journal_stores_any_game_through_the_engine_contract()
+    {
+        // Dziennik dostaje gre z kodekami od wolajacego; nie zna zasad zadnej gry ani botow.
+        AssertNoDependency("BalanceLab.Persistence", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Simulation", "BalanceLab.Reporting", "BalanceLab.Cli");
     }
 
     [Theory]

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+  </ItemGroup>
+
+  <!-- Dziennik zna tylko kontrakt silnika: gre (z kodekami) podaje ten, kto go tworzy. -->
+  <ItemGroup>
+    <ProjectReference Include="..\BalanceLab.Engine\BalanceLab.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Testy psuja dziennik surowym SQL-em i zagladaja do wierszy, ktorych nie widac z zewnatrz. -->
+    <InternalsVisibleTo Include="BalanceLab.Persistence.Tests" />
+  </ItemGroup>
+
+</Project>
