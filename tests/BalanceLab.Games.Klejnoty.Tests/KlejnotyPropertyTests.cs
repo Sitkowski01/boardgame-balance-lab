@@ -43,7 +43,7 @@ public sealed class KlejnotyPropertyTests
     public bool Replaying_the_moves_gives_the_same_final_hash(ulong seed)
     {
         var setup = new GameSetup(Players(seed), seed);
-        var result = Match.Play(Game, setup, Bots(seed));
+        var result = Match.Play(Game, setup, RandomBots(seed));
 
         return result.Moves.Aggregate(Game.Setup(setup), Game.Apply) is var replayed
             && Game.Hash(replayed) == Game.Hash(result.FinalState)
@@ -79,7 +79,7 @@ public sealed class KlejnotyPropertyTests
     public void Random_games_end_well_within_the_move_limit()
     {
         // Stale ziarna: koniec partii sprawdzamy osobno i powtarzalnie (zmierzone maksimum: ok. 250 ruchow na 4 graczy).
-        var lengths = Enumerable.Range(0, 60).Select(s => Match.Play(Game, new GameSetup(Players((ulong)s), (ulong)s), Bots((ulong)s), 2_000)).ToArray();
+        var lengths = Enumerable.Range(0, 60).Select(s => Match.Play(Game, new GameSetup(Players((ulong)s), (ulong)s), RandomBots((ulong)s), 2_000)).ToArray();
 
         Assert.All(lengths, r => Assert.True(r.Completed));
         Assert.True(lengths.Max(r => r.Moves.Length) < 600, $"najdluzsza: {lengths.Max(r => r.Moves.Length)}");
@@ -105,25 +105,6 @@ public sealed class KlejnotyPropertyTests
         Assert.Throws<ArgumentOutOfRangeException>(() => Game.Determinize(Start(2), 2, 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => Game.Determinize(Start(2), -1, 1));
         Assert.Throws<ArgumentNullException>(() => Game.Determinize(null!, 0, 1));
-    }
-
-    private static int Players(ulong seed) => 2 + (int)(seed % 3);
-
-    private static IPlayer<KlejnotyState, KlejnotyMove>[] Bots(ulong seed) =>
-        [.. Enumerable.Range(0, Players(seed)).Select(i => new RandomBot<KlejnotyState, KlejnotyMove>(seed + (ulong)i + 1))];
-
-    /// <summary>Losowa partia z wlasnym sprawdzeniem po kazdym ruchu (i na starcie).</summary>
-    private static bool Walk(ulong seed, Func<KlejnotyState, bool> check)
-    {
-        var bots = Bots(seed);
-        var state = Start(Players(seed), seed);
-        for (var moves = 0; moves < 2_000 && check(state) && !Game.IsTerminal(state); moves++)
-        {
-            state = Game.Apply(state, bots[state.ToMove].ChooseMove(Game, state));
-        }
-
-        // Sam niezmiennik: losowe ziarno FsCheck nie moze zaczerwienic CI tylko dlatego, ze partia trwa dlugo.
-        return check(state);
     }
 
     private static Gems Sum(Gems bank, IEnumerable<Gems> players) => players.Aggregate(bank, (a, b) => a + b);
