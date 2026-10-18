@@ -133,4 +133,141 @@ public sealed class JournalWriteTests(PostgresFixture postgres)
         Assert.Equal("3,6", await db.ScalarAsync<string>("SELECT string_agg(seq::text, ',' ORDER BY seq) FROM match_snapshots"));
         Assert.Equal(3, journal.SnapshotEvery);
     }
+
+    [Fact]
+    public async Task Of_simultaneous_appends_of_the_same_move_exactly_one_wins()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var id = await db.ConnectFourJournal().StartAsync(new GameSetup(2, 1), ["a", "b"]);
+
+        // Kazdy pisze przez wlasny dziennik (wlasny kontekst i polaczenie), jak dwa serwery albo dwie karty przegladarki.
+        var attempts = await Task.WhenAll(Enumerable.Range(0, 8).Select(async column =>
+        {
+            try
+            {
+                await db.ConnectFourJournal().AppendAsync(id, 0, new ConnectFourMove(column % 7));
+                return "ok";
+            }
+            catch (JournalConflictException)
+            {
+                return "conflict";
+            }
+        }));
+
+        Assert.Equal(1, attempts.Count(a => a == "ok"));
+        Assert.Equal(7, attempts.Count(a => a == "conflict"));
+        Assert.Equal(1L, await db.ScalarAsync<long>("SELECT count(*) FROM match_moves"));
+        Assert.True((await db.ConnectFourJournal().VerifyAsync(id)).Ok);
+    }
+
+    [Fact]
+    public async Task Move_written_by_someone_else_after_the_header_was_read_is_a_conflict()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        var id = await journal.StartAsync(new GameSetup(2, 1), ["a", "b"]);
+        // Drugi pisarz wstawil ruch nr 1, a naglowek jeszcze o nim nie wie — tak wyglada wyscig w srodku zapisu.
+        await db.ExecuteAsync($"INSERT INTO match_moves (match_id, seq, move, hash_after) VALUES ('{id}', 1, '3', 0)");
+
+        var ex = await Assert.ThrowsAsync<JournalConflictException>(() => journal.AppendAsync(id, 0, new ConnectFourMove(3)));
+
+        Assert.Equal($"Ruch nr 1 partii {id} dopisal ktos inny.", ex.Message);
+    }
+
+    [Fact]
+    public async Task Move_count_in_the_header_guards_the_header_itself()
+    {
+        // Druga zapora obok klucza ruchow: zmiana naglowka (status, wynik) tez przegrywa ze starszym odczytem.
+        await using var db = await postgres.CreateDatabaseAsync();
+        await using var context = db.Db.CreateContext();
+
+        Assert.True(context.Model.FindEntityType(typeof(MatchRow))!.FindProperty(nameof(MatchRow.Moves))!.IsConcurrencyToken);
+    }
+
+    [Fact]
+    public async Task Reading_while_another_writer_appends_always_sees_one_consistent_moment()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.KlejnotyJournal(snapshotEvery: 3);
+        var match = PlayKlejnoty(new Games.Klejnoty.KlejnotyGame(), 2, 6);
+        var id = await journal.StartAsync(new GameSetup(2, 6), Names(2));
+
+        var writer = Task.Run(async () =>
+        {
+            for (var i = 0; i < Math.Min(60, match.Moves.Length); i++)
+            {
+                await journal.AppendAsync(id, i, match.Moves[i]);
+            }
+        });
+        var verifications = new List<JournalVerification>();
+        while (!writer.IsCompleted)
+        {
+            verifications.Add(await journal.VerifyAsync(id));
+        }
+
+        await writer;
+        // Bez wspolnej transakcji naglowek i lista ruchow bywaja z roznych chwil i wychodzi falszywy rozjazd.
+        Assert.All(verifications, v => Assert.True(v.Ok, v.Problem));
+        Assert.True(verifications.Count > 1);
+    }
+
+    [Fact]
+    public async Task Whole_match_recorded_at_once_is_finished_and_verifies()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal(snapshotEvery: 5);
+        var match = PlayConnectFour(11);
+
+        var id = await journal.RecordAsync(new GameSetup(2, 11), ["a", "b"], match.Moves);
+
+        var log = await journal.LoadAsync(id);
+        Assert.Equal(match.Moves.ToArray(), log.Moves.ToArray());
+        Assert.Equal((MatchStatus.Finished, (ulong?)ConnectFour.Hash(match.FinalState)), (log.Match.Status, log.Match.FinalHash));
+        Assert.Equal(match.Scores.ToArray(), log.Match.Scores.ToArray());
+        var snapshots = (match.Moves.Length / 5) + (match.Moves.Length % 5 == 0 ? 0 : 1);
+        Assert.Equal(new JournalVerification(match.Moves.Length, snapshots, null, null), await journal.VerifyAsync(id));
+    }
+
+    [Fact]
+    public async Task Unfinished_match_recorded_at_once_is_abandoned_and_closed()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        var moves = PlayConnectFour(4).Moves[..5];
+
+        var id = await journal.RecordAsync(new GameSetup(2, 4), ["a", "b"], moves);
+
+        var info = (await journal.LoadAsync(id)).Match;
+        var state = Replay.Run(ConnectFour, ConnectFour.Setup(new GameSetup(2, 4)), moves).FinalState;
+        Assert.Equal((MatchStatus.Abandoned, 5, (ulong?)ConnectFour.Hash(state), (DateTimeOffset?)Now), (info.Status, info.Moves, info.FinalHash, info.FinishedAt));
+        Assert.Empty(info.Scores);
+        await Assert.ThrowsAsync<JournalConflictException>(() => journal.AppendAsync(id, 5, moves[0]));
+        Assert.True((await journal.VerifyAsync(id)).Ok);
+    }
+
+    [Fact]
+    public async Task Recording_illegal_moves_saves_nothing()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+
+        await Assert.ThrowsAsync<IllegalMoveException>(() => journal.RecordAsync(new GameSetup(2, 1), ["a", "b"], [new(0), new(7)]));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => journal.RecordAsync(new GameSetup(2, 1), ["a", "b"], null!));
+
+        Assert.Equal(0L, await db.ScalarAsync<long>("SELECT count(*) FROM matches"));
+    }
+
+    [Fact]
+    public async Task Constructor_arguments_are_checked()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        Func<string?, StoredGame<ConnectFourState, ConnectFourMove>> rules = _ => new(ConnectFour, ConnectFour, ConnectFour);
+
+        Assert.Throws<ArgumentNullException>(() => new MatchJournal<ConnectFourState, ConnectFourMove>(null!, "c", rules));
+        Assert.Throws<ArgumentException>(() => new MatchJournal<ConnectFourState, ConnectFourMove>(db.Db, " ", rules));
+        Assert.Throws<ArgumentNullException>(() => new MatchJournal<ConnectFourState, ConnectFourMove>(db.Db, "c", null!));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MatchJournal<ConnectFourState, ConnectFourMove>(db.Db, "c", rules, snapshotEvery: 0));
+        Assert.Equal(1, new MatchJournal<ConnectFourState, ConnectFourMove>(db.Db, "c", rules, snapshotEvery: 1).SnapshotEvery);
+        Assert.Throws<ArgumentException>(() => new JournalDb(""));
+    }
 }
