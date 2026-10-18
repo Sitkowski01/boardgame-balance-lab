@@ -8,12 +8,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Baza dla play/replay na zywo; testy integracyjne stawiaja wlasne kontenery (Testcontainers).
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - name: Testy (jednostkowe, wlasnosci FsCheck, statystyczne, sily botow, architektura, e2e CLI)
+      - name: Testy (jednostkowe, wlasnosci FsCheck, statystyczne, sily botow, architektura, integracyjne i e2e na PostgreSQL)
         run: dotnet test
       - name: Benchmarki uruchamiaja sie (przebieg probny)
         run: dotnet run -c Release --project benchmarks/BalanceLab.Benchmarks -- --filter '*' --job dry
@@ -25,6 +34,12 @@ jobs:
         run: |
           dotnet run --project src/BalanceLab.Cli -- league --game klejnoty --bots greedy:silnik greedy:punkty greedy:zetony --games 40 --html league.html
           dotnet run --project src/BalanceLab.Cli -- compare --game klejnoty --bots greedy:silnik greedy --games 100 --variant "card77.points=4; win=14" --html compare.html
+      - name: CLI na zywo - dziennik partii w PostgreSQL (zapis, powtorka z migawki, weryfikacja)
+        env:
+          BALANCE_LAB_DB: Host=localhost;Username=postgres;Password=ci;Database=balance_lab
+        run: |
+          id=$(dotnet run --project src/BalanceLab.Cli -- play --game klejnoty --bots greedy ismcts:30 random --seed 7 | grep -oE '[0-9a-f]{8}-[0-9a-f-]{27}' | head -1)
+          dotnet run --project src/BalanceLab.Cli -- replay --match "$id" --at 40
 
   mutation:
     # Kazdy projekt w osobnym, rownoleglym zadaniu: CI trwa tyle, co najwolniejszy, a nie suma.
@@ -32,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json]
+        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

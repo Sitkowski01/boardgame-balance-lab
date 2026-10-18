@@ -7,7 +7,7 @@ przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w z
 > Projekt w budowie. Gotowe: kontrakt silnika z ukrytą informacją, deterministyczny generator,
 > Czwórki (ConnectFour) i Klejnoty (gra karciana w stylu Splendora), boty: losowy, heurystyczny
 > (z profilami strategii), MCTS i ISMCTS, symulator turniejów, liga z rankingiem Elo, porównanie
-> wariantów zasad (A/B) i raport HTML.
+> wariantów zasad (A/B), raport HTML oraz dziennik partii w PostgreSQL z powtórkami i migawkami.
 
 ## Architektura
 
@@ -18,7 +18,8 @@ src/BalanceLab.Games.Klejnoty      Klejnoty: zasady, ukryte talie i rezerwacje, 
 src/BalanceLab.Bots                RandomBot, GreedyBot, MctsBot, IsmctsBot (kontrakt, żadnej gry)
 src/BalanceLab.Simulation          turnieje równoległe, statystyki kart, liga (Elo), porównanie A/B, raport JSON
 src/BalanceLab.Reporting           raport HTML z wykresami SVG — zna tylko liczby z symulatora
-src/BalanceLab.Cli                 simulate | league | compare — jedyne miejsce, które składa gry, boty i symulator
+src/BalanceLab.Persistence         dziennik partii (EF Core + PostgreSQL): ruchy tylko dopisywane, migawki, weryfikacja
+src/BalanceLab.Cli                 simulate | league | compare | play | replay — jedyne miejsce, które składa całość
 ```
 
 Gra to czyste funkcje na niemutowalnym stanie: `Setup(gracze, ziarno)`, `LegalMoves`, `Apply`
@@ -177,6 +178,48 @@ Wykresy raportu HTML pilnują testy zatwierdzonych plików (`tests/BalanceLab.Re
 strona ze stałych danych porównywana znak po znaku z zatwierdzoną. Celowa zmiana wyglądu to
 `BALANCE_LAB_APPROVE=1 dotnet test`, obejrzenie strony i commit — diff pokazuje dokładnie, co się zmieniło.
 
+## Dziennik partii i powtórki
+
+Partia w bazie to nagłówek (gra, wariant, ziarno, gracze) i ruchy — nic więcej nie trzeba, bo cała
+losowość siedzi w stanie gry. Obok każdego ruchu leży hash stanu po nim, a co 20 ruchów (i na końcu
+partii) migawka całego stanu.
+
+```bash
+export BALANCE_LAB_DB="Host=localhost;Username=postgres;Password=...;Database=balance_lab"
+balance-lab play   --game klejnoty --bots greedy ismcts:30 random --seed 7
+balance-lab replay --match <id> --at 45
+```
+
+```
+Partia 01a14fc3-...: Klejnoty, ziarno 7, gracze: greedy, ismcts:30, random
+Status: Finished, ruchow: 106; wyniki: 1, 0, 0
+    1. take:WRK         a17052d3f3eae9a6
+    2. take:WGR         f718dc631c4f6861
+    3. reserve:73       c913f3b569131d2a
+  ...
+Stan po ruchu 45: hash 304b63b872bcd647
+Weryfikacja: zgodna (106 ruchow, 6 migawek)
+```
+
+- **Ruchy jako tekst należący do gry** (`IMoveCodec`: `take:WRK`, `buy:17`, `deck:2`), a nie JSON z
+  serializatora — zmiana nazwy pola w C# nie unieważnia zapisanych partii. Migawka (`IStateCodec`) to JSON
+  w kolumnie `jsonb`, czytelny prosto z bazy (Czwórki zapisują planszę w wierszach `..XO...`).
+- **Tylko dopisywanie pilnuje baza**: trigger odrzuca `UPDATE`, `DELETE` i `TRUNCATE` na ruchach i migawkach,
+  a zamkniętej partii nie da się zmienić ani usunąć — także ręcznym SQL-em.
+- **Dwa zapisy tego samego ruchu**: dopisujący podaje, ile ruchów widział; licznik ruchów w nagłówku jest
+  znacznikiem współbieżności, a klucz (partia, numer ruchu) drugą zaporą. Z ośmiu równoległych prób
+  przechodzi dokładnie jedna, reszta dostaje `JournalConflictException` — pod serwer gry w czasie rzeczywistym.
+- **Stan po ruchu N** = najbliższa wcześniejsza migawka + najwyżej 19 ruchów powtórzonych przez zasady gry.
+  Migawka jest sprawdzana z łańcuchem hashy ruchów, nie tylko z własnym hashem — podmieniona para
+  (stan, hash) nie przejdzie jako prawdziwa.
+- **Weryfikacja** powtarza całą partię od rozdania i wskazuje pierwszy ruch, na którym powtórka rozchodzi się
+  z dziennikiem. To też alarm na zmianę zasad gry: stare partie przestają się zgadzać od konkretnego ruchu.
+  Odczyt idzie w jednej transakcji REPEATABLE READ, więc równoległe dopisywanie nie daje fałszywych rozjazdów.
+
+Testy na prawdziwym PostgreSQL (Testcontainers; każdy test dostaje kopię bazy-szablonu) psują dziennik
+z pominięciem triggerów — zmieniony hash, inny legalny ruch, luka w numeracji, podmieniona migawka,
+zły wynik w nagłówku — i sprawdzają, że każda zmiana jest wykryta we właściwym miejscu.
+
 ## Bot MCTS
 
 `MctsBot` to Monte Carlo Tree Search z wyborem UCT. Nie zna strategii żadnej gry — tylko zasady:
@@ -245,7 +288,8 @@ logicznych (5,1×). Skalowanie nie jest liniowe — ograniczają je rdzenie fizy
 ## Testy
 
 ```bash
-dotnet test                 # jednostkowe, właściwości (FsCheck), statystyczne, siła botów, architektura, e2e CLI
+dotnet test                 # jednostkowe, właściwości (FsCheck), statystyczne, siła botów, architektura,
+                            # integracyjne i e2e CLI na PostgreSQL (Testcontainers — potrzebny Docker)
 dotnet tool restore
 dotnet stryker              # mutation testing silnika, próg 90%
 dotnet stryker -f stryker-connectfour.json
@@ -254,6 +298,7 @@ dotnet stryker -f stryker-bots.json
 dotnet stryker -f stryker-simulation.json
 dotnet stryker -f stryker-reporting.json
 dotnet stryker -f stryker-cli.json
+dotnet stryker -f stryker-persistence.json
 dotnet run -c Release --project benchmarks/BalanceLab.Benchmarks -- --filter '*'
 ```
 
@@ -262,7 +307,8 @@ Na Windowsie z Visual Studio 2022 Stryker może wybrać MSBuild bez .NET 10 — 
 
 ## Stack
 
-.NET 10, System.CommandLine, System.Text.Json, xUnit, FsCheck, NetArchTest, Stryker.NET, BenchmarkDotNet.
+.NET 10, EF Core + PostgreSQL (Npgsql), System.CommandLine, System.Text.Json, xUnit, FsCheck, Testcontainers,
+NetArchTest, Stryker.NET, BenchmarkDotNet.
 
 ## Licencja
 
