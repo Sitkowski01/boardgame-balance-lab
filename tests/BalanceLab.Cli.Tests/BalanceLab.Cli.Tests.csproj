@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- play i replay testowane na prawdziwym PostgreSQL w Dockerze. -->
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\BalanceLab.Cli\BalanceLab.Cli.csproj" />
   </ItemGroup>
 
