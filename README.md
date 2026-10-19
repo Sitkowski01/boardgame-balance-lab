@@ -8,7 +8,8 @@ przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w z
 > Czwórki (ConnectFour) i Klejnoty (gra karciana w stylu Splendora), boty: losowy, heurystyczny
 > (z profilami strategii), MCTS i ISMCTS, symulator turniejów, liga z rankingiem Elo, porównanie
 > wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami oraz
-> serwer gry na żywo (SignalR): lobby, pokoje, boty na wolnych miejscach, limity czasu i powrót po rozłączeniu.
+> serwer gry na żywo (SignalR): lobby, pokoje, boty na wolnych miejscach, limity czasu i powrót po rozłączeniu,
+> a w przeglądarce (React): lobby, plansze Klejnotów i Czwórek oraz odtwarzacz powtórek z suwakiem.
 
 ## Architektura
 
@@ -24,6 +25,7 @@ src/BalanceLab.Catalog             katalog gier i botów (opis tekstem, np. mcts
 src/BalanceLab.Multiplayer         pokoje gry (serwer jest sędzią), lobby, archiwum partii — bez sieci
 src/BalanceLab.Api                 hub SignalR /hubs/game + REST /api — sam transport, bez zasad gier
 src/BalanceLab.Cli                 simulate | league | compare | play | replay
+web/                               React + TypeScript: lobby, plansze, powtórki (Vite, SignalR)
 ```
 
 Gra to czyste funkcje na niemutowalnym stanie: `Setup(gracze, ziarno)`, `LegalMoves`, `Apply`
@@ -246,15 +248,45 @@ jest na ruchu) i `Move`; ruch wysyła jako tekst z numerem pozycji: `MakeMove(12
 - **Boty** liczą poza pętlą, na widoku swojego miejsca, z ziarnem z partii i numeru ruchu — ten sam pokój
   z tym samym ziarnem rozgrywa się identycznie. Bot z lobby ma limit iteracji, żeby nikt nie zamówił
   nieskończonego MCTS na serwerze.
-- **Partia nie stoi.** Po upływie czasu na ruch albo gdy gracz rozłączy się na swoim ruchu, gra za niego bot.
+- **Partia nie stoi.** Po upływie czasu na ruch albo gdy gracz rozłączy się na swoim ruchu (po 10 s karencji —
+  odświeżenie strony to też rozłączenie), gra za niego bot.
   Powrót z biletem miejsca (`Rejoin`) przywraca widok; gracz, który wrócił przed ruchem bota, gra sam.
   Gdy dziennik kilka razy z rzędu nie przyjmie ruchu, partia jest porzucana zamiast ponawiać bez końca.
-- **REST:** `/api/games`, `/api/rooms`, `/api/matches/{id}` (ruchy i weryfikacja powtórki),
+- **REST:** `/api/games`, `/api/games/{gra}/rules` (karty wariantu dla ekranu), `/api/rooms`, `/api/matches/{id}` (ruchy i weryfikacja powtórki),
   `/api/matches/{id}/frames/{n}` (widok widza po n ruchach — klatka odtwarzacza). Limit żądań na adres IP.
 
 Testy huba idą przez prawdziwe połączenia WebSocket z serwerem w pamięci (`WebApplicationFactory`) i
 PostgreSQL z Testcontainers; e2e: dwóch graczy i bot kończą partię Klejnotów, a powtórka z dziennika daje
 te same hashe. Logika pokoi ma osobne testy bez sieci, z fałszywym zegarem (`FakeTimeProvider`).
+
+## W przeglądarce (React)
+
+```bash
+(cd web && pnpm install && pnpm build)
+export ASPNETCORE_URLS=http://localhost:5080 Web__Root=web/dist
+dotnet run --project src/BalanceLab.Api    # gra i front pod localhost:5080
+(cd web && pnpm dev)                      # albo front z odświeżaniem na :5173 (proxy do API na :5080)
+```
+
+Lobby pokazuje pokoje na żywo i zakłada nowe (gra, miejsca, wariant zasad). Przy stole gospodarz sadza boty
+i zaczyna, a każdy gra ze swojego miejsca; widz ogląda bez cudzych kart. Powtórka `/matches/{id}` przewija
+partię z dziennika suwakiem — klatki liczy serwer, przeglądarka je tylko pamięta.
+
+- **Front nie zna zasad.** Klik w żetony i karty składa ruch, ale przycisk „Weź” czy „Kup” pojawia się tylko,
+  gdy taki ruch jest na liście legalnych ruchów od serwera. Test własności (fast-check): żadna sekwencja klików
+  nie zbuduje ruchu spoza listy, a każdy legalny da się wyklikać.
+- **Liczby z serwera.** Widok gry podaje numery kart; koszt i punkty wariantu tej partii daje
+  `GET /api/games/{gra}/rules?variant=...` (`IRulesSheet` w silniku), więc „karta tańsza o 1” wygląda
+  na ekranie tak, jak gra się w nią na serwerze.
+- **Kolejność wiadomości.** Każdy stan pokoju i widok ma wersję — starsza niż posiadana jest pomijana.
+  Każda wiadomość z sieci przechodzi przez schemat (zod), zanim trafi do stanu.
+- **Powrót po odświeżeniu.** Bilet miejsca jest w `sessionStorage` tej karty: odświeżenie siada z powrotem
+  (`Rejoin`), a druga karta to osobny gracz. Po zerwaniu sieci klient sam łączy się i siada ponownie; bilet
+  zapomina tylko wtedy, gdy odrzuci go serwer, a nie gdy padnie sieć.
+- **Jeden ruch na pozycję.** Po kliknięciu plansza czeka na nowy widok — drugi klik nie wyśle ruchu do starej
+  pozycji. Powtórka pyta o klatkę dopiero, gdy suwak stanie, więc przeciąganie nie zasypuje serwera.
+- **Architektura** (dependency-cruiser): logika (stan stołu, ruchy, powtórka, kontrakt z serwerem) nie importuje
+  Reacta; klient SignalR zna tylko `api/hub.ts`, a reszta rozmawia przez interfejs, który testy podmieniają.
 
 ## Bot MCTS
 
@@ -339,6 +371,11 @@ dotnet stryker -f stryker-catalog.json
 dotnet stryker -f stryker-multiplayer.json
 dotnet stryker -f stryker-api.json
 dotnet run -c Release --project benchmarks/BalanceLab.Benchmarks -- --filter '*'
+
+cd web
+pnpm check                  # typy, format, lint, architektura, testy (Vitest + Testing Library + fast-check)
+pnpm mutation               # Stryker, próg 90%
+pnpm e2e                    # Playwright: prawdziwy serwer gry + PostgreSQL (Testcontainers albo BALANCE_LAB_DB)
 ```
 
 Na Windowsie z Visual Studio 2022 Stryker może wybrać MSBuild bez .NET 10 — wtedy
@@ -347,7 +384,8 @@ Na Windowsie z Visual Studio 2022 Stryker może wybrać MSBuild bez .NET 10 — 
 ## Stack
 
 .NET 10, ASP.NET Core + SignalR, EF Core + PostgreSQL (Npgsql), System.CommandLine, System.Text.Json, xUnit, FsCheck,
-Testcontainers, NetArchTest, Stryker.NET, BenchmarkDotNet.
+Testcontainers, NetArchTest, Stryker.NET, BenchmarkDotNet; front: React 19, TypeScript, Vite, @microsoft/signalr, zod,
+Vitest, Testing Library, fast-check, Playwright, dependency-cruiser, StrykerJS.
 
 ## Licencja
 
