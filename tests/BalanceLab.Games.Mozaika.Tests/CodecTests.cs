@@ -53,10 +53,49 @@ public sealed class CodecTests
         var ex = Assert.Throws<ArgumentException>(() => Game.EncodeMove(Move(0, (Tile)5, 0)));
 
         Assert.StartsWith("Nieznany kolor 5.", ex.Message, StringComparison.Ordinal);
+        Assert.Throws<ArgumentNullException>(() => Game.EncodeState(null!));
         Assert.Throws<ArgumentNullException>(() => Game.DecodeMove(null!));
     }
 
     [Property(MaxTest = 100)]
     public bool Every_legal_move_survives_the_round_trip(ulong seed) =>
         Walk(seed, state => Game.LegalMoves(state).All(m => Game.DecodeMove(Game.EncodeMove(m)) == m));
+
+    [Property(MaxTest = 100)]
+    public bool Every_state_survives_the_round_trip_with_its_hash_and_moves(ulong seed) =>
+        Walk(seed, state =>
+        {
+            var text = Game.EncodeState(state);
+            var decoded = Game.DecodeState(text);
+            return Game.Hash(decoded) == Game.Hash(state)
+                && Game.EncodeState(decoded) == text
+                && Game.LegalMoves(decoded).SequenceEqual(Game.LegalMoves(state))
+                && ReferenceEquals(decoded.Variant, Game.Variant);
+        });
+
+    [Fact]
+    public void Snapshot_keeps_the_seed_marker_box_and_end_flags()
+    {
+        // Kafelki na planszy gracza i w pudelku pochodza z worka: migawka pilnuje, zeby zadne nie powstaly.
+        var start = Start(3, 5);
+        var state = start.WithPlayer(2, b => b.WithLine(4, Tile.Graphite, 3) with { Marker = true, Score = 41, Wall = 0b10101, Floor = Tiles.Of(ochre: 2) })
+            with { Box = Tiles.One(Tile.Ivory, 7), Bag = start.Bag - Tiles.Of(1, 2, 1, 3, 8), CenterMarker = false, Over = true, Round = 4, ToMove = 2, DealSeed = ulong.MaxValue };
+
+        var decoded = Game.DecodeState(Game.EncodeState(state));
+
+        Assert.Equal(state.Players[2], decoded.Players[2] with { Lines = state.Players[2].Lines });
+        Assert.Equal(state.Players[2].Lines.ToArray(), decoded.Players[2].Lines.ToArray());
+        Assert.Equal((state.Box, false, true, 4, 2, ulong.MaxValue), (decoded.Box, decoded.CenterMarker, decoded.Over, decoded.Round, decoded.ToMove, decoded.DealSeed));
+    }
+
+    [Fact]
+    public void Snapshot_of_another_variant_is_rejected()
+    {
+        var text = Game.EncodeState(Start());
+        var other = new MozaikaGame(MozaikaVariant.Parse("column=5"));
+
+        var ex = Assert.Throws<FormatException>(() => other.DecodeState(text));
+
+        Assert.Equal("Migawka jest z wariantu 'standard', a gra ma wariant 'column=5'.", ex.Message);
+    }
 }
