@@ -30,6 +30,8 @@ jobs:
         run: dotnet run --project src/BalanceLab.Cli -- simulate --game connectfour --bots mcts:100 random --games 200 --out report.json
       - name: CLI na zywo - Klejnoty (ukryte karty, trzech graczy)
         run: dotnet run --project src/BalanceLab.Cli -- simulate --game klejnoty --bots greedy ismcts:50 random --games 30 --out klejnoty.json
+      - name: CLI na zywo - Mozaika (druga gra przez ten sam symulator i raport)
+        run: dotnet run --project src/BalanceLab.Cli -- league --game mozaika --bots greedy greedy:kolumny greedy:ostrozny --games 30 --variant "column=5" --html mozaika.html
       - name: CLI na zywo - raport balansu (liga profili, wariant zasad, HTML)
         run: |
           dotnet run --project src/BalanceLab.Cli -- league --game klejnoty --bots greedy:silnik greedy:punkty greedy:zetony --games 40 --html league.html
@@ -48,8 +50,19 @@ jobs:
           dotnet run --project src/BalanceLab.Api &
           for i in $(seq 1 60); do curl -sf http://localhost:5080/health && break; sleep 1; done
           curl -sf http://localhost:5080/api/games | grep -q klejnoty
+          curl -sf http://localhost:5080/api/games/mozaika/rules | grep -q floorPenalties
           curl -sf http://localhost:5080/api/rooms
           kill %1
+
+  second-game:
+    # Dowod z etapu 10: Mozaika weszla bez zmian w silniku, botach, symulatorze, raporcie, dzienniku, pokojach, serwerze i CLI.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Kod poza gra, katalogiem i frontem bez zmian od etapu 9
+        run: sh scripts/second-game-unchanged.sh
 
   mutation:
     # Kazdy projekt w osobnym, rownoleglym zadaniu: CI trwa tyle, co najwolniejszy, a nie suma.
@@ -57,7 +70,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
+        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-mozaika.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
