@@ -38,6 +38,85 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
         return ticket;
     }
 
+    public async Task<SeatTicket> JoinRoom(Guid room, string name)
+    {
+        var target = Reserve(room);
+        var ticket = await SitAsync(() => target.JoinAsync(name, Context.ConnectionId));
+        await BindAsync(target, ticket);
+        return ticket;
+    }
+
+    /// <summary>Powrot na miejsce z biletem; klient od razu dostaje stan pokoju i swoj widok.</summary>
+    public async Task<SeatTicket> Rejoin(Guid room, string token)
+    {
+        var target = Reserve(room);
+        var ticket = await SitAsync(() => target.RejoinAsync(token, Context.ConnectionId));
+        await BindAsync(target, ticket);
+        if (await target.ViewAsync(token) is { } view)
+        {
+            await Clients.Caller.View(view);
+        }
+
+        return ticket;
+    }
+
+    /// <summary>Widz: dostaje zmiany pokoju i widok bez niczyich ukrytych kart.</summary>
+    public async Task<TableView?> Watch(Guid room)
+    {
+        EnsureUnbound();
+        var target = lobby.Find(room);
+        Context.Items[BindingKey] = new Binding(room, null);
+        await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroups.Room(room));
+        await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroups.Watchers(room));
+        await Clients.Caller.Room(target.Info);
+        return await target.SpectateAsync();
+    }
+
+    /// <summary>Lista pokoi teraz i kazda zmiana pozniej.</summary>
+    public async Task<IReadOnlyList<RoomInfo>> WatchLobby()
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroups.Lobby);
+        await lobby.PruneAsync();
+        return lobby.Rooms;
+    }
+
+    public Task AddBot(int seat, string bot)
+    {
+        var (room, token) = Seat();
+        return room.AddBotAsync(token, seat, bot);
+    }
+
+    public Task Start()
+    {
+        var (room, token) = Seat();
+        return room.StartAsync(token);
+    }
+
+    /// <param name="number">Ile ruchow juz zagrano (z <see cref="TableView.Moves"/>).</param>
+    public Task MakeMove(int number, string move)
+    {
+        var (room, token) = Seat();
+        return room.MoveAsync(token, number, move);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        // Takze wiazanie bez biletu: rozlaczenie w trakcie JoinRoom nie moze zostawic miejsca "polaczonego" na zawsze.
+        if (Context.Items.TryGetValue(BindingKey, out var value) && value is Binding binding)
+        {
+            try
+            {
+                await lobby.Find(binding.Room).DisconnectAsync(Context.ConnectionId);
+            }
+            catch (RoomException)
+            {
+                // Pokoj juz zniknal z lobby — nie ma kogo powiadamiac.
+            }
+        }
+
+        await base.OnDisconnectedAsync(exception);
+    }
+
     private async Task BindAsync(IRoom room, SeatTicket ticket)
     {
         Context.Items[BindingKey] = new Binding(ticket.Room, ticket.Token);
@@ -47,6 +126,32 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
         await Clients.Caller.Room(room.Info);
     }
 
+    /// <summary>
+    /// Wiazanie z pokojem zapisane przed wejsciem do niego: jesli klient rozlaczy sie w trakcie, OnDisconnectedAsync
+    /// i tak zglosi pokojowi rozlaczenie.
+    /// </summary>
+    private IRoom Reserve(Guid room)
+    {
+        EnsureUnbound();
+        var target = lobby.Find(room);
+        Context.Items[BindingKey] = new Binding(room, null);
+        return target;
+    }
+
+    /// <summary>Nieudane wejscie (pelny stol, zly bilet) zwalnia polaczenie do innej proby.</summary>
+    private async Task<SeatTicket> SitAsync(Func<Task<SeatTicket>> sit)
+    {
+        try
+        {
+            return await sit();
+        }
+        catch
+        {
+            Context.Items.Remove(BindingKey);
+            throw;
+        }
+    }
+
     private void EnsureUnbound()
     {
         if (Context.Items.ContainsKey(BindingKey))
@@ -54,6 +159,11 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
             throw new HubException("To polaczenie jest juz w pokoju - do innego pokoju potrzebne jest nowe polaczenie.");
         }
     }
+
+    private (IRoom Room, string Token) Seat() =>
+        Context.Items.TryGetValue(BindingKey, out var value) && value is Binding { Token: { } token } binding
+            ? (lobby.Find(binding.Room), token)
+            : throw new HubException("Najpierw usiadz przy stole (CreateRoom, JoinRoom albo Rejoin).");
 
     /// <summary>Pokoj polaczenia i bilet miejsca; widz nie ma biletu.</summary>
     private sealed record Binding(Guid Room, string? Token);
