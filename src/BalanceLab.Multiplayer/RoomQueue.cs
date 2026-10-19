@@ -10,8 +10,8 @@ namespace BalanceLab.Multiplayer;
 /// </summary>
 internal sealed partial class RoomQueue : IAsyncDisposable
 {
-    private readonly Channel<Func<Task>> _inbox = Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions { SingleReader = true });
-    private readonly Channel<Func<Task>> _outbox = Channel.CreateUnbounded<Func<Task>>(new UnboundedChannelOptions { SingleReader = true });
+    private readonly Channel<Func<Task>> _inbox = Channel.CreateUnbounded<Func<Task>>();
+    private readonly Channel<Func<Task>> _outbox = Channel.CreateUnbounded<Func<Task>>();
     private readonly CancellationTokenSource _closing = new();
     private readonly ILogger _logger;
     private readonly Guid _room;
@@ -51,6 +51,19 @@ internal sealed partial class RoomQueue : IAsyncDisposable
     }
 
     public Task<T> Post<T>(Func<T> work) => Post(() => Task.FromResult(work()));
+
+    /// <summary>Praca bez wyniku, na ktora wolajacy czeka (i dostaje jej blad).</summary>
+    public Task Post(Func<Task> work) => Post<bool>(async () =>
+    {
+        await work();
+        return true;
+    });
+
+    public Task Post(Action work) => Post(() =>
+    {
+        work();
+        return Task.CompletedTask;
+    });
 
     /// <summary>Praca bez czekajacego (zegar, bot): blad trafia tylko do logu, a zamkniety pokoj ja pomija.</summary>
     public void Fire(Func<Task> work) => _inbox.Writer.TryWrite(() => Logged(work, LogBackgroundFailed));

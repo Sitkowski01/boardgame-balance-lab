@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using BalanceLab.Engine;
 using BalanceLab.Persistence;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 
 namespace BalanceLab.Multiplayer.Tests;
@@ -74,6 +75,9 @@ internal sealed class MemoryRecorders : IMatchRecorderFactory
     /// <summary>Ile najblizszych zapisow (start albo ruch) ma sie nie udac.</summary>
     public int Failures { get; set; }
 
+    /// <summary>Zapis ruchu czeka na te bramke (gdy jest): pokoj stoi wtedy w polowie ruchu.</summary>
+    public TaskCompletionSource? Gate { get; set; }
+
     public IMatchRecorder<TMove> Create<TState, TMove>(string game, Func<string?, StoredGame<TState, TMove>> rules)
         where TState : notnull
         where TMove : notnull => new Recorder<TState, TMove>(this, rules);
@@ -103,12 +107,16 @@ internal sealed class MemoryRecorders : IMatchRecorderFactory
             return Task.FromResult(id);
         }
 
-        public Task AppendAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default)
+        public async Task AppendAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default)
         {
+            if (owner.Gate is { } gate)
+            {
+                await gate.Task;
+            }
+
             owner.MaybeFail();
             Assert.Equal(expectedMoves, owner.Moves[match].Count);
             owner.Moves[match].Enqueue(rules(_variant).Moves.EncodeMove(move));
-            return Task.CompletedTask;
         }
     }
 }
@@ -119,7 +127,7 @@ internal sealed class Table : IAsyncDisposable
     public Table(RoomOptions? options = null, ulong seed = 7)
     {
         Options = options ?? new RoomOptions { BotDelay = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random" };
-        Lobby = new Lobby(Notifier, Recorders, Options, Clock, seeds: () => seed);
+        Lobby = new Lobby(Notifier, Recorders, Options, Clock, Logs, () => seed);
     }
 
     public RoomOptions Options { get; }
@@ -129,6 +137,8 @@ internal sealed class Table : IAsyncDisposable
     public RecordingNotifier Notifier { get; } = new();
 
     public MemoryRecorders Recorders { get; } = new();
+
+    public Logs Logs { get; } = new();
 
     public Lobby Lobby { get; }
 
@@ -164,4 +174,30 @@ internal sealed class JsonEquality : IEqualityComparer<object?>
     public int GetHashCode(object? obj) => Json(obj).GetHashCode(StringComparison.Ordinal);
 
     private static string Json(object? value) => System.Text.Json.JsonSerializer.Serialize(value);
+}
+
+/// <summary>Logi pokoi w liscie: poziom i tresc kazdego wpisu.</summary>
+internal sealed class Logs : ILoggerFactory, ILogger
+{
+    private readonly ConcurrentQueue<(LogLevel Level, string Message)> _entries = new();
+
+    public IReadOnlyList<(LogLevel Level, string Message)> Entries => [.. _entries];
+
+    public ILogger CreateLogger(string categoryName) => this;
+
+    public void AddProvider(ILoggerProvider provider)
+    {
+    }
+
+    public IDisposable? BeginScope<TState>(TState state)
+        where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+        _entries.Enqueue((logLevel, formatter(state, exception)));
+
+    public void Dispose()
+    {
+    }
 }

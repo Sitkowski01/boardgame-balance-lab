@@ -82,7 +82,6 @@ internal sealed partial class Room<TState, TMove, TGame>
 
         _seats[seat] = new Seat { Kind = SeatKind.Bot, Name = contestant.Name, Bot = contestant };
         PublishRoom();
-        return true;
     });
 
     public Task DisconnectAsync(string connection) => _queue.Post(() =>
@@ -90,7 +89,7 @@ internal sealed partial class Room<TState, TMove, TGame>
         var left = Array.FindIndex(_seats, s => s.Connections.Contains(connection));
         if (left < 0)
         {
-            return false;
+            return;
         }
 
         _seats[left].Connections.Remove(connection);
@@ -101,6 +100,5 @@ internal sealed partial class Room<TState, TMove, TGame>
         }
 
         PublishRoom();
-        return true;
     });
 }

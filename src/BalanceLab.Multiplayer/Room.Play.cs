@@ -41,7 +41,6 @@ internal sealed partial class Room<TState, TMove, TGame>
         _state = _rules.Setup(setup);
         _status = RoomStatus.Playing;
         BeginTurn();
-        return true;
     });
 
     public Task MoveAsync(string token, int number, string move) => _queue.Post(async () =>
@@ -74,7 +73,6 @@ internal sealed partial class Room<TState, TMove, TGame>
         }
 
         await CommitAsync(seat, decoded, byBot: false);
-        return true;
     });
 
     /// <summary>

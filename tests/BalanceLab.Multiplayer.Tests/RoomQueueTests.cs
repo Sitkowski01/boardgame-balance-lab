@@ -40,7 +40,8 @@ public sealed class RoomQueueTests
     [Fact]
     public async Task Background_work_and_sends_that_fail_do_not_stop_anything()
     {
-        await using var queue = new RoomQueue(Guid.NewGuid(), NullLogger.Instance);
+        using var logs = new Logs();
+        await using var queue = new RoomQueue(Guid.NewGuid(), logs);
         var sent = new TaskCompletionSource();
 
         queue.Fire(() => throw new InvalidOperationException("bot"));
@@ -54,6 +55,44 @@ public sealed class RoomQueueTests
 
         Assert.Equal(1, await queue.Post(() => 1));
         await sent.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(2, logs.Entries.Count(e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error && e.Message.EndsWith("blad w tle", StringComparison.Ordinal)));
+        Assert.Single(logs.Entries, e => e.Level == Microsoft.Extensions.Logging.LogLevel.Warning && e.Message.EndsWith("nie udalo sie wyslac zmiany do klientow", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Closing_waits_for_running_work_and_then_sends_what_it_queued()
+    {
+        var queue = new RoomQueue(Guid.NewGuid(), NullLogger.Instance);
+        var (gate, sent) = (new TaskCompletionSource(), false);
+        var running = queue.Post(async () =>
+        {
+            await gate.Task;
+            queue.Send(() =>
+            {
+                sent = true;
+                return Task.CompletedTask;
+            });
+        });
+
+        var closing = queue.DisposeAsync().AsTask();
+        gate.SetResult();
+        await closing;
+        await running;
+
+        Assert.True(sent);
+    }
+
+    [Fact]
+    public async Task Work_without_result_still_reports_its_error()
+    {
+        await using var queue = new RoomQueue(Guid.NewGuid(), NullLogger.Instance);
+
+        await Assert.ThrowsAsync<RoomException>(() => queue.Post(() => throw new RoomException("a")));
+        await Assert.ThrowsAsync<RoomException>(() => queue.Post(async () =>
+        {
+            await Task.Yield();
+            throw new RoomException("b");
+        }));
     }
 
     [Fact]
