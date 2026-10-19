@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using FsCheck.Xunit;
 using static BalanceLab.Games.Mozaika.Tests.Positions;
 
@@ -97,5 +98,90 @@ public sealed class CodecTests
         var ex = Assert.Throws<FormatException>(() => other.DecodeState(text));
 
         Assert.Equal("Migawka jest z wariantu 'standard', a gra ma wariant 'column=5'.", ex.Message);
+    }
+
+    public static TheoryData<string, string> BrokenSnapshots => new()
+    {
+        { "nie json", "nie poprawny JSON" },
+        { "null", "Pusta migawka" },
+        { "{}", "nie poprawny JSON" },
+        { Edit(s => s["players"]!.AsArray()[0] = null), "pusty (null) element" },
+        { Edit(s => s["factories"]!.AsArray()[0] = null), "pusty (null) element" },
+        { Edit(s => s["players"]!.AsArray().RemoveAt(1)), "1 graczy" },
+        { Edit(s => s["toMove"] = 2), "gracza na ruchu nr 2" },
+        { Edit(s => s["toMove"] = -1), "gracza na ruchu nr -1" },
+        { Edit(s => s["factories"]!.AsArray().RemoveAt(0)), "4 warsztatow" },
+        { Edit(s => s["players"]![0]!["lineCounts"]!.AsArray().RemoveAt(0)), "takiej partii nie ma" },
+        { Edit(s => s["players"]![1]!["lineColors"]!.AsArray().RemoveAt(0)), "takiej partii nie ma" },
+        { Edit(s => s["bag"]!.AsArray().RemoveAt(0)), "ma miec 5 liczb" },
+        { Edit(s => s["center"] = new JsonArray(1, 2, 3, 4, -1)), "Bledna migawka" },
+        { Edit(s => s["players"]![0]!["lineColors"]![2] = 1), "kolorem 1 i 0 kafelkami" },
+        { Edit(s => s["players"]![0]!["lineColors"]![2] = 5), "kolorem 5 i 0 kafelkami" },
+        { Edit(s => s["players"]![0]!["lineCounts"]![2] = 1), "kolorem -1 i 1 kafelkami" },
+        { Edit(s => Take(s, 0, -1)), "kafelkow koloru T jest 21, a wariant ma 20" },
+        { Edit(s => Line(s, 2, 4, 4)), "rzad wzoru 2 nie miesci tylu kafelkow" },
+        { Edit(s => { Line(s, 2, 4, 1); Take(s, 4, 1); s["players"]![0]!["wall"] = 1 << 11; }), "kolor, ktory juz lezy na scianie" },
+        { Edit(s => s["players"]![1]!["score"] = -1), "ujemne punkty" },
+        { Edit(s => s["players"]![1]!["wall"] = 1 << 25), "pole poza sciana" },
+        { Edit(s => s["round"] = 0), "runda przed pierwsza" },
+        { Edit(s => { Take(s, 0, 1); s["factories"]![0]![0] = s["factories"]![0]![0]!.GetValue<int>() + 1; }), "warsztat z wiecej niz 4" },
+        { Edit(s => s["centerMarker"] = false), "znacznik nie lezy w jednym miejscu" },
+        { Edit(s => s["players"]![1]!["marker"] = true), "znacznik nie lezy w jednym miejscu" },
+        { Edit(EmptyTable), "na stole nie ma kafelkow" },
+    };
+
+    [Fact]
+    public void Finished_game_may_have_an_empty_table_and_no_marker()
+    {
+        var text = Edit(s => { EmptyTable(s); s["centerMarker"] = false; s["over"] = true; });
+
+        Assert.True(Game.DecodeState(text).Over);
+    }
+
+    [Theory]
+    [MemberData(nameof(BrokenSnapshots))]
+    public void Broken_snapshot_is_a_format_error(string text, string message)
+    {
+        var ex = Assert.Throws<FormatException>(() => Game.DecodeState(text));
+
+        Assert.Contains(message, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Line_with_a_color_and_count_is_restored()
+    {
+        var text = Edit(s => Line(s, 2, 4, 2));
+
+        Assert.Equal(new PatternLine(Tile.Ivory, 2), Game.DecodeState(text).Players[0].Lines[2]);
+    }
+
+    /// <summary>Rzad wzoru gracza 0 z kafelkami wzietymi z worka.</summary>
+    private static void Line(JsonNode s, int row, int color, int count)
+    {
+        (s["players"]![0]!["lineColors"]![row], s["players"]![0]!["lineCounts"]![row]) = (color, count);
+        Take(s, color, count);
+    }
+
+    /// <summary>Zabiera z worka (ujemna liczba doklada) — zeby migawka zostala z ta sama liczba kafelkow.</summary>
+    private static void Take(JsonNode s, int color, int count) => s["bag"]![color] = s["bag"]![color]!.GetValue<int>() - count;
+
+    /// <summary>Wszystkie kafelki z warsztatow do pudelka.</summary>
+    private static void EmptyTable(JsonNode s)
+    {
+        foreach (var factory in s["factories"]!.AsArray())
+        {
+            for (var color = 0; color < 5; color++)
+            {
+                s["box"]![color] = s["box"]![color]!.GetValue<int>() + factory![color]!.GetValue<int>();
+                factory[color] = 0;
+            }
+        }
+    }
+
+    private static string Edit(Action<JsonNode> change)
+    {
+        var json = JsonNode.Parse(Game.EncodeState(Start()))!;
+        change(json);
+        return json.ToJsonString();
     }
 }
