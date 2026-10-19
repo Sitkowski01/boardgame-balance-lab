@@ -1,5 +1,6 @@
 import type { ConnectFourView } from "../connectfour/model";
 import type { KlejnotySheet, KlejnotyView, PlayerView } from "../klejnoty/model";
+import type { MozaikaPlayerView, MozaikaSheet, MozaikaView } from "../mozaika/model";
 
 export function connectFour(patch: Partial<ConnectFourView> = {}): ConnectFourView {
   return { rows: Array.from({ length: 6 }, () => Array.from({ length: 7 }, () => null)), toMove: 0, winner: null, over: false, ...patch };
@@ -45,4 +46,59 @@ export function openingMoves(): string[] {
     for (let b = a + 1; b < 5; b++)
       for (let c = b + 1; c < 5; c++) takes.push(`take:${letters[a] ?? ""}${letters[b] ?? ""}${letters[c] ?? ""}`);
   return [...takes, ...Array.from(letters, (l) => l).map((l) => `take2:${l}${l}`), "reserve:0", "reserve:40", "deck:1", "deck:3"];
+}
+
+/** Plansza Mozaiki gracza: puste rzedy, pusta sciana i podloga. */
+export function mozaikaPlayer(patch: Partial<MozaikaPlayerView> = {}): MozaikaPlayerView {
+  return {
+    score: 0,
+    lines: Array.from({ length: 5 }, () => ({ color: null, count: 0 })),
+    wall: [],
+    floor: [0, 0, 0, 0, 0],
+    marker: false,
+    ...patch,
+  };
+}
+
+/** Stol Mozaiki dla dwoch graczy: 5 warsztatow po 4 kafelki, pusty srodek ze znacznikiem. */
+export function mozaika(patch: Partial<MozaikaView> = {}): MozaikaView {
+  return {
+    players: [mozaikaPlayer(), mozaikaPlayer()],
+    factories: [
+      [2, 1, 0, 0, 1],
+      [0, 0, 4, 0, 0],
+      [1, 1, 1, 1, 0],
+      [0, 2, 0, 2, 0],
+      [0, 0, 0, 1, 3],
+    ],
+    center: [0, 0, 0, 0, 0],
+    centerMarker: true,
+    bag: [16, 16, 15, 16, 17],
+    box: [0, 0, 0, 0, 0],
+    toMove: 0,
+    round: 1,
+    over: false,
+    ...patch,
+  };
+}
+
+/** Zasady standardowe: wzor sciany przesuniety o pole w kazdym rzedzie, podloga 1 1 2 2 2 3 3. */
+export function mozaikaRules(): MozaikaSheet {
+  return {
+    wall: Array.from({ length: 5 }, (_, row) => Array.from({ length: 5 }, (_, column) => (column - row + 5) % 5)),
+    floorPenalties: [1, 1, 2, 2, 2, 3, 3],
+    rowBonus: 2,
+    columnBonus: 7,
+    colorBonus: 10,
+    tilesPerColor: 20,
+  };
+}
+
+/** Legalne ruchy jak z serwera dla pustej planszy: kazdy kolor z kazdego zrodla na kazdy rzad i podloge. */
+export function mozaikaMoves(view: MozaikaView = mozaika()): string[] {
+  const lines = ["0", "1", "2", "3", "4", "floor"];
+  const sources: [string, number[]][] = [...view.factories.map((f, i): [string, number[]] => [`f${String(i)}`, f]), ["c", view.center]];
+  return sources.flatMap(([source, tiles]) =>
+    tiles.flatMap((count, color) => (count === 0 ? [] : lines.map((line) => `${source}:${"TOCGI"[color] ?? "?"}:${line}`))),
+  );
 }
