@@ -16,6 +16,7 @@
     <Project Path="src/BalanceLab.Simulation/BalanceLab.Simulation.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/BalanceLab.Api.Tests/BalanceLab.Api.Tests.csproj" />
     <Project Path="tests/BalanceLab.Architecture.Tests/BalanceLab.Architecture.Tests.csproj" />
     <Project Path="tests/BalanceLab.Bots.Tests/BalanceLab.Bots.Tests.csproj" />
     <Project Path="tests/BalanceLab.Catalog.Tests/BalanceLab.Catalog.Tests.csproj" />

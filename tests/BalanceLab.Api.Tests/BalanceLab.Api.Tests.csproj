@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Caly serwer w pamieci (WebApplicationFactory), prawdziwi klienci SignalR i PostgreSQL w Dockerze. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BalanceLab.Api\BalanceLab.Api.csproj" />
+  </ItemGroup>
+
+</Project>
