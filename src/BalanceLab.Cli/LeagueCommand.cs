@@ -16,7 +16,7 @@ internal static class LeagueCommand
         command.Options.Add(variant);
         command.SetAction(parse => TournamentOptions.Execute(
             error,
-            () => GameCatalog.Find(parse.GetRequiredValue(options.Game))
+            () => GameEntries.Find(parse.GetRequiredValue(options.Game))
                 .PrepareLeague(parse.GetRequiredValue(options.Bots), options.Spec(parse), parse.GetValue(variant)),
             report =>
             {

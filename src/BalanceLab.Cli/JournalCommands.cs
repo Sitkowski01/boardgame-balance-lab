@@ -23,7 +23,7 @@ internal static class JournalCommands
         var command = new Command("play", "Rozgrywa jedna partie botow i zapisuje ja do dziennika w bazie.") { options.Game, options.Bots, options.Seed, variant, maxMoves, db };
         command.SetAction(parse => Execute(error, () =>
         {
-            var play = GameCatalog.Find(parse.GetRequiredValue(options.Game))
+            var play = GameEntries.Find(parse.GetRequiredValue(options.Game))
                 .PreparePlay(parse.GetRequiredValue(options.Bots), new TournamentSpec(1, parse.GetValue(options.Seed)) { MaxMoves = parse.GetValue(maxMoves) }, parse.GetValue(variant), new JournalDb(parse.GetRequiredValue(db)));
             return async () =>
             {
@@ -51,7 +51,7 @@ internal static class JournalCommands
             return async () =>
             {
                 var game = await GameOfAsync(journal, id) ?? throw new KeyNotFoundException($"Nie ma partii {id}.");
-                var replay = await GameCatalog.Find(game).ReplayAsync(journal, id, parse.GetValue(at));
+                var replay = await GameEntries.Find(game).ReplayAsync(journal, id, parse.GetValue(at));
                 Write(output, replay);
                 if (!replay.Verification.Ok)
                 {

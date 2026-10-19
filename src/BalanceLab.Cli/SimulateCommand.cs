@@ -23,7 +23,7 @@ internal static class SimulateCommand
             error,
             () =>
             {
-                var tournament = GameCatalog.Find(parse.GetRequiredValue(options.Game))
+                var tournament = GameEntries.Find(parse.GetRequiredValue(options.Game))
                     .Prepare(parse.GetRequiredValue(options.Bots), options.Spec(parse), parse.GetValue(variant));
                 return () => (Started: Stopwatch.GetTimestamp(), Result: tournament());
             },

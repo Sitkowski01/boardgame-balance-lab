@@ -1,33 +1,25 @@
 using BalanceLab.Catalog;
 using BalanceLab.Engine;
-using BalanceLab.Games.ConnectFour;
-using BalanceLab.Games.Klejnoty;
 using BalanceLab.Persistence;
 using BalanceLab.Simulation;
 
 namespace BalanceLab.Cli;
 
-/// <summary>Gry dostepne z linii polecen. Nowa gra = jedna linia tutaj.</summary>
-internal static class GameCatalog
+/// <summary>Gry z katalogu jako polecenia CLI.</summary>
+internal static class GameEntries
 {
-    private static readonly Dictionary<string, IGameEntry> Games = new(StringComparer.OrdinalIgnoreCase)
+    public static IGameEntry Find(string name) => GameCatalog.Find(name).Accept(Factory.Instance);
+
+    private sealed class Factory : IGameVisitor<IGameEntry>
     {
-        ["connectfour"] = new GameEntry<ConnectFourState, ConnectFourMove, ConnectFourGame>("connectfour", new ConnectFourGame()),
-        ["klejnoty"] = new GameEntry<KlejnotyState, KlejnotyMove, KlejnotyGame>(
-            "klejnoty",
-            new KlejnotyGame(),
-            new GreedyProfiles<KlejnotyState>(
-                new KlejnotyEvaluator(),
-                KlejnotyWeights.Profiles.ToDictionary(p => p.Key, p => (IEvaluator<KlejnotyState>)new KlejnotyEvaluator(p.Value))),
-            text => new KlejnotyGame(KlejnotyVariant.Parse(text))),
-    };
+        public static readonly Factory Instance = new();
 
-    public static IReadOnlyCollection<string> Names => Games.Keys;
-
-    public static IGameEntry Find(string name) =>
-        Games.TryGetValue(name, out var entry)
-            ? entry
-            : throw new FormatException($"Nieznana gra '{name}'. Dostepne: {string.Join(", ", Names)}.");
+        public IGameEntry Visit<TState, TMove, TGame>(GameDefinition<TState, TMove, TGame> definition)
+            where TState : notnull
+            where TMove : notnull
+            where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>, IPlayerView<TState, object> =>
+            new GameEntry<TState, TMove, TGame>(definition);
+    }
 }
 
 /// <summary>
@@ -50,29 +42,22 @@ internal interface IGameEntry
     Task<ReplayedMatch> ReplayAsync(JournalDb db, Guid match, int? at);
 }
 
-/// <param name="key">Nazwa gry w linii polecen i w dzienniku partii.</param>
-/// <param name="game">Gra razem z kodekami ruchow i stanow (do dziennika).</param>
-/// <param name="profiles">Oceny pozycji dla bota greedy, jesli gra je ma.</param>
-/// <param name="variants">Tworzy gre z wariantem zasad z tekstu, jesli gra ma warianty.</param>
-internal sealed partial class GameEntry<TState, TMove, TGame>(
-    string key,
-    TGame game,
-    GreedyProfiles<TState>? profiles = null,
-    Func<string, TGame>? variants = null) : IGameEntry
+/// <param name="definition">Gra z katalogu: zasady z kodekami, boty i warianty.</param>
+internal sealed partial class GameEntry<TState, TMove, TGame>(GameDefinition<TState, TMove, TGame> definition) : IGameEntry
     where TState : notnull
     where TMove : notnull
-    where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>
+    where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>, IPlayerView<TState, object>
 {
     public Func<TournamentResult> Prepare(IReadOnlyList<string> bots, TournamentSpec spec, string? variant)
     {
-        var (played, contestants) = (WithVariant(variant), Contestants(bots));
+        var (played, contestants) = (definition.Rules(variant), Contestants(bots));
         Tournament.Validate(played, contestants, spec);
         return () => Tournament.Run(played, contestants, spec);
     }
 
     public Func<LeagueReport> PrepareLeague(IReadOnlyList<string> bots, TournamentSpec perPair, string? variant)
     {
-        var (played, contestants) = (WithVariant(variant), Contestants(bots));
+        var (played, contestants) = (definition.Rules(variant), Contestants(bots));
         if (contestants.Length < 2)
         {
             throw new ArgumentException("Liga potrzebuje co najmniej dwoch botow.", nameof(bots));
@@ -85,21 +70,14 @@ internal sealed partial class GameEntry<TState, TMove, TGame>(
 
     public Func<ComparisonReport> PrepareComparison(IReadOnlyList<string> bots, TournamentSpec spec, string variant)
     {
-        var (played, contestants) = (WithVariant(variant), Contestants(bots));
-        Tournament.Validate(game, contestants, spec);
-        return () => Comparison.Run(game, played, contestants, spec);
+        var (played, contestants) = (definition.Rules(variant), Contestants(bots));
+        Tournament.Validate(definition.Game, contestants, spec);
+        return () => Comparison.Run(definition.Game, played, contestants, spec);
     }
 
     private Contestant<TState, TMove>[] Contestants(IReadOnlyList<string> bots)
     {
         var names = BotSpec.UniqueNames(bots);
-        return [.. bots.Select((bot, i) => BotSpec.Parse<TState, TMove>(bot, names[i], profiles))];
+        return [.. bots.Select((bot, i) => definition.Bot(bot, names[i]))];
     }
-
-    private TGame WithVariant(string? variant) => (variant, variants) switch
-    {
-        (null, _) => game,
-        (_, null) => throw new FormatException($"{game.Name} nie ma wariantow zasad."),
-        _ => variants(variant),
-    };
 }

@@ -22,7 +22,7 @@ internal sealed partial class GameEntry<TState, TMove, TGame>
 {
     public Func<Task<PlayedMatch>> PreparePlay(IReadOnlyList<string> bots, TournamentSpec spec, string? variant, JournalDb db)
     {
-        var (played, contestants, seed) = (WithVariant(variant), Contestants(bots), spec.Seed);
+        var (played, contestants, seed) = (definition.Rules(variant), Contestants(bots), spec.Seed);
         // Te same reguly co w turnieju (liczba graczy, unikalne nazwy, limit ruchow); liczba partii tylko je spelnia.
         Tournament.Validate(played, contestants, spec with { Games = Math.Max(contestants.Length, 1) });
         return async () =>
@@ -48,7 +48,7 @@ internal sealed partial class GameEntry<TState, TMove, TGame>
             throw new ArgumentException($"--at: partia ma tylko {log.Match.Moves} ruchow.", nameof(at));
         }
 
-        var rules = WithVariant(log.Match.Variant);
+        var rules = definition.Rules(log.Match.Variant);
         var verification = await journal.VerifyAsync(match);
         // Stan po N ruchach tylko z dziennika, ktory sie zgadza — inaczej wystarczy opis rozjazdu.
         (int, ulong?)? state = at is { } moves ? (moves, verification.Ok ? rules.Hash(await journal.StateAtAsync(match, moves)) : null) : null;
@@ -56,9 +56,9 @@ internal sealed partial class GameEntry<TState, TMove, TGame>
     }
 
     private MatchJournal<TState, TMove> Journal(JournalDb db) =>
-        new(db, key, variant =>
+        new(db, definition.Key, variant =>
         {
-            var rules = WithVariant(variant);
+            var rules = definition.Rules(variant);
             return new StoredGame<TState, TMove>(rules, rules, rules);
         });
 }
