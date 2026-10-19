@@ -72,3 +72,69 @@ jobs:
         with:
           name: stryker-${{ matrix.config }}
           path: StrykerOutput/**/reports
+
+  web:
+    # Front: typy, format, lint, reguly architektury, testy z pokryciem, testy mutacyjne i build.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: Typy, format, lint, architektura (dependency-cruiser), testy (Vitest + fast-check)
+        run: pnpm check
+      - name: Mutation testing (Stryker, prog 90%)
+        run: pnpm mutation
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    # Przegladarka na prawdziwym serwerze gry z PostgreSQL: dwoch graczy i bot w Klejnotach, partia i powtorka w Czworkach.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: web
+    env:
+      BALANCE_LAB_DB: Host=localhost;Username=postgres;Password=ci;Database=balance_lab_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: dotnet build src/BalanceLab.Api
+        working-directory: .
+      - name: Przegladarka Playwright
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E (Playwright)
+        run: pnpm e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright
+          path: web/playwright-report
