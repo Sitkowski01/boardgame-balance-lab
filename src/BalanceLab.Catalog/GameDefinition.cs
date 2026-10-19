@@ -72,7 +72,8 @@ public sealed class GameDefinition<TState, TMove, TGame>(
     };
 
     /// <summary>Bot z opisu (np. <c>mcts:500</c>); zly opis to <see cref="FormatException"/> od razu, nie w trakcie partii.</summary>
-    public Contestant<TState, TMove> Bot(string spec, string name) => BotSpec.Parse<TState, TMove>(spec, name, profiles);
+    /// <param name="maxIterations">Limit iteracji MCTS/ISMCTS; null = bez limitu.</param>
+    public Contestant<TState, TMove> Bot(string spec, string name, int? maxIterations = null) => BotSpec.Parse<TState, TMove>(spec, name, profiles, maxIterations);
 
     public TResult Accept<TResult>(IGameVisitor<TResult> visitor)
     {

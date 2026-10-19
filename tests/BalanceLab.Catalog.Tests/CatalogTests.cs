@@ -81,6 +81,9 @@ public sealed class CatalogTests
 
         Assert.Contains("potrzebuje oceny pozycji", Assert.Throws<FormatException>(() => connectFour.Bot("greedy", "g")).Message, StringComparison.Ordinal);
         Assert.Contains("Nieznany profil 'xyz'", Assert.Throws<FormatException>(() => Klejnoty().Bot("greedy:xyz", "g")).Message, StringComparison.Ordinal);
+        Assert.Equal("Bot 'ismcts:101': najwyzej 100 iteracji.", Assert.Throws<FormatException>(() => Klejnoty().Bot("ismcts:101", "m", 100)).Message);
+        Assert.Equal("m", Klejnoty().Bot("ismcts:100", "m", 100).Name);
+        Assert.Equal("m", Klejnoty().Bot("mcts", "m", 1000).Name);
         Assert.Contains("Nieznany bot 'mcts:0'", Assert.Throws<FormatException>(() => Klejnoty().Bot("mcts:0", "m")).Message, StringComparison.Ordinal);
     }
 

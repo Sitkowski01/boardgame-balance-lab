@@ -72,7 +72,8 @@ internal sealed partial class Room<TState, TMove, TGame>
         Contestant<TState, TMove> contestant;
         try
         {
-            contestant = _definition.Bot(bot, bot);
+            // Limit iteracji: bot z lobby liczy na serwerze, wiec gracz nie moze zamowic nieskonczonego MCTS.
+            contestant = _definition.Bot(bot, bot, _options.MaxBotIterations);
         }
         catch (FormatException ex)
         {

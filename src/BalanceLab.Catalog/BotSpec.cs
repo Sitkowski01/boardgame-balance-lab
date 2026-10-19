@@ -13,7 +13,8 @@ public static class BotSpec
     public const string Help = "random | greedy | greedy:PROFIL | mcts | mcts:ITERACJE | ismcts | ismcts:ITERACJE (np. mcts:500, greedy:silnik)";
 
     /// <param name="profiles">Oceny pozycji gry; bez nich bot <c>greedy</c> jest niedostepny.</param>
-    public static Contestant<TState, TMove> Parse<TState, TMove>(string spec, string name, GreedyProfiles<TState>? profiles)
+    /// <param name="maxIterations">Gorny limit iteracji MCTS (serwer nie liczy w nieskonczonosc na prosbe gracza); null = bez limitu.</param>
+    public static Contestant<TState, TMove> Parse<TState, TMove>(string spec, string name, GreedyProfiles<TState>? profiles, int? maxIterations = null)
         where TState : notnull
         where TMove : notnull
     {
@@ -28,7 +29,7 @@ public static class BotSpec
                 return Greedy<TState, TMove>(name, profiles, argument);
             case "mcts" or "ismcts":
                 // Opcje czytane tu, nie w fabryce: bledna liczba iteracji ma wyjsc przed turniejem, nie w jego trakcie.
-                var options = Options(spec, argument);
+                var options = Options(spec, argument, maxIterations);
                 return kind == "mcts"
                     ? new(name, seed => new MctsBot<TState, TMove>(seed, options))
                     : new(name, seed => new IsmctsBot<TState, TMove>(seed, options));
@@ -62,16 +63,16 @@ public static class BotSpec
     }
 
     /// <summary>Opcje MCTS z liczba iteracji po dwukropku; czyta je raz, przed turniejem.</summary>
-    private static MctsOptions Options(string spec, string? iterations)
+    private static MctsOptions Options(string spec, string? iterations, int? max)
     {
-        if (iterations is null)
-        {
-            return new MctsOptions();
-        }
-
-        return int.TryParse(iterations, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n > 0
-            ? new MctsOptions { Iterations = n }
-            : throw Unknown(spec);
+        var options = iterations is null
+            ? new MctsOptions()
+            : int.TryParse(iterations, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n > 0
+                ? new MctsOptions { Iterations = n }
+                : throw Unknown(spec);
+        return options.Iterations > max
+            ? throw new FormatException($"Bot '{spec}': najwyzej {max} iteracji.")
+            : options;
     }
 
     private static FormatException Unknown(string spec) => new($"Nieznany bot '{spec}'. Dostepne: {Help}.");
