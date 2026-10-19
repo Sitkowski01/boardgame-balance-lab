@@ -25,6 +25,20 @@ public sealed class BalanceCommandsTests : IDisposable
     }
 
     [Fact]
+    public void Mozaika_goes_through_the_same_report_with_wall_cells_as_items()
+    {
+        var (json, html) = (File("m.json"), File("m.html"));
+
+        var (code, output, error) = Run("simulate", "--game", "mozaika", "--bots", "greedy:kolumny", "greedy:ostrozny", "--games", "20", "--variant", "column=3", "--out", json, "--html", html);
+
+        Assert.Equal((0, ""), (code, error));
+        Assert.Contains("Mozaika (column=3): 20 partii", output, StringComparison.Ordinal);
+        Assert.Contains("<h1>Mozaika (column=3): raport balansu</h1>", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
+        Assert.Contains("rzad 3, kolumna 3 (turkus)", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
+        Assert.Equal(25, Json(json).GetProperty("items").GetArrayLength());
+    }
+
+    [Fact]
     public void Game_without_items_prints_no_card_summary()
     {
         var (_, output, _) = Run("simulate", "--game", "connectfour", "--bots", "random", "random", "--games", "2");

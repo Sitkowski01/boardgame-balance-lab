@@ -1,6 +1,7 @@
 using BalanceLab.Engine;
 using BalanceLab.Games.ConnectFour;
 using BalanceLab.Games.Klejnoty;
+using BalanceLab.Games.Mozaika;
 
 namespace BalanceLab.Catalog;
 
@@ -17,6 +18,13 @@ public static class GameCatalog
                 new KlejnotyEvaluator(),
                 KlejnotyWeights.Profiles.ToDictionary(p => p.Key, p => (IEvaluator<KlejnotyState>)new KlejnotyEvaluator(p.Value))),
             text => new KlejnotyGame(KlejnotyVariant.Parse(text))),
+        ["mozaika"] = new GameDefinition<MozaikaState, MozaikaMove, MozaikaGame>(
+            "mozaika",
+            new MozaikaGame(),
+            new GreedyProfiles<MozaikaState>(
+                new MozaikaEvaluator(),
+                MozaikaWeights.Profiles.ToDictionary(p => p.Key, p => (IEvaluator<MozaikaState>)new MozaikaEvaluator(p.Value))),
+            text => new MozaikaGame(MozaikaVariant.Parse(text))),
     };
 
     public static IReadOnlyCollection<string> Names => Games.Keys;

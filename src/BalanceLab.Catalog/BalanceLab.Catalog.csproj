@@ -6,6 +6,7 @@
     <ProjectReference Include="..\BalanceLab.Bots\BalanceLab.Bots.csproj" />
     <ProjectReference Include="..\BalanceLab.Games.ConnectFour\BalanceLab.Games.ConnectFour.csproj" />
     <ProjectReference Include="..\BalanceLab.Games.Klejnoty\BalanceLab.Games.Klejnoty.csproj" />
+    <ProjectReference Include="..\BalanceLab.Games.Mozaika\BalanceLab.Games.Mozaika.csproj" />
   </ItemGroup>
 
 </Project>

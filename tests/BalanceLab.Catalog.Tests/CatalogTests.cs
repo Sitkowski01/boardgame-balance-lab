@@ -2,6 +2,7 @@ using BalanceLab.Bots;
 using BalanceLab.Engine;
 using BalanceLab.Games.ConnectFour;
 using BalanceLab.Games.Klejnoty;
+using BalanceLab.Games.Mozaika;
 
 namespace BalanceLab.Catalog.Tests;
 
@@ -9,9 +10,9 @@ namespace BalanceLab.Catalog.Tests;
 public sealed class CatalogTests
 {
     [Fact]
-    public void Catalog_lists_both_games_and_finds_them_ignoring_case()
+    public void Catalog_lists_all_games_and_finds_them_ignoring_case()
     {
-        Assert.Equal(["connectfour", "klejnoty"], GameCatalog.Names.Order(StringComparer.Ordinal));
+        Assert.Equal(["connectfour", "klejnoty", "mozaika"], GameCatalog.Names.Order(StringComparer.Ordinal));
         Assert.Equal(GameCatalog.Names, GameCatalog.All.Select(g => g.Key));
         Assert.Same(GameCatalog.Find("klejnoty"), GameCatalog.Find("KLEJNOTY"));
     }
@@ -21,7 +22,7 @@ public sealed class CatalogTests
     {
         var ex = Assert.Throws<FormatException>(() => GameCatalog.Find("szachy"));
 
-        Assert.Equal("Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty.", ex.Message);
+        Assert.Equal("Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty, mozaika.", ex.Message);
     }
 
     [Fact]
@@ -39,6 +40,7 @@ public sealed class CatalogTests
     {
         Assert.IsType<KlejnotyGame>(GameCatalog.Find("klejnoty").Accept(new GameOf()));
         Assert.IsType<ConnectFourGame>(GameCatalog.Find("connectfour").Accept(new GameOf()));
+        Assert.IsType<MozaikaGame>(GameCatalog.Find("mozaika").Accept(new GameOf()));
         Assert.Throws<ArgumentNullException>(() => GameCatalog.Find("klejnoty").Accept<object>(null!));
     }
 
@@ -61,6 +63,19 @@ public sealed class CatalogTests
         Assert.Equal(9, Assert.IsType<KlejnotySheet>(klejnoty.Sheet("win=9")).WinningPoints);
         Assert.Throws<FormatException>(() => klejnoty.Sheet("win=abc"));
         Assert.Null(GameCatalog.Find("connectfour").Sheet(null));
+    }
+
+    [Fact]
+    public void Mozaika_has_variants_a_sheet_and_greedy_profiles()
+    {
+        var mozaika = (GameDefinition<MozaikaState, MozaikaMove, MozaikaGame>)GameCatalog.Find("mozaika").Accept(new Definition());
+
+        Assert.Equal(("mozaika", "Mozaika", 2, 4, true), (mozaika.Key, mozaika.Name, mozaika.MinPlayers, mozaika.MaxPlayers, mozaika.HasVariants));
+        Assert.Equal("Mozaika (column=5)", mozaika.Rules("column=5").Name);
+        Assert.Equal(5, Assert.IsType<MozaikaSheet>(mozaika.Sheet("column=5")).ColumnBonus);
+        Assert.IsType<GreedyBot<MozaikaState, MozaikaMove>>(mozaika.Bot("greedy:ostrozny", "g").Create(1));
+        Assert.IsType<IsmctsBot<MozaikaState, MozaikaMove>>(mozaika.Bot("ismcts:5", "i").Create(1));
+        Assert.Contains("Dostepne: kolory, kolumny, ostrozny, wyrownany", Assert.Throws<FormatException>(() => mozaika.Bot("greedy:silnik", "g")).Message, StringComparison.Ordinal);
     }
 
     [Fact]

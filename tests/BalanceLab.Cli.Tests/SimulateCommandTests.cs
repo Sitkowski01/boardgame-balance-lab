@@ -94,7 +94,7 @@ public sealed class SimulateCommandTests : IDisposable
     // przeszkadzaja Strykerowi w dopasowaniu testu do mutanta.
     private static readonly (string Message, string[] Args)[] UsageErrors =
     [
-        ("Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty.", ["--game", "szachy", "--bots", "random", "random"]),
+        ("Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty, mozaika.", ["--game", "szachy", "--bots", "random", "random"]),
         ("Nieznany bot 'alfa'. Dostepne: random | greedy | greedy:PROFIL | mcts | mcts:ITERACJE | ismcts | ismcts:ITERACJE (np. mcts:500, greedy:silnik).", ["--game", "connectfour", "--bots", "random", "alfa"]),
         ("Nieznany bot 'mcts:0'.", ["--game", "connectfour", "--bots", "random", "mcts:0"]),
         ("Nieznany bot 'mcts:-5'.", ["--game", "connectfour", "--bots", "random", "mcts:-5"]),
@@ -189,7 +189,7 @@ public sealed class SimulateCommandTests : IDisposable
         Assert.Equal(0, code);
         Assert.Contains("--bots", output, StringComparison.Ordinal);
         Assert.Contains("random | greedy | greedy:PROFIL | mcts | mcts:ITERACJE | ismcts", output, StringComparison.Ordinal);
-        Assert.Contains("Gra: connectfour, klejnoty.", output, StringComparison.Ordinal);
+        Assert.Contains("Gra: connectfour, klejnoty, mozaika.", output, StringComparison.Ordinal);
         Assert.Contains("Liczba partii (wielokrotnosc liczby botow).", output, StringComparison.Ordinal);
         Assert.Contains("Ziarno; to samo ziarno = ten sam raport.", output, StringComparison.Ordinal);
         Assert.Contains("Liczba watkow (domyslnie wszystkie rdzenie).", output, StringComparison.Ordinal);

@@ -22,7 +22,7 @@ public sealed class LobbyTests
     }
 
     [Theory]
-    [InlineData("szachy", 2, null, "Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty.")]
+    [InlineData("szachy", 2, null, "Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty, mozaika.")]
     [InlineData("connectfour", 3, null, "ConnectFour: od 2 do 2 graczy, a podano 3.")]
     [InlineData("klejnoty", 1, null, "Klejnoty: od 2 do 4 graczy, a podano 1.")]
     [InlineData("klejnoty", 5, null, "Klejnoty: od 2 do 4 graczy, a podano 5.")]
