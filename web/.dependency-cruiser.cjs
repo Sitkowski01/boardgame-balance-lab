@@ -36,8 +36,8 @@ module.exports = {
       name: "gry-niezalezne",
       comment: "plansza jednej gry nie importuje drugiej gry; wspolny jest tylko rejestr games.tsx",
       severity: "error",
-      from: { path: "^src/(klejnoty|connectfour)/" },
-      to: { path: "^src/(klejnoty|connectfour)/", pathNot: "^src/$1/" },
+      from: { path: "^src/(klejnoty|connectfour|mozaika)/" },
+      to: { path: "^src/(klejnoty|connectfour|mozaika)/", pathNot: "^src/$1/" },
     },
     {
       name: "bez-cykli",
