@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!-- Pokoje graja kazda gre z katalogu i zapisuja ja do dziennika; o sieci nic nie wiedza. -->
+  <ItemGroup>
+    <ProjectReference Include="..\BalanceLab.Catalog\BalanceLab.Catalog.csproj" />
+    <ProjectReference Include="..\BalanceLab.Persistence\BalanceLab.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BalanceLab.Multiplayer.Tests" />
+  </ItemGroup>
+
+</Project>

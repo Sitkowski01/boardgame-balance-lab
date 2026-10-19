@@ -33,7 +33,7 @@ public sealed class ArchitectureTests
     public void Engine_knows_no_game_bot_or_infrastructure()
     {
         AssertNoDependency("BalanceLab.Engine", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Simulation",
-            "BalanceLab.Persistence", "BalanceLab.Api", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
+            "BalanceLab.Persistence", "BalanceLab.Multiplayer", "BalanceLab.Api", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
     }
 
     [Theory]
@@ -41,7 +41,7 @@ public sealed class ArchitectureTests
     public void Games_know_only_the_engine(string game)
     {
         AssertNoDependency(game, "BalanceLab.Bots", "BalanceLab.Simulation", "BalanceLab.Persistence",
-            "BalanceLab.Api", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
+            "BalanceLab.Multiplayer", "BalanceLab.Api", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
     }
 
     [Fact]
@@ -77,6 +77,14 @@ public sealed class ArchitectureTests
         // Katalog sklada gry i boty dla CLI i serwera; o zapisie i sieci decyduje dopiero wolajacy.
         AssertNoDependency("BalanceLab.Catalog", "BalanceLab.Persistence", "BalanceLab.Cli", "BalanceLab.Reporting",
             "BalanceLab.Api", "BalanceLab.Multiplayer", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
+    }
+
+    [Fact]
+    public void Rooms_play_any_game_from_the_catalog_without_knowing_the_network()
+    {
+        // Pokoj zna gre tylko przez kontrakt silnika i katalog; boty tworzy przez opis, a SignalR jest w Api.
+        AssertNoDependency("BalanceLab.Multiplayer", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Api", "BalanceLab.Cli",
+            "BalanceLab.Reporting", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
     }
 
     [Theory]
