@@ -33,6 +33,16 @@ builder.Services.AddSignalR(o => o.AddFilter<RoomErrorFilter>())
     .AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
 
+// Limit zadan HTTP na adres IP (takze nowych polaczen z hubem): jeden klient nie zajmie lobby ani bazy.
+var perMinute = builder.Configuration.GetValue("RateLimit:PerMinute", 120);
+builder.Services.AddRateLimiter(o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "local",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1) }));
+});
+
 var app = builder.Build();
 
 if (app.Configuration.GetValue("Journal:Migrate", true))
@@ -41,6 +51,7 @@ if (app.Configuration.GetValue("Journal:Migrate", true))
 }
 
 app.UseExceptionHandler();
+app.UseRateLimiter();
 app.MapHub<GameHub>("/hubs/game");
 app.MapGameApi();
 
