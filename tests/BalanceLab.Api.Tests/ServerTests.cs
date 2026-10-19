@@ -47,6 +47,76 @@ public sealed class ServerTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Server_serves_the_built_front_and_its_pages_but_not_unknown_api_paths()
+    {
+        var root = Directory.CreateTempSubdirectory("balance-lab-web").FullName;
+        await File.WriteAllTextAsync(Path.Combine(root, "index.html"), "<p>aplikacja</p>");
+        Directory.CreateDirectory(Path.Combine(root, "assets"));
+        await File.WriteAllTextAsync(Path.Combine(root, "assets", "app-1a2b.js"), "start()");
+        await using var server = api.Factory.WithWebHostBuilder(web => web.UseSetting("Web:Root", root));
+        var http = server.CreateClient();
+
+        Assert.Equal("start()", await http.GetStringAsync("/assets/app-1a2b.js"));
+        Assert.Equal("<p>aplikacja</p>", await http.GetStringAsync("/"));
+        Assert.Equal("<p>aplikacja</p>", await http.GetStringAsync($"/rooms/{Guid.NewGuid()}"));
+        Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync("/api/nie-ma")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync("/hubs/nie-ma")).StatusCode);
+        Assert.Equal("[", (await http.GetStringAsync("/api/games"))[..1]);
+        Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync("/assets/stary-0000.js")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Built_assets_are_cached_for_good_and_pages_are_always_checked()
+    {
+        var root = Directory.CreateTempSubdirectory("balance-lab-web").FullName;
+        await File.WriteAllTextAsync(Path.Combine(root, "index.html"), "<p>aplikacja</p>");
+        Directory.CreateDirectory(Path.Combine(root, "assets"));
+        await File.WriteAllTextAsync(Path.Combine(root, "assets", "app-1a2b.js"), "start()");
+        await using var server = api.Factory.WithWebHostBuilder(web => web.UseSetting("Web:Root", root));
+        var http = server.CreateClient();
+
+        async Task<string?> CacheOf(string url) => (await http.GetAsync(url)).Headers.CacheControl?.ToString();
+
+        Assert.Equal("public, max-age=31536000, immutable", await CacheOf("/assets/app-1a2b.js"));
+        Assert.Equal("no-cache", await CacheOf("/"));
+        Assert.Equal("no-cache", await CacheOf($"/matches/{Guid.NewGuid()}"));
+    }
+
+    [Fact]
+    public async Task Front_files_do_not_count_towards_the_request_limit()
+    {
+        var root = Directory.CreateTempSubdirectory("balance-lab-web").FullName;
+        await File.WriteAllTextAsync(Path.Combine(root, "index.html"), "<p>aplikacja</p>");
+        await using var server = api.Factory.WithWebHostBuilder(web => web.UseSetting("Web:Root", root).UseSetting("RateLimit:PerMinute", "1"));
+        var http = server.CreateClient();
+
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.Equal(HttpStatusCode.OK, (await http.GetAsync("/index.html")).StatusCode);
+        }
+
+        Assert.Equal(HttpStatusCode.OK, (await http.GetAsync("/health")).StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, (await http.GetAsync("/health")).StatusCode);
+    }
+
+    [Fact]
+    public void Missing_front_directory_stops_the_server_with_a_clear_message()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), $"balance-lab-brak-{Guid.NewGuid():N}");
+        using var server = api.Factory.WithWebHostBuilder(web => web.UseSetting("Web:Root", missing));
+
+        var ex = Assert.Throws<InvalidOperationException>(() => server.Server);
+
+        Assert.Contains("zbuduj front", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Without_a_front_directory_pages_are_not_found()
+    {
+        Assert.Equal(HttpStatusCode.NotFound, (await api.Http().GetAsync("/rooms/x")).StatusCode);
+    }
+
+    [Fact]
     public async Task Server_migrates_a_new_database_at_start()
     {
         var empty = await api.CreateDatabaseAsync();

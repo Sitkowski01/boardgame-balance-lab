@@ -4,6 +4,7 @@ using BalanceLab.Api;
 using BalanceLab.Multiplayer;
 using BalanceLab.Persistence;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,28 @@ if (app.Configuration.GetValue("Journal:Migrate", true))
 }
 
 app.UseExceptionHandler();
+
+// Zbudowany front (web/dist) z tego samego adresu co API: bez CORS i jeden proces do uruchomienia.
+// Pliki ida przed limitem zadan (strona to kilka plikow naraz), a kazda sciezka bez rozszerzenia poza /api
+// i /hubs to strona aplikacji (np. /rooms/{id} po odswiezeniu). Brakujacy plik (/assets/stary.js) to 404,
+// a nie index.html, ktory przegladarka probowalaby wykonac jako skrypt.
+if (app.Configuration["Web:Root"] is { Length: > 0 } root)
+{
+    var path = Path.GetFullPath(root);
+    if (!Directory.Exists(path))
+    {
+        throw new InvalidOperationException($"Web:Root wskazuje katalog {path}, ktorego nie ma - zbuduj front (cd web && pnpm build).");
+    }
+
+    var provider = new PhysicalFileProvider(path);
+    var files = new StaticFileOptions { FileProvider = provider, OnPrepareResponse = WebCache.Apply };
+    app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = provider });
+    app.UseStaticFiles(files);
+    app.MapFallbackToFile("{*path:regex(^(?!api/|hubs/)):nonfile}", "index.html", files);
+}
+
+// Routing dopiero po plikach: inaczej trasa zapasowa (index.html) wygrywa takze z istniejacym plikiem.
+app.UseRouting();
 app.UseRateLimiter();
 app.MapHub<GameHub>("/hubs/game");
 app.MapGameApi();
