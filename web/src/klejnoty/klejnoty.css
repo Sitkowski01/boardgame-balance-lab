@@ -1,0 +1,167 @@
+/* Klejnoty: zetony, karty, rynek, bank i panele graczy. Kolory zetonow sa w :root (styles.css). */
+.gem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgb(0 0 0 / 0.25);
+}
+.gem-0 {
+  background: var(--gem-0);
+  color: #222;
+}
+.gem-1 {
+  background: var(--gem-1);
+  color: #fff;
+}
+.gem-2 {
+  background: var(--gem-2);
+  color: #fff;
+}
+.gem-3 {
+  background: var(--gem-3);
+  color: #fff;
+}
+.gem-4 {
+  background: var(--gem-4);
+  color: #fff;
+}
+.gem-5 {
+  background: var(--gem-5);
+  color: #222;
+}
+.cost {
+  display: inline-flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+.klejnoty {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.patrons,
+.bank,
+.players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.patron {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px;
+  background: var(--panel);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+.market {
+  display: grid;
+  gap: 8px;
+}
+.market-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.card,
+.deck {
+  min-height: 96px;
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+.card.empty {
+  opacity: 0.3;
+}
+.card.back {
+  justify-content: center;
+  align-items: center;
+  color: var(--muted);
+}
+.card.tier-1,
+.deck.tier-1 {
+  border-top: 4px solid #6aa36f;
+}
+.card.tier-2,
+.deck.tier-2 {
+  border-top: 4px solid #d1a43c;
+}
+.card.tier-3,
+.deck.tier-3 {
+  border-top: 4px solid #4f7bc4;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-actions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.bank button {
+  border-radius: 999px;
+  padding: 2px;
+}
+.bank button.picked {
+  outline: 3px solid var(--accent);
+}
+.take,
+.returns {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.player {
+  flex: 1 1 240px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.player.to-move {
+  border-color: var(--accent);
+}
+.player header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.player .points {
+  margin-left: auto;
+  font-weight: 700;
+}
+.reserved {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .market-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
