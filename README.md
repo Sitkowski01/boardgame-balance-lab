@@ -5,11 +5,11 @@ rozgrywają tysiące partii, a raport pokazuje, co jest niezbalansowane: przewag
 przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w zasadach.
 
 > Projekt w budowie. Gotowe: kontrakt silnika z ukrytą informacją, deterministyczny generator,
-> Czwórki (ConnectFour) i Klejnoty (gra karciana w stylu Splendora), boty: losowy, heurystyczny
+> Czwórki (ConnectFour), Klejnoty (gra karciana w stylu Splendora) i Mozaika (kafelki w stylu Azula), boty: losowy, heurystyczny
 > (z profilami strategii), MCTS i ISMCTS, symulator turniejów, liga z rankingiem Elo, porównanie
 > wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami oraz
 > serwer gry na żywo (SignalR): lobby, pokoje, boty na wolnych miejscach, limity czasu i powrót po rozłączeniu,
-> a w przeglądarce (React): lobby, plansze Klejnotów i Czwórek oraz odtwarzacz powtórek z suwakiem.
+> a w przeglądarce (React): lobby, plansze trzech gier oraz odtwarzacz powtórek z suwakiem.
 
 ## Architektura
 
@@ -17,6 +17,7 @@ przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w z
 src/BalanceLab.Engine              kontrakt IGame<TState, TMove>, IPlayer, Match, Pcg32, StableHash
 src/BalanceLab.Games.ConnectFour   Czwórki na bitboardach (zna tylko silnik)
 src/BalanceLab.Games.Klejnoty      Klejnoty: zasady, ukryte talie i rezerwacje, ocena pozycji
+src/BalanceLab.Games.Mozaika       Mozaika: warsztaty, rzędy wzoru, ściana, worek z losowaniem, ocena pozycji
 src/BalanceLab.Bots                RandomBot, GreedyBot, MctsBot, IsmctsBot (kontrakt, żadnej gry)
 src/BalanceLab.Simulation          turnieje równoległe, statystyki kart, liga (Elo), porównanie A/B, raport JSON
 src/BalanceLab.Reporting           raport HTML z wykresami SVG — zna tylko liczby z symulatora
@@ -101,6 +102,39 @@ greedy wygrywa z losowym co najmniej 75% partii, ISMCTS(300 iteracji) z greedy c
 ```bash
 dotnet run -c Release --project src/BalanceLab.Cli -- simulate --game klejnoty --bots greedy ismcts:200 random --games 300
 ```
+
+## Mozaika — druga gra bez zmian w silniku
+
+Gra kafelkowa w stylu Azula: gracze biorą z warsztatów wszystkie kafelki jednego koloru (reszta idzie na
+środek), układają je w rzędach wzoru, a pełne rzędy na koniec rundy przenoszą po kafelku na ścianę 5×5,
+punktowaną za sąsiedztwo. Nadmiar spada na podłogę i kosztuje punkty; kto pierwszy sięgnie na środek, bierze
+znacznik pierwszego gracza. Gra kończy się po rundzie, w której ktoś zapełnił rząd ściany (premie: rząd +2,
+kolumna +7, kolor +10). Nazwy kolorów i wygląd są własne.
+
+Mozaika jest testem architektury: weszła jako nowy projekt, jeden wpis w `GameCatalog` i plansza we froncie.
+Silnik, boty, symulator, raport, dziennik, pokoje, serwer i CLI nie zmieniły się ani o linię — pilnuje tego
+zadanie CI `second-game` (`scripts/second-game-unchanged.sh`: `git diff --exit-code etap-9 etap-10` na tych
+katalogach). Raport balansu, liga, porównanie A/B, dziennik z powtórkami i gra na żywo działają dla niej od razu.
+
+- ukryta jest tylko kolejność losowania z worka; stan trzyma ziarno rozdań, a każda runda losuje z własnego
+  strumienia `Pcg32.Create(ziarno, runda)` — dlatego `Determinize` podmienia samo ziarno, a migawka w dzienniku
+  to zwykły JSON bez stanu generatora;
+- `MozaikaVariant`: `tiles=N; floor=1,2,2,3; row=N; column=N; color=N` (np. `--variant "column=5"`);
+- elementami dla raportu są pola ściany pogrupowane po kolorze — raport pokazuje, czy któreś pole daje
+  wyraźnie więcej wygranych niż inne pola tego samego koloru;
+- testy właściwości: 100 kafelków nigdy nie powstaje ani nie znika (worek + pudełko + stół + rzędy + podłogi
+  + ściany), znacznik jest dokładnie w jednym miejscu, powtórka ruchów daje ten sam hash.
+
+Ciekawostka z testów siły: w Mozaice prosty `GreedyBot` (ocena pozycji z `MozaikaEvaluator`, profile
+`kolumny`, `kolory`, `ostrozny`) wygrywa z ISMCTS(300) — losowe dogrywki do końca partii są tu za słabą
+oceną, bo punkty przychodzą dopiero na koniec rundy. MCTS i ISMCTS biją za to bota losowego.
+
+```bash
+dotnet run -c Release --project src/BalanceLab.Cli -- league --game mozaika --bots greedy greedy:kolumny greedy:ostrozny --games 300 --html mozaika.html
+```
+
+Raport i CLI nazywają elementy „kartami” (napisane przy Klejnotach) — w Mozaice to pola ściany. Zmiana tych
+napisów czeka na etap z dashboardem, żeby nie psuć dowodu „bez zmian”.
 
 ## Symulator turniejów
 
@@ -362,6 +396,7 @@ dotnet tool restore
 dotnet stryker              # mutation testing silnika, próg 90%
 dotnet stryker -f stryker-connectfour.json
 dotnet stryker -f stryker-klejnoty.json
+dotnet stryker -f stryker-mozaika.json
 dotnet stryker -f stryker-bots.json
 dotnet stryker -f stryker-simulation.json
 dotnet stryker -f stryker-reporting.json
