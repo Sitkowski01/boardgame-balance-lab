@@ -68,6 +68,12 @@ public sealed record RoomOptions
     /// <summary>Przerwa przed ruchem bota, zeby ludzie widzieli, co sie dzieje.</summary>
     public TimeSpan BotDelay { get; init; } = TimeSpan.FromMilliseconds(600);
 
+    /// <summary>
+    /// Ile czeka czlowiek rozlaczony na swoim ruchu, zanim zagra za niego bot. Odswiezenie strony to krotkie
+    /// rozlaczenie: gracz zdazy wrocic (Rejoin) i zagrac sam.
+    /// </summary>
+    public TimeSpan DisconnectGrace { get; init; } = TimeSpan.FromSeconds(10);
+
     /// <summary>Po nieudanym zapisie ruchu bota (np. baza chwilowo niedostepna) — tyle czekamy przed kolejna proba.</summary>
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(2);
 

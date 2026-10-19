@@ -126,7 +126,7 @@ internal sealed class Table : IAsyncDisposable
 {
     public Table(RoomOptions? options = null, ulong seed = 7)
     {
-        Options = options ?? new RoomOptions { BotDelay = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random" };
+        Options = options ?? new RoomOptions { BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random" };
         Lobby = new Lobby(Notifier, Recorders, Options, Clock, Logs, () => seed);
     }
 

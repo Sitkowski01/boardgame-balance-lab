@@ -79,7 +79,7 @@ public sealed class LobbyTests
     [Fact]
     public async Task Server_has_a_room_limit()
     {
-        await using var table = new Table(new RoomOptions { MaxRooms = 2, BotDelay = TimeSpan.Zero });
+        await using var table = new Table(new RoomOptions { MaxRooms = 2, BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.Zero });
         await table.CreateAsync();
         await table.CreateAsync();
 
@@ -114,7 +114,7 @@ public sealed class LobbyTests
     [Fact]
     public async Task Waiting_room_disappears_only_when_nobody_is_there_for_long()
     {
-        await using var table = new Table(new RoomOptions { KeepIdle = TimeSpan.FromMinutes(30), BotDelay = TimeSpan.Zero });
+        await using var table = new Table(new RoomOptions { KeepIdle = TimeSpan.FromMinutes(30), BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.Zero });
         var (room, _) = await table.CreateAsync();
 
         table.Clock.Advance(TimeSpan.FromMinutes(31));
@@ -138,7 +138,7 @@ public sealed class LobbyTests
         await using var table = new Table(new RoomOptions
         {
             KeepFinished = TimeSpan.FromMinutes(10), KeepIdle = TimeSpan.FromHours(2), MoveTimeout = TimeSpan.FromDays(1),
-            BotDelay = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random",
+            BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random",
         });
         var (playing, _, _) = await table.StartedPairAsync();
         // Gospodarz wychodzi zaraz po starcie: za niego gra bot, wiec partia sama dochodzi do konca.
@@ -167,7 +167,7 @@ public sealed class LobbyTests
     [Fact]
     public async Task Waiting_room_cannot_hold_a_place_in_the_lobby_forever()
     {
-        await using var table = new Table(new RoomOptions { KeepWaiting = TimeSpan.FromHours(2), KeepIdle = TimeSpan.FromHours(5), BotDelay = TimeSpan.Zero });
+        await using var table = new Table(new RoomOptions { KeepWaiting = TimeSpan.FromHours(2), KeepIdle = TimeSpan.FromHours(5), BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.Zero });
         var (room, _) = await table.CreateAsync();
 
         table.Clock.Advance(TimeSpan.FromMinutes(119));
@@ -185,7 +185,7 @@ public sealed class LobbyTests
     {
         await using var table = new Table(new RoomOptions
         {
-            KeepFinished = TimeSpan.FromMinutes(10), MaxRecordFailures = 1, BotDelay = TimeSpan.FromSeconds(1), FillBot = "random", AutopilotBot = "random",
+            KeepFinished = TimeSpan.FromMinutes(10), MaxRecordFailures = 1, BotDelay = TimeSpan.FromSeconds(1), DisconnectGrace = TimeSpan.FromSeconds(1), FillBot = "random", AutopilotBot = "random",
         });
         var (room, host) = await table.CreateAsync();
         await room.StartAsync(host.Token);

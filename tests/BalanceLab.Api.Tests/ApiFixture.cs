@@ -30,6 +30,7 @@ public sealed class ApiFixture : IAsyncLifetime
         Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(web => web
             .UseSetting("ConnectionStrings:Journal", _database.GetConnectionString())
             .UseSetting("Rooms:BotDelay", "00:00:00")
+            .UseSetting("Rooms:DisconnectGrace", "00:00:00")
             .UseSetting("Rooms:FillBot", "random")
             .UseSetting("Rooms:AutopilotBot", "random")
             .UseSetting("RateLimit:PerMinute", "100000"));

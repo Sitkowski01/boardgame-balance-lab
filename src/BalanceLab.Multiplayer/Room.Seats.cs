@@ -93,10 +93,10 @@ internal sealed partial class Room<TState, TMove, TGame>
         }
 
         _seats[left].Connections.Remove(connection);
-        // Rozlaczony na swoim ruchu: gra za niego bot, zeby partia nie stala. Wroci przed jego ruchem — gra sam.
+        // Rozlaczony na swoim ruchu: po chwili gra za niego bot, zeby partia nie stala. Wroci wczesniej — gra sam.
         if (_status == RoomStatus.Playing && left == _rules.CurrentPlayer(_state) && _seats[left].Connections.Count == 0)
         {
-            ScheduleBot(left, _options.BotDelay);
+            ScheduleBot(left, _options.DisconnectGrace);
         }
 
         PublishRoom();

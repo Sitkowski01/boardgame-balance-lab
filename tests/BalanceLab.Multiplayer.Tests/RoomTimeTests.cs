@@ -26,7 +26,7 @@ public sealed class RoomTimeTests
     public async Task Late_move_is_rejected_while_the_bot_is_still_thinking()
     {
         // Bot z przerwa: po czasie gracz juz nie zdazy, nawet jesli bot jeszcze nie zagral.
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), DisconnectGrace = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, ala, _) = await table.StartedPairAsync();
 
         table.Clock.Advance(table.Options.MoveTimeout);
@@ -80,7 +80,8 @@ public sealed class RoomTimeTests
     [Fact]
     public async Task Player_who_returns_before_the_bot_moves_plays_themselves()
     {
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        // Odswiezenie strony: bot czeka DisconnectGrace, a nie krotkie BotDelay.
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, ala, _) = await table.StartedPairAsync();
         await room.DisconnectAsync("c-ala");
         Assert.True((await table.Notifier.RoomAsync(room.Id, r => r.Seats[0].Autopilot)).Seats[0].Autopilot);
@@ -101,7 +102,7 @@ public sealed class RoomTimeTests
     {
         await using var table = new Table(new RoomOptions
         {
-            MaxRecordFailures = 2, BotDelay = TimeSpan.FromSeconds(1), RetryDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random",
+            MaxRecordFailures = 2, BotDelay = TimeSpan.FromSeconds(1), DisconnectGrace = TimeSpan.FromSeconds(1), RetryDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random",
         });
         var (room, host) = await table.CreateAsync();
         await room.StartAsync(host.Token);
@@ -198,7 +199,7 @@ public sealed class RoomTimeTests
     [Fact]
     public async Task Failed_record_of_a_bot_move_is_retried_later()
     {
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(1), RetryDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(1), DisconnectGrace = TimeSpan.FromSeconds(1), RetryDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, host) = await table.CreateAsync();
         await room.AddBotAsync(host.Token, 1, "random");
         await room.StartAsync(host.Token);

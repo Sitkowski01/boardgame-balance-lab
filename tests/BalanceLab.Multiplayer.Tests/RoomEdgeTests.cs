@@ -28,7 +28,7 @@ public sealed class RoomEdgeTests
     [Fact]
     public async Task Bot_move_for_a_position_the_human_already_played_is_dropped()
     {
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), DisconnectGrace = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, ala, _) = await table.StartedPairAsync();
         await room.DisconnectAsync("c-ala");
 
@@ -66,7 +66,7 @@ public sealed class RoomEdgeTests
     {
         await using var table = new Table(new RoomOptions
         {
-            MaxRecordFailures = 1, BotDelay = TimeSpan.FromSeconds(1), FillBot = "random", AutopilotBot = "random",
+            MaxRecordFailures = 1, BotDelay = TimeSpan.FromSeconds(1), DisconnectGrace = TimeSpan.FromSeconds(1), FillBot = "random", AutopilotBot = "random",
         });
         var (room, _, _) = await table.StartedPairAsync();
         await room.DisconnectAsync("c-ala");
@@ -87,7 +87,7 @@ public sealed class RoomEdgeTests
     [Fact]
     public async Task Only_the_human_on_move_is_shown_as_played_by_a_bot()
     {
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), DisconnectGrace = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, host) = await table.CreateAsync();
         await room.AddBotAsync(host.Token, 1, "random");
         await room.StartAsync(host.Token);
@@ -100,7 +100,7 @@ public sealed class RoomEdgeTests
     [Fact]
     public async Task Return_while_a_bot_seat_thinks_does_not_cancel_that_bot()
     {
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), DisconnectGrace = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, host) = await table.CreateAsync();
         await room.AddBotAsync(host.Token, 1, "random");
         await room.StartAsync(host.Token);
@@ -115,7 +115,7 @@ public sealed class RoomEdgeTests
     [Fact]
     public async Task Return_after_the_deadline_does_not_cancel_the_bot()
     {
-        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), DisconnectGrace = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
         var (room, ala, _) = await table.StartedPairAsync();
         table.Clock.Advance(table.Options.MoveTimeout);
         await table.Notifier.RoomAsync(room.Id, r => r.Seats[0].Autopilot);
