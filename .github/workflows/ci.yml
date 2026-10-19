@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: global.json
-      - name: Testy (jednostkowe, wlasnosci FsCheck, statystyczne, sily botow, architektura, integracyjne i e2e na PostgreSQL)
+      - name: Testy (jednostkowe, wlasnosci FsCheck, statystyczne, sily botow, architektura, integracyjne, hub SignalR i e2e na PostgreSQL)
         run: dotnet test
       - name: Benchmarki uruchamiaja sie (przebieg probny)
         run: dotnet run -c Release --project benchmarks/BalanceLab.Benchmarks -- --filter '*' --job dry
@@ -40,6 +40,16 @@ jobs:
         run: |
           id=$(dotnet run --project src/BalanceLab.Cli -- play --game klejnoty --bots greedy ismcts:30 random --seed 7 | grep -oE '[0-9a-f]{8}-[0-9a-f-]{27}' | head -1)
           dotnet run --project src/BalanceLab.Cli -- replay --match "$id" --at 40
+      - name: Serwer gry na zywo (migracje przy starcie, katalog gier, lobby)
+        env:
+          BALANCE_LAB_DB: Host=localhost;Username=postgres;Password=ci;Database=balance_lab
+          ASPNETCORE_URLS: http://localhost:5080
+        run: |
+          dotnet run --project src/BalanceLab.Api &
+          for i in $(seq 1 60); do curl -sf http://localhost:5080/health && break; sleep 1; done
+          curl -sf http://localhost:5080/api/games | grep -q klejnoty
+          curl -sf http://localhost:5080/api/rooms
+          kill %1
 
   mutation:
     # Kazdy projekt w osobnym, rownoleglym zadaniu: CI trwa tyle, co najwolniejszy, a nie suma.
@@ -47,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json]
+        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
