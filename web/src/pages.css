@@ -1,0 +1,90 @@
+/* Lobby, stol i powtorka: formularze, lista pokoi, miejsca, ruchy i przewijanie. */
+.create,
+.join {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.create label,
+.join label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+.rooms {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.rooms li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.table-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+.clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.seats li {
+  padding: 6px 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.seats li.to-move {
+  border-color: var(--accent);
+}
+.moves ol {
+  padding-left: 24px;
+}
+.replay .moves {
+  columns: 3 220px;
+}
+.replay .moves li.current button {
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.replay .moves button {
+  border: none;
+  text-align: left;
+  padding: 2px 4px;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+.controls input[type="range"] {
+  flex: 1 1 200px;
+}
