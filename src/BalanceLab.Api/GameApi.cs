@@ -15,6 +15,7 @@ internal static class GameApi
     {
         var api = app.MapGroup("/api");
         api.MapGet("/games", Games);
+        api.MapGet("/games/{key}/rules", Rules);
         api.MapGet("/rooms", RoomsAsync);
         api.MapGet("/rooms/{id:guid}", Room);
         api.MapGet("/matches/{id:guid}", MatchAsync);
@@ -24,6 +25,24 @@ internal static class GameApi
 
     private static IEnumerable<GameInfo> Games() =>
         GameCatalog.All.Select(g => new GameInfo(g.Key, g.Name, g.MinPlayers, g.MaxPlayers, g.HasVariants));
+
+    /// <summary>Tabela zasad dla ekranu (np. karty wariantu); zly wariant to 400, gra bez tabeli to 404.</summary>
+    private static Results<Ok<object>, NotFound, ProblemHttpResult> Rules(string key, string? variant)
+    {
+        if (GameCatalog.All.FirstOrDefault(g => string.Equals(g.Key, key, StringComparison.OrdinalIgnoreCase)) is not { } game)
+        {
+            return TypedResults.NotFound();
+        }
+
+        try
+        {
+            return game.Sheet(variant) is { } sheet ? TypedResults.Ok(sheet) : TypedResults.NotFound();
+        }
+        catch (FormatException ex)
+        {
+            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest);
+        }
+    }
 
     private static async Task<IReadOnlyList<RoomInfo>> RoomsAsync(Lobby lobby)
     {

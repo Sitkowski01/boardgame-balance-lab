@@ -19,6 +19,29 @@ public sealed class RestTests(ApiFixture api)
     }
 
     [Fact]
+    public async Task Rules_give_the_card_table_of_the_variant()
+    {
+        var http = api.Http();
+
+        var standard = await http.GetFromJsonAsync<JsonElement>("/api/games/KLEJNOTY/rules");
+        var variant = await http.GetFromJsonAsync<JsonElement>("/api/games/klejnoty/rules?variant=card3.points=4");
+
+        Assert.Equal(90, standard.GetProperty("cards").GetArrayLength());
+        Assert.Equal(15, standard.GetProperty("winningPoints").GetInt32());
+        Assert.Equal(4, variant.GetProperty("cards")[3].GetProperty("points").GetInt32());
+    }
+
+    [Theory]
+    [InlineData("/api/games/szachy/rules", HttpStatusCode.NotFound)]
+    [InlineData("/api/games/connectfour/rules", HttpStatusCode.NotFound)]
+    [InlineData("/api/games/klejnoty/rules?variant=win=abc", HttpStatusCode.BadRequest)]
+    [InlineData("/api/games/connectfour/rules?variant=win=9", HttpStatusCode.BadRequest)]
+    public async Task Rules_need_a_game_with_a_table_and_a_valid_variant(string url, HttpStatusCode status)
+    {
+        Assert.Equal(status, (await api.Http().GetAsync(url)).StatusCode);
+    }
+
+    [Fact]
     public async Task Health_answers()
     {
         Assert.Equal("ok", await api.Http().GetStringAsync("/health"));
