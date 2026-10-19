@@ -6,6 +6,55 @@ namespace BalanceLab.Multiplayer.Tests;
 public sealed class RoomTimeTests
 {
     [Fact]
+    public async Task After_the_deadline_a_bot_moves_for_the_player()
+    {
+        await using var table = new Table();
+        var (room, ala, _) = await table.StartedPairAsync();
+
+        table.Clock.Advance(table.Options.MoveTimeout - TimeSpan.FromSeconds(1));
+        Assert.Equal(0, room.Info.Moves);
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+
+        var info = await table.Notifier.RoomAsync(room.Id, r => r.Moves == 1);
+        Assert.Equal(new MovePlayed(room.Id, 1, 0, table.MovesOf(room)[0], true), table.Notifier.Moves.Single());
+        Assert.Equal(1, info.ToMove);
+        var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(ala.Token, 0, "3"));
+        Assert.StartsWith("Ruch do nieaktualnej pozycji", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Late_move_is_rejected_while_the_bot_is_still_thinking()
+    {
+        // Bot z przerwa: po czasie gracz juz nie zdazy, nawet jesli bot jeszcze nie zagral.
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        var (room, ala, _) = await table.StartedPairAsync();
+
+        table.Clock.Advance(table.Options.MoveTimeout);
+        var info = await table.Notifier.RoomAsync(room.Id, r => r.Seats[0].Autopilot);
+
+        Assert.Null(info.Deadline);
+        var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(ala.Token, 0, "3"));
+        Assert.Equal("Czas na ruch minal - za ciebie gra bot.", ex.Message);
+        Assert.Empty((await table.Notifier.ViewAsync(room.Id, 0, 0)).LegalMoves);
+    }
+
+    [Fact]
+    public async Task Timer_of_an_old_position_does_nothing()
+    {
+        await using var table = new Table();
+        var (room, ala, ola) = await table.StartedPairAsync();
+        table.Clock.Advance(TimeSpan.FromSeconds(50));
+        await room.MoveAsync(ala.Token, 0, "3");
+
+        // Minelo 60 s od startu (termin Ali), ale tylko 10 s tury Oli.
+        table.Clock.Advance(TimeSpan.FromSeconds(10));
+        await room.MoveAsync(ola.Token, 1, "3");
+
+        Assert.All(await table.Notifier.MovesAsync(room.Id, 2), m => Assert.False(m.ByBot));
+        Assert.Equal(2, room.Info.Moves);
+    }
+
+    [Fact]
     public async Task Player_who_left_on_their_move_is_replaced_by_a_bot_until_they_return()
     {
         await using var table = new Table();

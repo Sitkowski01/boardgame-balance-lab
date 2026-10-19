@@ -103,6 +103,7 @@ internal sealed partial class Room<TState, TMove, TGame>
     {
         if (++_recordFailures >= _options.MaxRecordFailures)
         {
+            StopClock();
             _status = RoomStatus.Abandoned;
             LogAbandoned(_logger, Id, _recordFailures);
             PublishAll();

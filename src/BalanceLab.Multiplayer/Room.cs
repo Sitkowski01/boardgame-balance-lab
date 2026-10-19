@@ -77,6 +77,8 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
     public async ValueTask DisposeAsync()
     {
         await _queue.DisposeAsync();
+        // Petla pokoju juz stoi, wiec zegar mozna zatrzymac bez wyscigu.
+        _timer?.Dispose();
     }
 
     private int SeatOf(string token)

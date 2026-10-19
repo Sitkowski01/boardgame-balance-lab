@@ -29,7 +29,7 @@ internal sealed partial class Room<TState, TMove, TGame>
         var seat = SeatOf(token);
         _seats[seat].Connections.Add(connection);
         // Wrocil na swoim ruchu, zanim minal mu czas: bot, ktory gral za rozlaczonego, juz nie zagra.
-        if (_status == RoomStatus.Playing && seat == _rules.CurrentPlayer(_state) && _botTurn == _moves)
+        if (_status == RoomStatus.Playing && seat == _rules.CurrentPlayer(_state) && _botTurn == _moves && !_timedOut)
         {
             CancelBot();
             PublishAll();

@@ -96,6 +96,7 @@ public sealed class RoomSetupTests
         Assert.Equal((4, 42UL, "win=9"), (setup.PlayerCount, setup.Seed, variant));
         Assert.Equal(["Ala", "Ola", "random", "greedy"], players);
         Assert.Equal((0, 0), (info.ToMove, info.Moves));
+        Assert.Equal(table.Clock.GetUtcNow() + table.Options.MoveTimeout, info.Deadline);
     }
 
     [Fact]

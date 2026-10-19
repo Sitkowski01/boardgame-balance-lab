@@ -6,6 +6,12 @@ namespace BalanceLab.Multiplayer;
 /// <summary>Partia: start, ruchy sprawdzane przez zasady, kolejne tury i czas na ruch.</summary>
 internal sealed partial class Room<TState, TMove, TGame>
 {
+    private DateTimeOffset? _deadline;
+    private ITimer? _timer;
+
+    /// <summary>Czas czlowieka na ten ruch minal; jego ruch juz nie przejdzie, gra bot.</summary>
+    private bool _timedOut;
+
     public Task StartAsync(string token) => _queue.Post(async () =>
     {
         EnsureHost(token);
@@ -50,6 +56,11 @@ internal sealed partial class Room<TState, TMove, TGame>
         if (seat != _rules.CurrentPlayer(_state))
         {
             throw new RoomException("Nie twoja kolej.");
+        }
+
+        if (_timedOut)
+        {
+            throw new RoomException("Czas na ruch minal - za ciebie gra bot.");
         }
 
         TMove decoded;
@@ -100,9 +111,11 @@ internal sealed partial class Room<TState, TMove, TGame>
         BeginTurn();
     }
 
-    /// <summary>Nowa pozycja: koniec partii albo ruch kolejnego gracza (bot liczy sam, czlowiek dostaje legalne ruchy).</summary>
+    /// <summary>Nowa pozycja: koniec partii albo ruch kolejnego gracza (bot liczy, czlowiekowi biegnie czas).</summary>
     private void BeginTurn()
     {
+        StopClock();
+        _timedOut = false;
         if (_rules.IsTerminal(_state))
         {
             _status = RoomStatus.Finished;
@@ -112,12 +125,42 @@ internal sealed partial class Room<TState, TMove, TGame>
         }
 
         var seat = _rules.CurrentPlayer(_state);
-        if (_seats[seat].Kind == SeatKind.Bot || _seats[seat].Connections.Count == 0)
+        if (_seats[seat].Kind == SeatKind.Bot)
         {
             ScheduleBot(seat, _options.BotDelay);
         }
+        else
+        {
+            var number = _moves;
+            _deadline = _clock.GetUtcNow() + _options.MoveTimeout;
+            _timer = _clock.CreateTimer(_ => _queue.Fire(() => Timeout(number)), null, _options.MoveTimeout, System.Threading.Timeout.InfiniteTimeSpan);
+            if (_seats[seat].Connections.Count == 0)
+            {
+                ScheduleBot(seat, _options.BotDelay);
+            }
+        }
 
         PublishAll();
+    }
+
+    private void Timeout(int number)
+    {
+        if (_status != RoomStatus.Playing || _moves != number)
+        {
+            return;
+        }
+
+        StopClock();
+        _timedOut = true;
+        ScheduleBot(_rules.CurrentPlayer(_state), _options.BotDelay);
+        // Widoki tez: klient gracza musi przestac pokazywac ruchy, ktorych juz nie moze zagrac.
+        PublishAll();
+    }
+
+    private void StopClock()
+    {
+        _timer?.Dispose();
+        (_timer, _deadline) = (null, null);
     }
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Pokoj {Room}: nie udalo sie zapisac ruchu nr {Number}")]
