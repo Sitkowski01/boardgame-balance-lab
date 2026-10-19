@@ -3,6 +3,7 @@
     <Project Path="benchmarks/BalanceLab.Benchmarks/BalanceLab.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/BalanceLab.Api/BalanceLab.Api.csproj" />
     <Project Path="src/BalanceLab.Bots/BalanceLab.Bots.csproj" />
     <Project Path="src/BalanceLab.Catalog/BalanceLab.Catalog.csproj" />
     <Project Path="src/BalanceLab.Cli/BalanceLab.Cli.csproj" />

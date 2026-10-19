@@ -87,6 +87,14 @@ public sealed class ArchitectureTests
             "BalanceLab.Reporting", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
     }
 
+    [Fact]
+    public void Server_is_only_transport_without_game_rules_or_bots()
+    {
+        // Api przekazuje prosby do pokoi; zasady gier, boty i baza sa schowane za Multiplayer.
+        AssertNoDependency("BalanceLab.Api", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Simulation", "BalanceLab.Cli",
+            "BalanceLab.Reporting", "Microsoft.EntityFrameworkCore");
+    }
+
     [Theory]
     [MemberData(nameof(DeterministicCore))]
     public void Randomness_comes_only_from_the_engine_generator(string project)
