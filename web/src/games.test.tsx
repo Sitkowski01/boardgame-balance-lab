@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { botsFor, describe as describeMove, GameBoard } from "./games";
-import { connectFour, klejnoty, sheet } from "./test/boards";
+import { connectFour, klejnoty, mozaika, mozaikaRules, sheet } from "./test/boards";
 
 describe("GameBoard", () => {
   const common = { variant: null, legalMoves: [], seat: 0, names: ["Ala", "Ola"], onMove: vi.fn() };
@@ -51,6 +51,39 @@ describe("GameBoard", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("odśwież stronę");
   });
 
+  it("loads the rules of the variant before drawing Mozaika and checks them", async () => {
+    const loadSheet = vi.fn().mockResolvedValue(mozaikaRules());
+    const { unmount } = render(<GameBoard {...common} game="mozaika" variant="column=5" view={mozaika()} loadSheet={loadSheet} />);
+
+    expect(await screen.findByRole("region", { name: "Warsztaty" })).toBeInTheDocument();
+    expect(loadSheet).toHaveBeenCalledWith("mozaika", "column=5");
+    unmount();
+
+    render(<GameBoard {...common} game="mozaika" view={mozaika()} loadSheet={() => Promise.resolve({ wall: [] })} />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("zasady gry, których ta wersja strony nie rozumie");
+  });
+
+  it("never draws a board with the rules of another game or variant", async () => {
+    const loadSheet = vi.fn((game: string) => Promise.resolve(game === "mozaika" ? mozaikaRules() : sheet()));
+    const { rerender } = render(<GameBoard {...common} game="klejnoty" view={klejnoty()} loadSheet={loadSheet} />);
+    expect(await screen.findByRole("region", { name: "Rynek" })).toBeInTheDocument();
+
+    rerender(<GameBoard {...common} game="mozaika" view={mozaika()} loadSheet={loadSheet} />);
+    expect(screen.getByText("Wczytywanie zasad…")).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Warsztaty" })).toBeInTheDocument();
+
+    rerender(<GameBoard {...common} game="mozaika" variant="row=3" view={mozaika()} loadSheet={loadSheet} />);
+    expect(screen.getByText("Wczytywanie zasad…")).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Warsztaty" })).toBeInTheDocument();
+    expect(loadSheet).toHaveBeenLastCalledWith("mozaika", "row=3");
+  });
+
+  it("refuses a Mozaika board of the wrong shape", async () => {
+    render(<GameBoard {...common} game="mozaika" view={klejnoty()} loadSheet={() => Promise.resolve(mozaikaRules())} />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("odśwież stronę");
+  });
+
   it("ignores a card table that arrives after leaving the board", async () => {
     let resolve: (value: ReturnType<typeof sheet>) => void = () => undefined;
     const { unmount } = render(
@@ -68,11 +101,13 @@ describe("games", () => {
   it("names the bots for people", () => {
     expect(botsFor("klejnoty").map((b) => b.label)).toEqual(["ISMCTS (mocny)", "Zachłanny", "Losowy"]);
     expect(botsFor("connectfour").map((b) => b.label)).toEqual(["MCTS (mocny)", "Losowy"]);
+    expect(botsFor("mozaika").map((b) => b.label)).toEqual(["Zachłanny (mocny)", "ISMCTS", "Losowy"]);
   });
 
   it("offers bots that the game understands", () => {
     expect(botsFor("klejnoty").map((b) => b.spec)).toEqual(["ismcts:300", "greedy", "random"]);
     expect(botsFor("connectfour").map((b) => b.spec)).toEqual(["mcts:500", "random"]);
+    expect(botsFor("mozaika").map((b) => b.spec)).toEqual(["greedy", "ismcts:300", "random"]);
   });
 
   it("describes moves of each game and falls back to the raw move", () => {
@@ -80,5 +115,7 @@ describe("games", () => {
     expect(describeMove("klejnoty", "buy:41", sheet().cards)).toBe("kupuje karte #41 (niebieski, 1 pkt)");
     expect(describeMove("connectfour", "6")).toBe("wrzuca do kolumny 7");
     expect(describeMove("klejnoty", "dziwny")).toBe("dziwny");
+    expect(describeMove("mozaika", "f0:O:floor")).toBe("bierze ochra z warsztatu 1 na podłogę");
+    expect(describeMove("mozaika", "dziwny")).toBe("dziwny");
   });
 });
