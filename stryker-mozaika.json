@@ -1,0 +1,9 @@
+{
+  "stryker-config": {
+    "project": "BalanceLab.Games.Mozaika.csproj",
+    "test-projects": [ "tests/BalanceLab.Games.Mozaika.Tests/BalanceLab.Games.Mozaika.Tests.csproj" ],
+    "test-case-filter": "Category!=Strength",
+    "reporters": [ "html", "progress", "cleartext", "json" ],
+    "thresholds": { "high": 90, "low": 90, "break": 90 }
+  }
+}
