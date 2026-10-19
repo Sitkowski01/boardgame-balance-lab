@@ -138,9 +138,30 @@ internal sealed class Table : IAsyncDisposable
         return (Lobby.Find(host.Room), host);
     }
 
+    /// <summary>Partia dwoch ludzi w Czworki, juz rozpoczeta.</summary>
+    public async Task<(IRoom Room, SeatTicket Ala, SeatTicket Ola)> StartedPairAsync()
+    {
+        var (room, ala) = await CreateAsync();
+        var ola = await room.JoinAsync("Ola", "c-ola");
+        await room.StartAsync(ala.Token);
+        return (room, ala, ola);
+    }
+
+    public IReadOnlyList<string> MovesOf(IRoom room) => [.. Recorders.Moves[room.Info.MatchId!.Value]];
+
     public async ValueTask DisposeAsync()
     {
         await Lobby.DisposeAsync();
         Notifier.Dispose();
     }
+}
+
+/// <summary>Widoki gier porownane tak, jak zobaczy je klient: po JSON.</summary>
+internal sealed class JsonEquality : IEqualityComparer<object?>
+{
+    public new bool Equals(object? x, object? y) => Json(x) == Json(y);
+
+    public int GetHashCode(object? obj) => Json(obj).GetHashCode(StringComparison.Ordinal);
+
+    private static string Json(object? value) => System.Text.Json.JsonSerializer.Serialize(value);
 }
