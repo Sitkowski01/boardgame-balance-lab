@@ -6,6 +6,73 @@ namespace BalanceLab.Multiplayer.Tests;
 public sealed class RoomTimeTests
 {
     [Fact]
+    public async Task Player_who_left_on_their_move_is_replaced_by_a_bot_until_they_return()
+    {
+        await using var table = new Table();
+        var (room, ala, ola) = await table.StartedPairAsync();
+
+        await room.DisconnectAsync("c-ala");
+        await table.Notifier.RoomAsync(room.Id, r => r.Moves == 1);
+        Assert.False(room.Info.Seats[0].Connected);
+        Assert.True(table.Notifier.Moves[0].ByBot);
+
+        var back = await room.RejoinAsync(ala.Token, "c-ala-2");
+        Assert.Equal(new SeatTicket(room.Id, 0, ala.Token), back);
+        Assert.True(room.Info.Seats[0].Connected);
+        var view = await room.ViewAsync(ala.Token);
+        Assert.Equal((0, 1), (view!.Seat, view.Moves));
+        Assert.Empty(view.LegalMoves);
+
+        await room.MoveAsync(ola.Token, 1, "3");
+        await room.MoveAsync(ala.Token, 2, "3");
+        Assert.Equal([true, false, false], (await table.Notifier.MovesAsync(room.Id, 3)).Select(m => m.ByBot));
+    }
+
+    [Fact]
+    public async Task Player_who_returns_before_the_bot_moves_plays_themselves()
+    {
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        var (room, ala, _) = await table.StartedPairAsync();
+        await room.DisconnectAsync("c-ala");
+        Assert.True((await table.Notifier.RoomAsync(room.Id, r => r.Seats[0].Autopilot)).Seats[0].Autopilot);
+
+        await room.RejoinAsync(ala.Token, "c-ala-2");
+
+        Assert.False(room.Info.Seats[0].Autopilot);
+        Assert.NotEmpty((await room.ViewAsync(ala.Token))!.LegalMoves);
+        table.Clock.Advance(TimeSpan.FromSeconds(5));
+        await room.SpectateAsync();
+        Assert.Equal(0, room.Info.Moves);
+        await room.MoveAsync(ala.Token, 0, "3");
+        Assert.False((await table.Notifier.MovesAsync(room.Id, 1)).Single().ByBot);
+    }
+
+    [Fact]
+    public async Task Repeated_record_failures_abandon_the_game_instead_of_retrying_forever()
+    {
+        await using var table = new Table(new RoomOptions
+        {
+            MaxRecordFailures = 2, BotDelay = TimeSpan.FromSeconds(1), RetryDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random",
+        });
+        var (room, host) = await table.CreateAsync();
+        await room.StartAsync(host.Token);
+        await room.MoveAsync(host.Token, 0, "3");
+        table.Recorders.Failures = 2;
+
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+        await table.Notifier.WaitAsync(() => table.Recorders.Failures == 1 ? "" : null);
+        await room.SpectateAsync();
+        Assert.Equal(RoomStatus.Playing, room.Info.Status);
+        table.Clock.Advance(TimeSpan.FromSeconds(5));
+
+        var info = await table.Notifier.RoomAsync(room.Id, r => r.Status == RoomStatus.Abandoned);
+        Assert.Equal((1, (int?)null, (DateTimeOffset?)null), (info.Moves, info.ToMove, info.Deadline));
+        Assert.Empty((await room.ViewAsync(host.Token))!.LegalMoves);
+        var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(host.Token, 1, "3"));
+        Assert.Equal("Partia sie nie toczy.", ex.Message);
+    }
+
+    [Fact]
     public async Task Every_change_has_a_higher_version()
     {
         await using var table = new Table();
@@ -19,6 +86,22 @@ public sealed class RoomTimeTests
         Assert.Equal(versions.Length, versions.Distinct().Count());
         Assert.Equal(info.Version, (await table.Notifier.ViewAsync(room.Id, 0, 2)).Version);
         Assert.Equal(info.Version, (await room.SpectateAsync())!.Version);
+    }
+
+    [Fact]
+    public async Task Player_who_left_is_replaced_only_when_their_turn_comes()
+    {
+        await using var table = new Table();
+        var (room, ala, ola) = await table.StartedPairAsync();
+
+        await room.DisconnectAsync("c-ola");
+        Assert.False(room.Info.Seats[1].Autopilot);
+        await room.MoveAsync(ala.Token, 0, "3");
+
+        await table.Notifier.RoomAsync(room.Id, r => r.Moves == 2);
+        Assert.Equal([false, true], table.Notifier.Moves.Select(m => m.ByBot));
+        Assert.Equal(1, table.Notifier.Moves[1].Seat);
+        _ = ola;
     }
 
     [Fact]
@@ -61,6 +144,29 @@ public sealed class RoomTimeTests
         Assert.Empty(table.Notifier.Moves);
         await room.MoveAsync(ala.Token, 0, "3");
         Assert.Equal(["3"], table.MovesOf(room));
+    }
+
+    [Fact]
+    public async Task Failed_record_of_a_bot_move_is_retried_later()
+    {
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(1), RetryDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        var (room, host) = await table.CreateAsync();
+        await room.AddBotAsync(host.Token, 1, "random");
+        await room.StartAsync(host.Token);
+        await room.MoveAsync(host.Token, 0, "3");
+        table.Recorders.Failures = 1;
+
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+        await table.Notifier.WaitAsync(() => table.Recorders.Failures == 0 ? "" : null);
+        // Kolejka pokoju jako bariera: nowa proba jest juz zaplanowana, zanim przesuniemy zegar.
+        await room.SpectateAsync();
+        Assert.Equal(1, room.Info.Moves);
+
+        table.Clock.Advance(TimeSpan.FromSeconds(4));
+        Assert.Equal(1, room.Info.Moves);
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+        await table.Notifier.RoomAsync(room.Id, r => r.Moves == 2);
+        Assert.Equal(2, table.MovesOf(room).Count);
     }
 
     [Fact]
