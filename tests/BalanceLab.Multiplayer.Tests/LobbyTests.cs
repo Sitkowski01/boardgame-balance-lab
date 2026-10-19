@@ -132,6 +132,35 @@ public sealed class LobbyTests
     }
 
     [Fact]
+    public async Task Finished_room_stays_for_a_while_and_a_running_one_while_something_happens()
+    {
+        await using var table = new Table(new RoomOptions
+        {
+            KeepFinished = TimeSpan.FromMinutes(10), KeepIdle = TimeSpan.FromHours(2), MoveTimeout = TimeSpan.FromDays(1),
+            BotDelay = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random",
+        });
+        var (playing, _, _) = await table.StartedPairAsync();
+        // Gospodarz wychodzi zaraz po starcie: za niego gra bot, wiec partia sama dochodzi do konca.
+        var (finished, host) = await table.CreateAsync();
+        await finished.StartAsync(host.Token);
+        await finished.DisconnectAsync("c-ala");
+        await table.Notifier.RoomAsync(finished.Id, r => r.Status == RoomStatus.Finished);
+
+        table.Clock.Advance(TimeSpan.FromMinutes(9));
+        await table.Lobby.PruneAsync();
+        Assert.Equal(2, table.Lobby.Rooms.Count);
+
+        table.Clock.Advance(TimeSpan.FromHours(1));
+        await table.Lobby.PruneAsync();
+        Assert.Equal([playing.Id], table.Lobby.Rooms.Select(r => r.Id));
+
+        // Dwie godziny bez zadnego ruchu (nawet bota): pokoj zawieszony, wiec znika.
+        table.Clock.Advance(TimeSpan.FromHours(1));
+        await table.Lobby.PruneAsync();
+        Assert.Empty(table.Lobby.Rooms);
+    }
+
+    [Fact]
     public async Task Waiting_room_cannot_hold_a_place_in_the_lobby_forever()
     {
         await using var table = new Table(new RoomOptions { KeepWaiting = TimeSpan.FromHours(2), KeepIdle = TimeSpan.FromHours(5), BotDelay = TimeSpan.Zero });
@@ -143,6 +172,25 @@ public sealed class LobbyTests
         Assert.Single(table.Lobby.Rooms);
 
         table.Clock.Advance(TimeSpan.FromMinutes(1));
+        await table.Lobby.PruneAsync();
+        Assert.Empty(table.Lobby.Rooms);
+    }
+
+    [Fact]
+    public async Task Abandoned_room_is_cleaned_up_like_a_finished_one()
+    {
+        await using var table = new Table(new RoomOptions
+        {
+            KeepFinished = TimeSpan.FromMinutes(10), MaxRecordFailures = 1, BotDelay = TimeSpan.FromSeconds(1), FillBot = "random", AutopilotBot = "random",
+        });
+        var (room, host) = await table.CreateAsync();
+        await room.StartAsync(host.Token);
+        await room.MoveAsync(host.Token, 0, "3");
+        table.Recorders.Failures = 1;
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+        await table.Notifier.RoomAsync(room.Id, r => r.Status == RoomStatus.Abandoned);
+
+        table.Clock.Advance(TimeSpan.FromMinutes(10));
         await table.Lobby.PruneAsync();
         Assert.Empty(table.Lobby.Rooms);
     }

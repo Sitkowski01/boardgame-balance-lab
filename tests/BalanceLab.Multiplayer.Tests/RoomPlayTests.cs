@@ -63,4 +63,68 @@ public sealed class RoomPlayTests
 
         Assert.Equal("Partia sie nie toczy.", ex.Message);
     }
+
+    [Fact]
+    public async Task Bot_answers_every_human_move_until_the_end()
+    {
+        await using var table = new Table();
+        var (room, host) = await table.CreateAsync();
+        await room.AddBotAsync(host.Token, 1, "random");
+        await room.StartAsync(host.Token);
+
+        while (room.Info.Status == RoomStatus.Playing)
+        {
+            var view = await table.Notifier.WaitAsync(() =>
+                room.Info.Status != RoomStatus.Playing ? null
+                : table.Notifier.Views.LastOrDefault(v => v.Seat == 0 && v.View.Moves == room.Info.Moves && v.View.LegalMoves.Length > 0).View);
+            if (view is null)
+            {
+                break;
+            }
+
+            await room.MoveAsync(host.Token, view.Moves, view.LegalMoves[0]);
+            await table.Notifier.RoomAsync(room.Id, r => r.Moves > view.Moves + 1 || r.Status == RoomStatus.Finished);
+        }
+
+        var moves = await table.Notifier.MovesAsync(room.Id, room.Info.Moves);
+        Assert.Equal(RoomStatus.Finished, room.Info.Status);
+        Assert.All(moves, m => Assert.Equal(m.Seat == 1, m.ByBot));
+        Assert.Equal(moves.Select(m => m.Move), table.MovesOf(room));
+    }
+
+    [Fact]
+    public async Task Bots_alone_play_the_same_game_from_the_same_seed()
+    {
+        // Ziarna botow wynikaja z ziarna partii i numeru ruchu, wiec dwa pokoje z tym samym ziarnem graja identycznie.
+        async Task<IReadOnlyList<string>> PlayAsync()
+        {
+            await using var table = new Table(seed: 99);
+            var (room, host) = await table.CreateAsync("klejnoty", 3);
+            await room.AddBotAsync(host.Token, 1, "greedy");
+            await room.StartAsync(host.Token);
+            await room.DisconnectAsync("c-ala");
+            await table.Notifier.RoomAsync(room.Id, r => r.Status == RoomStatus.Finished);
+            return table.MovesOf(room);
+        }
+
+        var first = await PlayAsync();
+
+        Assert.True(first.Count > 30, $"ruchow: {first.Count}");
+        Assert.Equal(first, await PlayAsync());
+    }
+
+    [Fact]
+    public async Task Klejnoty_variant_is_played_by_its_rules()
+    {
+        await using var table = new Table();
+        var (room, host) = await table.CreateAsync("klejnoty", 2, "win=3");
+        await room.StartAsync(host.Token);
+        await room.DisconnectAsync("c-ala");
+
+        var info = await table.Notifier.RoomAsync(room.Id, r => r.Status == RoomStatus.Finished);
+
+        var final = (KlejnotyView)(await table.Notifier.ViewAsync(room.Id, null, info.Moves)).View;
+        Assert.Contains(final.Players, p => p.Points >= 3);
+        Assert.True(final.Over);
+    }
 }
