@@ -41,6 +41,7 @@ public sealed class EndToEndTests(ApiFixture api)
         Assert.Equal(["Ala", "Ola", "greedy"], match.Players.ToArray());
         Assert.NotNull(match.Seed);
         Assert.Equal(end.Moves, match.Hashes.Length);
+        Assert.All(match.Hashes, h => Assert.Matches("^[0-9a-f]{16}$", h));
         Assert.Equal(end.Scores.ToArray(), match.Scores.ToArray());
         // Ruchy w dzienniku to dokladnie te, ktore widzieli gracze, w tej samej kolejnosci.
         Assert.Equal(ala.Moves.OrderBy(m => m.Number).Select(m => m.Move), match.Moves);

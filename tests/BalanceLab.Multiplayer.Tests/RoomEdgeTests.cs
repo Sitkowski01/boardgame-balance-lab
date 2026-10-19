@@ -84,6 +84,74 @@ public sealed class RoomEdgeTests
         Assert.Contains(table.Logs.Entries, e => e.Level == LogLevel.Error && e.Message.EndsWith("nie udalo sie zapisac ruchu nr 1", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task Only_the_human_on_move_is_shown_as_played_by_a_bot()
+    {
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        var (room, host) = await table.CreateAsync();
+        await room.AddBotAsync(host.Token, 1, "random");
+        await room.StartAsync(host.Token);
+
+        await room.MoveAsync(host.Token, 0, "3");
+
+        Assert.All(room.Info.Seats, s => Assert.False(s.Autopilot));
+    }
+
+    [Fact]
+    public async Task Return_while_a_bot_seat_thinks_does_not_cancel_that_bot()
+    {
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        var (room, host) = await table.CreateAsync();
+        await room.AddBotAsync(host.Token, 1, "random");
+        await room.StartAsync(host.Token);
+        await room.MoveAsync(host.Token, 0, "3");
+
+        await room.RejoinAsync(host.Token, "c-ala-2");
+        table.Clock.Advance(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(1, (await table.Notifier.MovesAsync(room.Id, 2))[1].Seat);
+    }
+
+    [Fact]
+    public async Task Return_after_the_deadline_does_not_cancel_the_bot()
+    {
+        await using var table = new Table(new RoomOptions { BotDelay = TimeSpan.FromSeconds(5), FillBot = "random", AutopilotBot = "random" });
+        var (room, ala, _) = await table.StartedPairAsync();
+        table.Clock.Advance(table.Options.MoveTimeout);
+        await table.Notifier.RoomAsync(room.Id, r => r.Seats[0].Autopilot);
+
+        await room.RejoinAsync(ala.Token, "c-ala-2");
+        table.Clock.Advance(TimeSpan.FromSeconds(5));
+
+        Assert.True((await table.Notifier.MovesAsync(room.Id, 1)).Single().ByBot);
+    }
+
+    [Fact]
+    public async Task Return_before_the_start_only_reconnects()
+    {
+        await using var table = new Table();
+        var (room, ala) = await table.CreateAsync("klejnoty", 2);
+        await room.DisconnectAsync("c-ala");
+
+        Assert.Equal(ala, await room.RejoinAsync(ala.Token, "c-ala-2"));
+        Assert.True(room.Info.Seats[0].Connected);
+    }
+
+    [Fact]
+    public async Task Bots_play_the_recorded_opening_for_a_known_seed()
+    {
+        // Zamrozone ruchy: ziarno bota zalezy od ziarna partii, numeru ruchu i miejsca; zmiana tej reguly zmienia partie.
+        await using var table = new Table(seed: 99);
+        var (room, host) = await table.CreateAsync("klejnoty", 3);
+        await room.AddBotAsync(host.Token, 1, "greedy");
+        await room.StartAsync(host.Token);
+        await room.DisconnectAsync("c-ala");
+
+        var opening = (await table.Notifier.MovesAsync(room.Id, 6)).Take(6).Select(m => m.Move);
+
+        Assert.Equal(["take:WGR", "take:WUK", "reserve:33", "take:UGR", "take:WUG", "deck:1"], opening);
+    }
+
     private static Room<CountdownState, Take, CountdownGame> CountdownRoom(Table table, Trick trick)
     {
         var game = new CountdownGame(trick);

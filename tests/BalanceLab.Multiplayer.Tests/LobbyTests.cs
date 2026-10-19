@@ -49,17 +49,18 @@ public sealed class LobbyTests
     }
 
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("abcdefghijklmnopqrstuvwxy")]
     [InlineData("Al\na")]
     [InlineData("Ala\u202E")]
     [InlineData("O\u200Bla")]
-    public async Task Bad_player_name_creates_no_room(string name)
+    public async Task Bad_player_name_creates_no_room(string? name)
     {
         await using var table = new Table();
 
-        var ex = await Assert.ThrowsAsync<RoomException>(() => table.Lobby.CreateAsync(new RoomRequest("connectfour", 2), name, "c"));
+        var ex = await Assert.ThrowsAsync<RoomException>(() => table.Lobby.CreateAsync(new RoomRequest("connectfour", 2), name!, "c"));
 
         Assert.Equal("Nazwa gracza: od 1 do 24 znakow, bez znakow sterujacych i niewidocznych.", ex.Message);
         Assert.Empty(table.Lobby.Rooms);
@@ -154,8 +155,11 @@ public sealed class LobbyTests
         await table.Lobby.PruneAsync();
         Assert.Equal([playing.Id], table.Lobby.Rooms.Select(r => r.Id));
 
-        // Dwie godziny bez zadnego ruchu (nawet bota): pokoj zawieszony, wiec znika.
-        table.Clock.Advance(TimeSpan.FromHours(1));
+        // Dwie godziny bez zadnego ruchu (nawet bota): pokoj zawieszony, wiec znika — dokladnie po KeepIdle.
+        table.Clock.Advance(TimeSpan.FromMinutes(50));
+        await table.Lobby.PruneAsync();
+        Assert.Single(table.Lobby.Rooms);
+        table.Clock.Advance(TimeSpan.FromMinutes(1));
         await table.Lobby.PruneAsync();
         Assert.Empty(table.Lobby.Rooms);
     }
@@ -193,6 +197,32 @@ public sealed class LobbyTests
         table.Clock.Advance(TimeSpan.FromMinutes(10));
         await table.Lobby.PruneAsync();
         Assert.Empty(table.Lobby.Rooms);
+    }
+
+    [Fact]
+    public async Task Rooms_created_at_the_same_moment_are_listed_by_id()
+    {
+        await using var table = new Table();
+        var ids = new List<Guid>();
+        for (var i = 0; i < 5; i++)
+        {
+            ids.Add((await table.CreateAsync()).Room.Id);
+        }
+
+        Assert.Equal(ids.Order(), table.Lobby.Rooms.Select(r => r.Id));
+    }
+
+    [Fact]
+    public async Task Closed_lobby_closes_its_rooms_and_creates_no_more()
+    {
+        var table = new Table();
+        var (room, _) = await table.CreateAsync();
+
+        await table.Lobby.DisposeAsync();
+
+        Assert.Empty(table.Lobby.Rooms);
+        await Assert.ThrowsAsync<RoomException>(() => room.JoinAsync("Ola", "c-ola"));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => table.CreateAsync());
     }
 
     [Fact]

@@ -122,6 +122,7 @@ public sealed class RoomSetupTests
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.StartAsync(host.Token));
 
         Assert.Equal("Nie udalo sie zapisac partii - sprobuj jeszcze raz.", ex.Message);
+        Assert.Contains(table.Logs.Entries, e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error && e.Message.EndsWith("nie udalo sie zapisac ruchu nr 0", StringComparison.Ordinal));
 
         Assert.Equal(RoomStatus.Waiting, room.Info.Status);
         Assert.Equal([SeatKind.Human, SeatKind.Empty, SeatKind.Empty], room.Info.Seats.Select(s => s.Kind));
