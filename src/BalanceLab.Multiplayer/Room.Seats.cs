@@ -33,6 +33,14 @@ internal sealed partial class Room<TState, TMove, TGame>
         return new SeatTicket(Id, seat, token);
     });
 
+    public Task<TableView?> ViewAsync(string token) => _queue.Post(() =>
+    {
+        var seat = SeatOf(token);
+        return _status == RoomStatus.Waiting ? null : ViewFor(seat);
+    });
+
+    public Task<TableView?> SpectateAsync() => _queue.Post(() => _status == RoomStatus.Waiting ? null : ViewFor(null));
+
     public Task AddBotAsync(string token, int seat, string bot) => _queue.Post(() =>
     {
         EnsureHost(token);

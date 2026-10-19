@@ -34,6 +34,8 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
     private RoomStatus _status = RoomStatus.Waiting;
     private int _host = -1;
     private TState _state = default!;
+    private int _moves;
+    private Guid? _match;
     private ImmutableArray<double> _scores = [];
     private long _version;
     private volatile RoomInfo _info;

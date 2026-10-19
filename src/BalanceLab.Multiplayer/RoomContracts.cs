@@ -114,7 +114,18 @@ public interface IRoom : IAsyncDisposable
     /// <summary>Powrot na swoje miejsce z biletem (np. po zerwaniu polaczenia albo z drugiej karty).</summary>
     Task<SeatTicket> RejoinAsync(string token, string connection);
 
+    /// <summary>Widok z miejsca z tym biletem; null, dopoki partia sie nie zaczela.</summary>
+    Task<TableView?> ViewAsync(string token);
+
+    /// <summary>Widok dla widza; null, dopoki partia sie nie zaczela.</summary>
+    Task<TableView?> SpectateAsync();
+
     Task AddBotAsync(string token, int seat, string bot);
+
+    Task StartAsync(string token);
+
+    /// <param name="number">Ile ruchow juz zagrano (z <see cref="TableView.Moves"/>): ruch do innej pozycji jest odrzucany.</param>
+    Task MoveAsync(string token, int number, string move);
 
     Task DisconnectAsync(string connection);
 }

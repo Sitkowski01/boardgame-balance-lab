@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace BalanceLab.Multiplayer;
 
 /// <summary>Co kto widzi: stan pokoju dla wszystkich i widok gry osobno dla kazdego miejsca.</summary>
@@ -13,6 +15,32 @@ internal sealed partial class Room<TState, TMove, TGame>
         Send(n => n.RoomChangedAsync(info));
     }
 
+    /// <summary>Stan pokoju dla wszystkich i widok gry dla kazdego miejsca z czlowiekiem oraz dla widzow.</summary>
+    private void PublishAll()
+    {
+        PublishRoom();
+        for (var seat = 0; seat < _seats.Length; seat++)
+        {
+            if (_seats[seat].Kind == SeatKind.Human)
+            {
+                var view = ViewFor(seat);
+                Send(n => n.ViewChangedAsync(Id, view.Seat, view));
+            }
+        }
+
+        var spectators = ViewFor(null);
+        Send(n => n.ViewChangedAsync(Id, null, spectators));
+    }
+
+    /// <summary>Legalne ruchy dostaje tylko czlowiek na ruchu.</summary>
+    private TableView ViewFor(int? seat)
+    {
+        var moves = _status == RoomStatus.Playing && seat == _rules.CurrentPlayer(_state)
+            ? _rules.LegalMoves(_state).Select(_rules.EncodeMove).ToImmutableArray()
+            : [];
+        return new TableView(Id, seat, _version, _moves, _rules.View(_state, seat), moves, null);
+    }
+
     private RoomInfo BuildInfo()
     {
         int? toMove = _status == RoomStatus.Playing ? _rules.CurrentPlayer(_state) : null;
@@ -22,6 +50,6 @@ internal sealed partial class Room<TState, TMove, TGame>
             s.Name,
             s.Connections.Count > 0,
             Autopilot: false));
-        return new RoomInfo(Id, _version, _definition.Key, _rules.Name, _variant, _status, _host, [.. seats], 0, toMove, null, null, _scores, _createdAt);
+        return new RoomInfo(Id, _version, _definition.Key, _rules.Name, _variant, _status, _host, [.. seats], _moves, toMove, null, _match, _scores, _createdAt);
     }
 }
