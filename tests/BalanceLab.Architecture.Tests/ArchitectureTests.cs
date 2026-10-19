@@ -53,7 +53,7 @@ public sealed class ArchitectureTests
     [Fact]
     public void Simulator_runs_any_game_with_any_player()
     {
-        // Gry i boty sklada dopiero CLI; symulator zna tylko kontrakt silnika.
+        // Gry i boty sklada dopiero katalog; symulator zna tylko kontrakt silnika.
         AssertNoDependency("BalanceLab.Simulation", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Cli", "BalanceLab.Reporting", "BalanceLab.Persistence");
     }
 
@@ -69,6 +69,14 @@ public sealed class ArchitectureTests
     {
         // Dziennik dostaje gre z kodekami od wolajacego; nie zna zasad zadnej gry ani botow.
         AssertNoDependency("BalanceLab.Persistence", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Simulation", "BalanceLab.Reporting", "BalanceLab.Cli");
+    }
+
+    [Fact]
+    public void Catalog_composes_games_and_bots_without_storage_or_network()
+    {
+        // Katalog sklada gry i boty dla CLI i serwera; o zapisie i sieci decyduje dopiero wolajacy.
+        AssertNoDependency("BalanceLab.Catalog", "BalanceLab.Persistence", "BalanceLab.Cli", "BalanceLab.Reporting",
+            "BalanceLab.Api", "BalanceLab.Multiplayer", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
     }
 
     [Theory]
