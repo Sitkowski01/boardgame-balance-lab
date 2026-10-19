@@ -24,6 +24,8 @@ builder.Services.AddSingleton(sp => new Lobby(
     sp.GetRequiredService<RoomOptions>(),
     sp.GetRequiredService<TimeProvider>(),
     sp.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddSingleton(sp => new MatchArchive(sp.GetRequiredService<JournalDb>()));
+builder.Services.AddHostedService<LobbyPruner>();
 
 // Wyliczenia jako tekst ("Playing"), takze w SignalR: klient nie musi znac kolejnosci w C#.
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -40,6 +42,7 @@ if (app.Configuration.GetValue("Journal:Migrate", true))
 
 app.UseExceptionHandler();
 app.MapHub<GameHub>("/hubs/game");
+app.MapGameApi();
 
 await app.RunAsync();
 
