@@ -1,0 +1,31 @@
+/* Czworki: przyciski kolumn nad plansza i krazki graczy. */
+.connectfour {
+  max-width: 420px;
+  margin-top: 12px;
+}
+.drops,
+.connectfour .grid {
+  display: grid;
+  gap: 4px;
+}
+.drops button {
+  font-size: 0.7rem;
+  padding: 2px;
+}
+.connectfour .grid {
+  margin-top: 6px;
+  padding: 6px;
+  background: #2a4f8f;
+  border-radius: 8px;
+}
+.cell {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--bg);
+}
+.cell.p0 {
+  background: #d33c3c;
+}
+.cell.p1 {
+  background: #e8c23a;
+}
