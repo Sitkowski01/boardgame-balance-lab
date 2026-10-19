@@ -7,7 +7,8 @@ przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w z
 > Projekt w budowie. Gotowe: kontrakt silnika z ukrytą informacją, deterministyczny generator,
 > Czwórki (ConnectFour) i Klejnoty (gra karciana w stylu Splendora), boty: losowy, heurystyczny
 > (z profilami strategii), MCTS i ISMCTS, symulator turniejów, liga z rankingiem Elo, porównanie
-> wariantów zasad (A/B), raport HTML oraz dziennik partii w PostgreSQL z powtórkami i migawkami.
+> wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami oraz
+> serwer gry na żywo (SignalR): lobby, pokoje, boty na wolnych miejscach, limity czasu i powrót po rozłączeniu.
 
 ## Architektura
 
@@ -19,7 +20,10 @@ src/BalanceLab.Bots                RandomBot, GreedyBot, MctsBot, IsmctsBot (kon
 src/BalanceLab.Simulation          turnieje równoległe, statystyki kart, liga (Elo), porównanie A/B, raport JSON
 src/BalanceLab.Reporting           raport HTML z wykresami SVG — zna tylko liczby z symulatora
 src/BalanceLab.Persistence         dziennik partii (EF Core + PostgreSQL): ruchy tylko dopisywane, migawki, weryfikacja
-src/BalanceLab.Cli                 simulate | league | compare | play | replay — jedyne miejsce, które składa całość
+src/BalanceLab.Catalog             katalog gier i botów (opis tekstem, np. mcts:300) dla CLI i serwera
+src/BalanceLab.Multiplayer         pokoje gry (serwer jest sędzią), lobby, archiwum partii — bez sieci
+src/BalanceLab.Api                 hub SignalR /hubs/game + REST /api — sam transport, bez zasad gier
+src/BalanceLab.Cli                 simulate | league | compare | play | replay
 ```
 
 Gra to czyste funkcje na niemutowalnym stanie: `Setup(gracze, ziarno)`, `LegalMoves`, `Apply`
@@ -220,6 +224,38 @@ Testy na prawdziwym PostgreSQL (Testcontainers; każdy test dostaje kopię bazy-
 z pominięciem triggerów — zmieniony hash, inny legalny ruch, luka w numeracji, podmieniona migawka,
 zły wynik w nagłówku — i sprawdzają, że każda zmiana jest wykryta we właściwym miejscu.
 
+## Gra na żywo (SignalR)
+
+```bash
+export BALANCE_LAB_DB="Host=localhost;Username=postgres;Password=...;Database=balance_lab"
+dotnet run --project src/BalanceLab.Api      # migracje przy starcie, hub na /hubs/game
+```
+
+Gospodarz zakłada pokój (`CreateRoom`: gra, liczba miejsc, wariant zasad), inni dołączają (`JoinRoom`),
+gospodarz sadza boty (`AddBot(miejsce, "mcts:300")`) i zaczyna (`Start`) — wolne miejsca zajmują boty.
+Klient dostaje `Room` (miejsca, kto na ruchu, termin), `View` (gra ze swojego miejsca i legalne ruchy, gdy
+jest na ruchu) i `Move`; ruch wysyła jako tekst z numerem pozycji: `MakeMove(12, "buy:17")`.
+
+- **Serwer jest sędzią.** Stan gry istnieje tylko w pokoju; ruch przechodzi przez `Apply` gry, trafia do
+  dziennika w PostgreSQL i dopiero potem widzą go gracze. Ruch do nieaktualnej pozycji (numer) jest odrzucany.
+- **Pokój to aktor.** Prośby graczy, ruchy botów i upływ czasu idą przez jedną kolejkę (`Channel`) i jedną
+  pętlę — bez blokad. Wysyłka do klientów ma własną kolejkę, więc wolny klient nie wstrzymuje ruchów i zegarów.
+- **Ukryta informacja.** Każde miejsce dostaje własny widok (`IPlayerView`): kartę wziętą w ciemno widzi tylko
+  właściciel, reszta stołu i widzowie — jej rewers. Test własności: widok nie zmienia się, gdy tasujemy to,
+  czego obserwator nie widzi. Ziarno i hashe partii REST pokazuje dopiero po jej końcu.
+- **Boty** liczą poza pętlą, na widoku swojego miejsca, z ziarnem z partii i numeru ruchu — ten sam pokój
+  z tym samym ziarnem rozgrywa się identycznie. Bot z lobby ma limit iteracji, żeby nikt nie zamówił
+  nieskończonego MCTS na serwerze.
+- **Partia nie stoi.** Po upływie czasu na ruch albo gdy gracz rozłączy się na swoim ruchu, gra za niego bot.
+  Powrót z biletem miejsca (`Rejoin`) przywraca widok; gracz, który wrócił przed ruchem bota, gra sam.
+  Gdy dziennik kilka razy z rzędu nie przyjmie ruchu, partia jest porzucana zamiast ponawiać bez końca.
+- **REST:** `/api/games`, `/api/rooms`, `/api/matches/{id}` (ruchy i weryfikacja powtórki),
+  `/api/matches/{id}/frames/{n}` (widok widza po n ruchach — klatka odtwarzacza). Limit żądań na adres IP.
+
+Testy huba idą przez prawdziwe połączenia WebSocket z serwerem w pamięci (`WebApplicationFactory`) i
+PostgreSQL z Testcontainers; e2e: dwóch graczy i bot kończą partię Klejnotów, a powtórka z dziennika daje
+te same hashe. Logika pokoi ma osobne testy bez sieci, z fałszywym zegarem (`FakeTimeProvider`).
+
 ## Bot MCTS
 
 `MctsBot` to Monte Carlo Tree Search z wyborem UCT. Nie zna strategii żadnej gry — tylko zasady:
@@ -289,7 +325,7 @@ logicznych (5,1×). Skalowanie nie jest liniowe — ograniczają je rdzenie fizy
 
 ```bash
 dotnet test                 # jednostkowe, właściwości (FsCheck), statystyczne, siła botów, architektura,
-                            # integracyjne i e2e CLI na PostgreSQL (Testcontainers — potrzebny Docker)
+                            # integracyjne, hub SignalR i e2e na PostgreSQL (Testcontainers — potrzebny Docker)
 dotnet tool restore
 dotnet stryker              # mutation testing silnika, próg 90%
 dotnet stryker -f stryker-connectfour.json
@@ -299,6 +335,9 @@ dotnet stryker -f stryker-simulation.json
 dotnet stryker -f stryker-reporting.json
 dotnet stryker -f stryker-cli.json
 dotnet stryker -f stryker-persistence.json
+dotnet stryker -f stryker-catalog.json
+dotnet stryker -f stryker-multiplayer.json
+dotnet stryker -f stryker-api.json
 dotnet run -c Release --project benchmarks/BalanceLab.Benchmarks -- --filter '*'
 ```
 
@@ -307,8 +346,8 @@ Na Windowsie z Visual Studio 2022 Stryker może wybrać MSBuild bez .NET 10 — 
 
 ## Stack
 
-.NET 10, EF Core + PostgreSQL (Npgsql), System.CommandLine, System.Text.Json, xUnit, FsCheck, Testcontainers,
-NetArchTest, Stryker.NET, BenchmarkDotNet.
+.NET 10, ASP.NET Core + SignalR, EF Core + PostgreSQL (Npgsql), System.CommandLine, System.Text.Json, xUnit, FsCheck,
+Testcontainers, NetArchTest, Stryker.NET, BenchmarkDotNet.
 
 ## Licencja
 
