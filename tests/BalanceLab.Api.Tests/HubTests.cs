@@ -92,6 +92,58 @@ public sealed class HubTests(ApiFixture api)
         Assert.Equal(("klejnoty", 4, RoomStatus.Waiting), (created.Game, created.Seats.Length, created.Status));
     }
 
+    [Fact]
+    public async Task Connection_already_at_a_table_cannot_create_or_watch_another_room()
+    {
+        await using var ala = await api.ConnectAsync();
+        var host = await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
+
+        Assert.StartsWith("To polaczenie jest juz w pokoju", await ErrorAsync(ala, "CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala")), StringComparison.Ordinal);
+        Assert.StartsWith("To polaczenie jest juz w pokoju", await ErrorAsync(ala, "Watch", host.Room), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Failed_join_leaves_the_connection_free_for_another_room()
+    {
+        await using var ala = await api.ConnectAsync();
+        await using var ola = await api.ConnectAsync();
+        await using var iza = await api.ConnectAsync();
+        var full = await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
+        await ola.Hub.InvokeAsync<SeatTicket>("JoinRoom", full.Room, "Ola");
+        await using var eva = await api.ConnectAsync();
+        var open = await eva.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Eva"));
+
+        Assert.Equal("Brak wolnych miejsc.", await ErrorAsync(iza, "JoinRoom", full.Room, "Iza"));
+        var seat = await iza.Hub.InvokeAsync<SeatTicket>("JoinRoom", open.Room, "Iza");
+
+        Assert.Equal((open.Room, 1), (seat.Room, seat.Seat));
+    }
+
+    [Fact]
+    public async Task Spectator_gets_the_room_at_once_and_only_from_the_watched_room()
+    {
+        await using var ala = await api.ConnectAsync();
+        await using var ola = await api.ConnectAsync();
+        await using var watcher = await api.ConnectAsync();
+        var watched = await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
+        var other = await ola.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ola"));
+
+        await watcher.Hub.InvokeAsync<TableView?>("Watch", watched.Room);
+        Assert.Equal(watched.Room, (await watcher.WaitAsync(() => watcher.Rooms is [var first, ..] ? first : null)).Id);
+
+        await ola.Hub.InvokeAsync("AddBot", 1, "random");
+        await ola.Hub.InvokeAsync("Start");
+        await ola.Hub.InvokeAsync("MakeMove", 0, "3");
+        await ala.Hub.InvokeAsync("AddBot", 1, "random");
+        await ala.Hub.InvokeAsync("Start");
+        await watcher.WaitAsync(() => watcher.Views.FirstOrDefault(v => v.Moves == 0));
+        await ola.WaitAsync(() => ola.Moves.FirstOrDefault(m => m.Number == 2));
+
+        Assert.All(watcher.Views, v => Assert.Equal(watched.Room, v.Room));
+        Assert.All(watcher.Rooms, r => Assert.Equal(watched.Room, r.Id));
+        _ = other;
+    }
+
     private static async Task<string> ErrorAsync(Player player, string method, params object?[] args) =>
         (await Assert.ThrowsAsync<HubException>(() => player.Hub.InvokeCoreAsync(method, args))).Message
             .Replace("An unexpected error occurred invoking '" + method + "' on the server. HubException: ", "", StringComparison.Ordinal);

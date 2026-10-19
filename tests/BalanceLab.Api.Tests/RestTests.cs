@@ -72,4 +72,26 @@ public sealed class RestTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("po 3 ruchach", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Journal_that_no_longer_matches_the_rules_is_unprocessable()
+    {
+        await using var ala = await api.ConnectAsync();
+        await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
+        await ala.Hub.InvokeAsync("AddBot", 1, "random");
+        await ala.Hub.InvokeAsync("Start");
+        await ala.Hub.InvokeAsync("MakeMove", 0, "3");
+        var room = await ala.RoomAsync(r => r.Moves == 2);
+
+        // Ruch w dzienniku podmieniony z pominieciem triggerow: tak wyglada uszkodzenie albo zmiana kodeka gry.
+        await ApiFixture.ExecuteAsync(api.ConnectionString,
+            $"ALTER TABLE match_moves DISABLE TRIGGER USER; UPDATE match_moves SET move = 'x' WHERE match_id = '{room.MatchId}' AND seq = 1; ALTER TABLE match_moves ENABLE TRIGGER USER;");
+        var http = api.Http();
+        var match = await http.GetAsync($"/api/matches/{room.MatchId}");
+        var frame = await http.GetAsync($"/api/matches/{room.MatchId}/frames/2");
+
+        Assert.Equal((HttpStatusCode.UnprocessableEntity, HttpStatusCode.UnprocessableEntity), (match.StatusCode, frame.StatusCode));
+        Assert.Contains("Dziennik partii nie zgadza sie z zasadami gry", await match.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Contains("Dziennik partii nie zgadza sie z zasadami gry", await frame.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
 }
