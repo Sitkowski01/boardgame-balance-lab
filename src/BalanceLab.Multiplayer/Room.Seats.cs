@@ -28,7 +28,16 @@ internal sealed partial class Room<TState, TMove, TGame>
     {
         var seat = SeatOf(token);
         _seats[seat].Connections.Add(connection);
-        PublishRoom();
+        // Wrocil na swoim ruchu, zanim minal mu czas: bot, ktory gral za rozlaczonego, juz nie zagra.
+        if (_status == RoomStatus.Playing && seat == _rules.CurrentPlayer(_state) && _botTurn == _moves)
+        {
+            CancelBot();
+            PublishAll();
+        }
+        else
+        {
+            PublishRoom();
+        }
 
         return new SeatTicket(Id, seat, token);
     });
@@ -84,6 +93,12 @@ internal sealed partial class Room<TState, TMove, TGame>
         }
 
         _seats[left].Connections.Remove(connection);
+        // Rozlaczony na swoim ruchu: gra za niego bot, zeby partia nie stala. Wroci przed jego ruchem — gra sam.
+        if (_status == RoomStatus.Playing && left == _rules.CurrentPlayer(_state) && _seats[left].Connections.Count == 0)
+        {
+            ScheduleBot(left, _options.BotDelay);
+        }
+
         PublishRoom();
         return true;
     });

@@ -49,7 +49,7 @@ internal sealed partial class Room<TState, TMove, TGame>
             s.Kind,
             s.Name,
             s.Connections.Count > 0,
-            Autopilot: false));
+            Autopilot: i == toMove && s.Kind == SeatKind.Human && _botTurn == _moves));
         return new RoomInfo(Id, _version, _definition.Key, _rules.Name, _variant, _status, _host, [.. seats], _moves, toMove, null, _match, _scores, _createdAt);
     }
 }

@@ -94,18 +94,27 @@ internal sealed partial class Room<TState, TMove, TGame>
 
         _state = next;
         _moves++;
+        _recordFailures = 0;
         var played = new MovePlayed(Id, _moves, seat, _rules.EncodeMove(move), byBot);
         Send(n => n.MovePlayedAsync(played));
         BeginTurn();
     }
 
-    /// <summary>Nowa pozycja: koniec partii albo ruch kolejnego gracza.</summary>
+    /// <summary>Nowa pozycja: koniec partii albo ruch kolejnego gracza (bot liczy sam, czlowiek dostaje legalne ruchy).</summary>
     private void BeginTurn()
     {
         if (_rules.IsTerminal(_state))
         {
             _status = RoomStatus.Finished;
             _scores = _rules.Scores(_state);
+            PublishAll();
+            return;
+        }
+
+        var seat = _rules.CurrentPlayer(_state);
+        if (_seats[seat].Kind == SeatKind.Bot || _seats[seat].Connections.Count == 0)
+        {
+            ScheduleBot(seat, _options.BotDelay);
         }
 
         PublishAll();
