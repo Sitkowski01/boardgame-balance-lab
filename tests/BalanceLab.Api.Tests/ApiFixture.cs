@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Testcontainers.PostgreSql;
 
 namespace BalanceLab.Api.Tests;
@@ -37,12 +38,33 @@ public sealed class ApiFixture : IAsyncLifetime
 
     public HttpClient Http() => Factory.CreateClient();
 
+    /// <summary>Polaczenie z baza testowa (do psucia dziennika surowym SQL-em).</summary>
+    public string ConnectionString => _database.GetConnectionString();
+
+    /// <summary>Nowa, pusta baza w tym samym kontenerze (bez migracji).</summary>
+    public async Task<string> CreateDatabaseAsync()
+    {
+        var name = $"api_{Guid.NewGuid():N}";
+        await ExecuteAsync(ConnectionString, $"CREATE DATABASE {name}");
+        return new NpgsqlConnectionStringBuilder(ConnectionString) { Database = name }.ConnectionString;
+    }
+
+    public static async Task ExecuteAsync(string connectionString, string sql)
+    {
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(sql, connection);
+        await command.ExecuteNonQueryAsync();
+    }
+
     public Lobby Lobby => Factory.Services.GetRequiredService<Lobby>();
 
     /// <summary>Klient SignalR po WebSocket, tak jak przegladarka (bez negocjacji, wprost do serwera testowego).</summary>
-    public async Task<Player> ConnectAsync()
+    public Task<Player> ConnectAsync() => ConnectAsync(Factory);
+
+    public static async Task<Player> ConnectAsync(WebApplicationFactory<Program> factory)
     {
-        var server = Factory.Server;
+        var server = factory.Server;
         var hub = new HubConnectionBuilder()
             .WithUrl(new Uri(server.BaseAddress, "hubs/game"), o =>
             {

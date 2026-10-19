@@ -5,4 +5,9 @@
     <ProjectReference Include="..\BalanceLab.Multiplayer\BalanceLab.Multiplayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Test sprzatania lobby w tle podstawia zegar. -->
+    <InternalsVisibleTo Include="BalanceLab.Api.Tests" />
+  </ItemGroup>
+
 </Project>

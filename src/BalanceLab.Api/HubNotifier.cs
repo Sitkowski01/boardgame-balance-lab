@@ -20,7 +20,6 @@ internal sealed class RoomErrorFilter : IHubFilter
 {
     public async ValueTask<object?> InvokeMethodAsync(HubInvocationContext invocationContext, Func<HubInvocationContext, ValueTask<object?>> next)
     {
-        ArgumentNullException.ThrowIfNull(next);
         try
         {
             return await next(invocationContext);

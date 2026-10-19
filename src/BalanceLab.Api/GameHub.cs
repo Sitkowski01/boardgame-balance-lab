@@ -31,7 +31,6 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
 
     public async Task<SeatTicket> CreateRoom(CreateRoomArgs args)
     {
-        ArgumentNullException.ThrowIfNull(args);
         EnsureUnbound();
         var ticket = await lobby.CreateAsync(new RoomRequest(args.Game, args.Seats, args.Variant), args.Name, Context.ConnectionId);
         await BindAsync(lobby.Find(ticket.Room), ticket);
@@ -113,8 +112,6 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
                 // Pokoj juz zniknal z lobby — nie ma kogo powiadamiac.
             }
         }
-
-        await base.OnDisconnectedAsync(exception);
     }
 
     private async Task BindAsync(IRoom room, SeatTicket ticket)
