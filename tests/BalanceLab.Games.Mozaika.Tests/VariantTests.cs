@@ -1,3 +1,5 @@
+using BalanceLab.Engine;
+
 namespace BalanceLab.Games.Mozaika.Tests;
 
 public sealed class VariantTests
@@ -58,5 +60,14 @@ public sealed class VariantTests
         Assert.Throws<ArgumentOutOfRangeException>(() => v.WithBonuses(0, 0, -1));
         Assert.Throws<ArgumentException>(() => v.Named(" "));
         Assert.Throws<ArgumentNullException>(() => MozaikaVariant.Parse(null!));
+    }
+
+    [Fact]
+    public void Fewer_tiles_change_the_bag_but_not_the_rules()
+    {
+        var state = new MozaikaGame(MozaikaVariant.Parse("tiles=8")).Setup(new GameSetup(4, 1));
+
+        Assert.Equal(40 - 36, state.Bag.Total);
+        Assert.Equal(Tiles.Each(8), Positions.AllTiles(state));
     }
 }
