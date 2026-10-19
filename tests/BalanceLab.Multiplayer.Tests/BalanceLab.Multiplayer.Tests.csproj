@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
+  <!-- Pokoje bez sieci i bez bazy: zegar, zapis i odbiorcy zmian sa podstawione w testach. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BalanceLab.Multiplayer\BalanceLab.Multiplayer.csproj" />
+  </ItemGroup>
+
+</Project>
