@@ -111,6 +111,27 @@ public sealed class LobbyTests
     }
 
     [Fact]
+    public async Task Waiting_room_disappears_only_when_nobody_is_there_for_long()
+    {
+        await using var table = new Table(new RoomOptions { KeepIdle = TimeSpan.FromMinutes(30), BotDelay = TimeSpan.Zero });
+        var (room, _) = await table.CreateAsync();
+
+        table.Clock.Advance(TimeSpan.FromMinutes(31));
+        await table.Lobby.PruneAsync();
+        Assert.Single(table.Lobby.Rooms);
+
+        await room.DisconnectAsync("c-ala");
+        table.Clock.Advance(TimeSpan.FromMinutes(29));
+        await table.Lobby.PruneAsync();
+        Assert.Single(table.Lobby.Rooms);
+
+        table.Clock.Advance(TimeSpan.FromMinutes(1));
+        await table.Lobby.PruneAsync();
+        Assert.Empty(table.Lobby.Rooms);
+        await Assert.ThrowsAsync<RoomException>(() => room.JoinAsync("Ola", "c-ola"));
+    }
+
+    [Fact]
     public async Task Waiting_room_cannot_hold_a_place_in_the_lobby_forever()
     {
         await using var table = new Table(new RoomOptions { KeepWaiting = TimeSpan.FromHours(2), KeepIdle = TimeSpan.FromHours(5), BotDelay = TimeSpan.Zero });

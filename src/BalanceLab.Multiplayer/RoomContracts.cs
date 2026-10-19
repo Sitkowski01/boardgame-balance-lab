@@ -110,4 +110,11 @@ public interface IRoom : IAsyncDisposable
     DateTimeOffset LastActivity { get; }
 
     Task<SeatTicket> JoinAsync(string name, string connection);
+
+    /// <summary>Powrot na swoje miejsce z biletem (np. po zerwaniu polaczenia albo z drugiej karty).</summary>
+    Task<SeatTicket> RejoinAsync(string token, string connection);
+
+    Task AddBotAsync(string token, int seat, string bot);
+
+    Task DisconnectAsync(string connection);
 }
