@@ -72,6 +72,15 @@ public sealed class TilesAndWallTests
     }
 
     [Fact]
+    public void Edges_of_the_wall_do_not_wrap_around()
+    {
+        Assert.Equal(1, Wall.PlacementPoints(WallOf((0, 4), (1, 4)), 1, 0));
+        Assert.Equal(1, Wall.PlacementPoints(WallOf((4, 0)), 0, 0));
+        Assert.Equal(2, Wall.PlacementPoints(WallOf((4, 4)), 4, 3));
+        Assert.Equal(2, Wall.PlacementPoints(WallOf((3, 4)), 4, 4));
+    }
+
+    [Fact]
     public void Wall_counts_rows_columns_and_colors()
     {
         var row = WallOf([.. Enumerable.Range(0, 5).Select(c => (2, c))]);
