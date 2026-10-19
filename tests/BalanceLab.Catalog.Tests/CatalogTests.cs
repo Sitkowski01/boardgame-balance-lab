@@ -53,6 +53,17 @@ public sealed class CatalogTests
     }
 
     [Fact]
+    public void Sheet_comes_from_the_rules_of_the_variant()
+    {
+        var klejnoty = GameCatalog.Find("klejnoty");
+
+        Assert.Equal(15, Assert.IsType<KlejnotySheet>(klejnoty.Sheet(null)).WinningPoints);
+        Assert.Equal(9, Assert.IsType<KlejnotySheet>(klejnoty.Sheet("win=9")).WinningPoints);
+        Assert.Throws<FormatException>(() => klejnoty.Sheet("win=abc"));
+        Assert.Null(GameCatalog.Find("connectfour").Sheet(null));
+    }
+
+    [Fact]
     public void Game_without_variants_rejects_one()
     {
         var connectFour = (GameDefinition<ConnectFourState, ConnectFourMove, ConnectFourGame>)GameCatalog.Find("connectfour").Accept(new Definition());

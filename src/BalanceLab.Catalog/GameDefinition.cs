@@ -20,6 +20,10 @@ public interface IGameDefinition
 
     bool HasVariants { get; }
 
+    /// <summary>Stale dane zasad dla ekranu (np. tabela kart wariantu); null, gdy gra ich nie potrzebuje.</summary>
+    /// <exception cref="FormatException">Zly wariant albo gra nie ma wariantow.</exception>
+    object? Sheet(string? variant);
+
     TResult Accept<TResult>(IGameVisitor<TResult> visitor);
 }
 
@@ -70,6 +74,8 @@ public sealed class GameDefinition<TState, TMove, TGame>(
         (_, null) => throw new FormatException($"{game.Name} nie ma wariantow zasad."),
         _ => variants(variant),
     };
+
+    public object? Sheet(string? variant) => Rules(variant) is IRulesSheet<object> rules ? rules.Sheet : null;
 
     /// <summary>Bot z opisu (np. <c>mcts:500</c>); zly opis to <see cref="FormatException"/> od razu, nie w trakcie partii.</summary>
     /// <param name="maxIterations">Limit iteracji MCTS/ISMCTS; null = bez limitu.</param>
