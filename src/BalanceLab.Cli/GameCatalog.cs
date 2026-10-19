@@ -1,3 +1,4 @@
+using BalanceLab.Catalog;
 using BalanceLab.Engine;
 using BalanceLab.Games.ConnectFour;
 using BalanceLab.Games.Klejnoty;
@@ -48,10 +49,6 @@ internal interface IGameEntry
     /// <summary>Partia z dziennika, powtorzona i sprawdzona; <paramref name="at"/> — stan po tylu ruchach.</summary>
     Task<ReplayedMatch> ReplayAsync(JournalDb db, Guid match, int? at);
 }
-
-/// <summary>Oceny pozycji dla bota greedy: domyslna i nazwane profile strategii.</summary>
-internal sealed record GreedyProfiles<TState>(IEvaluator<TState> Default, IReadOnlyDictionary<string, IEvaluator<TState>> Named)
-    where TState : notnull;
 
 /// <param name="key">Nazwa gry w linii polecen i w dzienniku partii.</param>
 /// <param name="game">Gra razem z kodekami ruchow i stanow (do dziennika).</param>

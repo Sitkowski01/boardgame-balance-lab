@@ -1,4 +1,5 @@
 using System.CommandLine;
+using BalanceLab.Catalog;
 using BalanceLab.Games.Klejnoty;
 using BalanceLab.Simulation;
 

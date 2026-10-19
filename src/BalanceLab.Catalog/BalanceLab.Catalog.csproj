@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Jedyne miejsce, ktore zna konkretne gry i boty: sklada je dla CLI i serwera gry. -->
+  <ItemGroup>
+    <ProjectReference Include="..\BalanceLab.Simulation\BalanceLab.Simulation.csproj" />
+    <ProjectReference Include="..\BalanceLab.Bots\BalanceLab.Bots.csproj" />
+    <ProjectReference Include="..\BalanceLab.Games.ConnectFour\BalanceLab.Games.ConnectFour.csproj" />
+    <ProjectReference Include="..\BalanceLab.Games.Klejnoty\BalanceLab.Games.Klejnoty.csproj" />
+  </ItemGroup>
+
+</Project>

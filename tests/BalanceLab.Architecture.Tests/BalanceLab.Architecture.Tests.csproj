@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\src\BalanceLab.Reporting\BalanceLab.Reporting.csproj" />
     <ProjectReference Include="..\..\src\BalanceLab.Cli\BalanceLab.Cli.csproj" />
     <ProjectReference Include="..\..\src\BalanceLab.Persistence\BalanceLab.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\BalanceLab.Catalog\BalanceLab.Catalog.csproj" />
   </ItemGroup>
 
 </Project>

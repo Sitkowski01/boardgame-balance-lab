@@ -3,12 +3,12 @@ using BalanceLab.Bots;
 using BalanceLab.Engine;
 using BalanceLab.Simulation;
 
-namespace BalanceLab.Cli;
+namespace BalanceLab.Catalog;
 
 /// <summary>
-/// Bot z linii polecen: <c>random</c>, <c>greedy[:PROFIL]</c>, <c>mcts[:ITERACJE]</c> albo <c>ismcts[:ITERACJE]</c>.
+/// Bot opisany tekstem (linia polecen, lobby gry): <c>random</c>, <c>greedy[:PROFIL]</c>, <c>mcts[:ITERACJE]</c> albo <c>ismcts[:ITERACJE]</c>.
 /// </summary>
-internal static class BotSpec
+public static class BotSpec
 {
     public const string Help = "random | greedy | greedy:PROFIL | mcts | mcts:ITERACJE | ismcts | ismcts:ITERACJE (np. mcts:500, greedy:silnik)";
 

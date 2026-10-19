@@ -1,3 +1,4 @@
+using BalanceLab.Catalog;
 using System.Text.Json;
 
 namespace BalanceLab.Cli.Tests;
