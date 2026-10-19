@@ -1,0 +1,143 @@
+/* Mozaika: warsztaty, srodek stolu i plansze graczy (rzedy wzoru, sciana, podloga). */
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid rgb(0 0 0 / 0.25);
+  color: #fff;
+}
+.tile-0 {
+  background: #1f9e94;
+}
+.tile-1 {
+  background: #d4952a;
+}
+.tile-2 {
+  background: #b3243b;
+}
+.tile-3 {
+  background: #4a4c50;
+}
+.tile-4 {
+  background: #efe6cf;
+  color: #222;
+}
+.tile.faint {
+  opacity: 0.22;
+}
+
+.mozaika {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+.mozaika .table {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  min-width: 84px;
+  min-height: 40px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  justify-content: center;
+}
+.source.center {
+  border-radius: 8px;
+  border-style: dashed;
+  flex: 1 1 160px;
+}
+.source button {
+  padding: 2px;
+  border-radius: 6px;
+}
+.source button.picked {
+  outline: 3px solid var(--accent);
+}
+.marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+}
+.mozaika-player {
+  flex: 1 1 300px;
+  padding: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.mozaika-player.to-move {
+  border-color: var(--accent);
+}
+.mozaika-player header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mozaika-player .points {
+  margin-left: auto;
+  font-weight: 700;
+}
+.mozaika-boards {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0;
+}
+.lines,
+.wall {
+  display: grid;
+  gap: 3px;
+}
+.line {
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 26px;
+}
+.slot {
+  width: 24px;
+  height: 24px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+.wall-row {
+  display: flex;
+  gap: 3px;
+}
+.floor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  min-height: 28px;
+}
+.place {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  .mozaika-boards {
+    flex-direction: column;
+  }
+}
