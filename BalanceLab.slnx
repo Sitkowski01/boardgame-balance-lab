@@ -16,6 +16,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/BalanceLab.Architecture.Tests/BalanceLab.Architecture.Tests.csproj" />
     <Project Path="tests/BalanceLab.Bots.Tests/BalanceLab.Bots.Tests.csproj" />
+    <Project Path="tests/BalanceLab.Catalog.Tests/BalanceLab.Catalog.Tests.csproj" />
     <Project Path="tests/BalanceLab.Cli.Tests/BalanceLab.Cli.Tests.csproj" />
     <Project Path="tests/BalanceLab.Engine.Tests/BalanceLab.Engine.Tests.csproj" />
     <Project Path="tests/BalanceLab.Games.ConnectFour.Tests/BalanceLab.Games.ConnectFour.Tests.csproj" />

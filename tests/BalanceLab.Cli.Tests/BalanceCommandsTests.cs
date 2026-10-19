@@ -1,4 +1,3 @@
-using BalanceLab.Catalog;
 using System.Text.Json;
 
 namespace BalanceLab.Cli.Tests;
@@ -137,17 +136,6 @@ public sealed class BalanceCommandsTests : IDisposable
         var four = Rerun(File("four.json"), [.. args, "--threads", "4"]);
 
         Assert.Equal(one, four);
-    }
-
-
-    [Fact]
-    public void Bot_names_choose_the_matching_search()
-    {
-        var mcts = BotSpec.Parse<Games.Klejnoty.KlejnotyState, Games.Klejnoty.KlejnotyMove>("mcts:5", "m", null).Create(1);
-        var ismcts = BotSpec.Parse<Games.Klejnoty.KlejnotyState, Games.Klejnoty.KlejnotyMove>("ISMCTS:5", "i", null).Create(1);
-
-        Assert.IsType<Bots.MctsBot<Games.Klejnoty.KlejnotyState, Games.Klejnoty.KlejnotyMove>>(mcts);
-        Assert.IsType<Bots.IsmctsBot<Games.Klejnoty.KlejnotyState, Games.Klejnoty.KlejnotyMove>>(ismcts);
     }
 
     [Fact]
