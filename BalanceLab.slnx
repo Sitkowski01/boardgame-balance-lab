@@ -8,6 +8,7 @@
     <Project Path="src/BalanceLab.Catalog/BalanceLab.Catalog.csproj" />
     <Project Path="src/BalanceLab.Cli/BalanceLab.Cli.csproj" />
     <Project Path="src/BalanceLab.Engine/BalanceLab.Engine.csproj" />
+    <Project Path="src/BalanceLab.Experiments/BalanceLab.Experiments.csproj" />
     <Project Path="src/BalanceLab.Games.ConnectFour/BalanceLab.Games.ConnectFour.csproj" />
     <Project Path="src/BalanceLab.Games.Klejnoty/BalanceLab.Games.Klejnoty.csproj" />
     <Project Path="src/BalanceLab.Games.Mozaika/BalanceLab.Games.Mozaika.csproj" />

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Eksperymenty balansu na zamowienie (turniej, liga, "co jesli") z katalogu gier; o sieci nic nie wiedza. -->
+  <ItemGroup>
+    <ProjectReference Include="..\BalanceLab.Catalog\BalanceLab.Catalog.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BalanceLab.Experiments.Tests" />
+  </ItemGroup>
+
+</Project>
