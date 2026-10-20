@@ -20,6 +20,12 @@ public interface IGameDefinition
 
     bool HasVariants { get; }
 
+    /// <summary>Skladnia wariantu zasad do podpowiedzi (np. "win=N; ..."); null, gdy gra nie ma wariantow.</summary>
+    string? VariantSyntax { get; }
+
+    /// <summary>Nazwane profile bota greedy (np. "silnik"), posortowane; pusta lista, gdy gra nie ma oceny pozycji.</summary>
+    IReadOnlyList<string> Profiles { get; }
+
     /// <summary>Stale dane zasad dla ekranu (np. tabela kart wariantu); null, gdy gra ich nie potrzebuje.</summary>
     /// <exception cref="FormatException">Zly wariant albo gra nie ma wariantow.</exception>
     object? Sheet(string? variant);
@@ -45,11 +51,13 @@ public sealed record GreedyProfiles<TState>(IEvaluator<TState> Default, IReadOnl
 /// <param name="game">Zasady podstawowe.</param>
 /// <param name="profiles">Oceny pozycji dla bota greedy, jesli gra je ma.</param>
 /// <param name="variants">Tworzy gre z wariantem zasad z tekstu, jesli gra ma warianty.</param>
+/// <param name="variantSyntax">Skladnia wariantu do podpowiedzi w CLI i na ekranie.</param>
 public sealed class GameDefinition<TState, TMove, TGame>(
     string key,
     TGame game,
     GreedyProfiles<TState>? profiles = null,
-    Func<string, TGame>? variants = null) : IGameDefinition
+    Func<string, TGame>? variants = null,
+    string? variantSyntax = null) : IGameDefinition
     where TState : notnull
     where TMove : notnull
     where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>, IPlayerView<TState, object>
@@ -65,6 +73,10 @@ public sealed class GameDefinition<TState, TMove, TGame>(
     public int MaxPlayers => game.MaxPlayers;
 
     public bool HasVariants => variants is not null;
+
+    public string? VariantSyntax => variants is null ? null : variantSyntax;
+
+    public IReadOnlyList<string> Profiles { get; } = profiles is null ? [] : [.. profiles.Named.Keys.Order(StringComparer.Ordinal)];
 
     /// <summary>Zasady dla wariantu (null = podstawowe).</summary>
     /// <exception cref="FormatException">Gra nie ma wariantow albo tekst nie jest poprawnym wariantem.</exception>

@@ -70,8 +70,9 @@ public static class BotSpec
             : int.TryParse(iterations, NumberStyles.None, CultureInfo.InvariantCulture, out var n) && n > 0
                 ? new MctsOptions { Iterations = n }
                 : throw Unknown(spec);
-        return options.Iterations > max
-            ? throw new FormatException($"Bot '{spec}': najwyzej {max} iteracji.")
+        // Bez liczby bot liczy domyslne 1000 iteracji — tez musi sie zmiescic w limicie.
+        return (options.Iterations ?? MctsOptions.DefaultIterations) > max
+            ? throw new FormatException($"Bot '{spec}': najwyzej {max} iteracji{(iterations is null ? $" (bez liczby po dwukropku liczy {MctsOptions.DefaultIterations})" : "")}.")
             : options;
     }
 

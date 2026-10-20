@@ -33,6 +33,10 @@ public sealed class CatalogTests
 
         Assert.Equal(("klejnoty", "Klejnoty", 2, 4, true), (klejnoty.Key, klejnoty.Name, klejnoty.MinPlayers, klejnoty.MaxPlayers, klejnoty.HasVariants));
         Assert.Equal(("connectfour", "ConnectFour", 2, 2, false), (connectFour.Key, connectFour.Name, connectFour.MinPlayers, connectFour.MaxPlayers, connectFour.HasVariants));
+        Assert.Equal(KlejnotyVariant.Syntax, klejnoty.VariantSyntax);
+        Assert.Null(connectFour.VariantSyntax);
+        Assert.Equal(["patroni", "punkty", "silnik", "wyrownany", "zetony"], klejnoty.Profiles);
+        Assert.Empty(connectFour.Profiles);
     }
 
     [Fact]
@@ -71,6 +75,8 @@ public sealed class CatalogTests
         var mozaika = (GameDefinition<MozaikaState, MozaikaMove, MozaikaGame>)GameCatalog.Find("mozaika").Accept(new Definition());
 
         Assert.Equal(("mozaika", "Mozaika", 2, 4, true), (mozaika.Key, mozaika.Name, mozaika.MinPlayers, mozaika.MaxPlayers, mozaika.HasVariants));
+        Assert.Equal(MozaikaVariant.Syntax, mozaika.VariantSyntax);
+        Assert.Equal(["kolory", "kolumny", "ostrozny", "wyrownany"], mozaika.Profiles);
         Assert.Equal("Mozaika (column=5)", mozaika.Rules("column=5").Name);
         Assert.Equal(5, Assert.IsType<MozaikaSheet>(mozaika.Sheet("column=5")).ColumnBonus);
         Assert.IsType<GreedyBot<MozaikaState, MozaikaMove>>(mozaika.Bot("greedy:ostrozny", "g").Create(1));
@@ -108,6 +114,7 @@ public sealed class CatalogTests
         Assert.Contains("potrzebuje oceny pozycji", Assert.Throws<FormatException>(() => connectFour.Bot("greedy", "g")).Message, StringComparison.Ordinal);
         Assert.Contains("Nieznany profil 'xyz'", Assert.Throws<FormatException>(() => Klejnoty().Bot("greedy:xyz", "g")).Message, StringComparison.Ordinal);
         Assert.Equal("Bot 'ismcts:101': najwyzej 100 iteracji.", Assert.Throws<FormatException>(() => Klejnoty().Bot("ismcts:101", "m", 100)).Message);
+        Assert.Equal("Bot 'mcts': najwyzej 999 iteracji (bez liczby po dwukropku liczy 1000).", Assert.Throws<FormatException>(() => Klejnoty().Bot("mcts", "m", 999)).Message);
         Assert.Equal("m", Klejnoty().Bot("ismcts:100", "m", 100).Name);
         Assert.Equal("m", Klejnoty().Bot("mcts", "m", 1000).Name);
         Assert.Contains("Nieznany bot 'mcts:0'", Assert.Throws<FormatException>(() => Klejnoty().Bot("mcts:0", "m")).Message, StringComparison.Ordinal);

@@ -17,14 +17,16 @@ public static class GameCatalog
             new GreedyProfiles<KlejnotyState>(
                 new KlejnotyEvaluator(),
                 KlejnotyWeights.Profiles.ToDictionary(p => p.Key, p => (IEvaluator<KlejnotyState>)new KlejnotyEvaluator(p.Value))),
-            text => new KlejnotyGame(KlejnotyVariant.Parse(text))),
+            text => new KlejnotyGame(KlejnotyVariant.Parse(text)),
+            KlejnotyVariant.Syntax),
         ["mozaika"] = new GameDefinition<MozaikaState, MozaikaMove, MozaikaGame>(
             "mozaika",
             new MozaikaGame(),
             new GreedyProfiles<MozaikaState>(
                 new MozaikaEvaluator(),
                 MozaikaWeights.Profiles.ToDictionary(p => p.Key, p => (IEvaluator<MozaikaState>)new MozaikaEvaluator(p.Value))),
-            text => new MozaikaGame(MozaikaVariant.Parse(text))),
+            text => new MozaikaGame(MozaikaVariant.Parse(text)),
+            MozaikaVariant.Syntax),
     };
 
     public static IReadOnlyCollection<string> Names => Games.Keys;

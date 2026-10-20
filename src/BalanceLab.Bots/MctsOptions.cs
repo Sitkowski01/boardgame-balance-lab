@@ -5,6 +5,9 @@ namespace BalanceLab.Bots;
 /// <summary>Budzet i parametry przeszukiwania MCTS.</summary>
 public sealed record MctsOptions
 {
+    /// <summary>Iteracje, gdy nie podano ani <see cref="Iterations"/>, ani <see cref="TimeLimit"/>.</summary>
+    public const int DefaultIterations = 1_000;
+
     /// <summary>
     /// Gorny limit iteracji (jedna iteracja = wybor, rozwiniecie, symulacja, propagacja).
     /// Bez podanej wartosci: 1000, a przy samym <see cref="TimeLimit"/> — bez limitu iteracji.
@@ -23,7 +26,7 @@ public sealed record MctsOptions
     /// <summary>Bezpiecznik na symulacje gier, ktore moga sie zapetlic; taka symulacja liczy sie jak remis.</summary>
     public int MaxPlayoutMoves { get; init; } = 1_000;
 
-    internal int IterationLimit => Iterations ?? (TimeLimit is null ? 1_000 : int.MaxValue);
+    internal int IterationLimit => Iterations ?? (TimeLimit is null ? DefaultIterations : int.MaxValue);
 
     internal void Validate()
     {
