@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/rest";
 import { experiment, fakeLab } from "../test/fakeLab";
-import { games, tournament } from "../test/labReports";
-import { LabPage } from "./LabPage";
-import { PollEvery } from "./useExperiment";
+import { games, league, tournament } from "../test/labReports";
+import { LabPage, RecentEvery } from "./LabPage";
+import { PollEvery, RetryEvery } from "./useExperiment";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -160,5 +160,119 @@ describe("LabPage", () => {
     other.get.mockRejectedValueOnce(new Error(""));
     page(other, id);
     expect(await screen.findByText("Nie udało się pobrać eksperymentu. Ponawiam…")).toBeInTheDocument();
+  });
+
+  it("keeps the last progress through a network error and carries on", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const client = fakeLab(experiment({ status: "Running", done: 40 }));
+    page(client, id);
+    await screen.findByRole("progressbar");
+
+    client.get.mockRejectedValueOnce(new ApiError("Serwer odpowiedzial 429.", 429));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PollEvery);
+    });
+    expect(screen.getByText("Serwer odpowiedzial 429. Ponawiam…")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "40");
+
+    client.get.mockResolvedValue(experiment({ status: "Done", done: 100, result: tournament() }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RetryEvery);
+    });
+    expect(await screen.findByRole("region", { name: "Wyniki turnieju" })).toBeInTheDocument();
+    expect(screen.queryByText(/Ponawiam/u)).not.toBeInTheDocument();
+  });
+
+  it("refreshes the recent list while something on it is running", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const client = fakeLab();
+    client.recent.mockResolvedValueOnce([experiment({ status: "Running" })]).mockResolvedValue([experiment({ status: "Done" })]);
+    page(client);
+
+    const recent = await screen.findByRole("region", { name: "Ostatnie eksperymenty" });
+    expect(recent).toHaveTextContent("liczy się");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RecentEvery);
+    });
+    expect(recent).toHaveTextContent("gotowe");
+    const calls = client.recent.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RecentEvery * 3);
+    });
+    expect(client.recent.mock.calls.length).toBe(calls); // nic sie juz nie liczy: bez odpytywania
+  });
+
+  it("takes the limits from the server and shows the work of the experiment", async () => {
+    const client = fakeLab();
+    client.limits.mockResolvedValue({ maxGames: 50, maxBots: 3, maxBotIterations: 40, maxWork: 1000 });
+    page(client);
+
+    const form = await screen.findByRole("form", { name: "Nowy eksperyment" });
+    expect(await within(form).findByText("Liczba partii: od 1 do 50.")).toBeInTheDocument();
+    expect(within(form).getByRole("option", { name: "ISMCTS 40" })).toBeInTheDocument();
+    expect(within(form).getByLabelText("Praca")).toHaveTextContent("Praca: 5 100 z 1 000 jednostek");
+  });
+
+  it("keeps default limits when the server does not give them", async () => {
+    const client = fakeLab();
+    client.limits.mockRejectedValue(new Error("siec"));
+    page(client);
+
+    const form = await screen.findByRole("form", { name: "Nowy eksperyment" });
+    expect(within(form).getByRole("option", { name: "ISMCTS 200" })).toBeInTheDocument();
+  });
+
+  it("shows a dash for work that cannot be counted yet", async () => {
+    const { user } = page();
+    const form = await screen.findByRole("form", { name: "Nowy eksperyment" });
+
+    await user.clear(within(form).getByLabelText("Partie"));
+    await user.type(within(form).getByLabelText("Partie"), "x");
+
+    expect(within(form).getByLabelText("Praca")).toHaveTextContent("Praca: — z");
+  });
+
+  it("lists recent experiments with their status and marks the open one", async () => {
+    const client = fakeLab(experiment({ status: "Done", result: league(), request: { ...experiment().request, kind: "League" } }));
+    client.recent.mockResolvedValue([
+      experiment({ status: "Done", request: { ...experiment().request, kind: "League" } }),
+      experiment({
+        id: "00000000-0000-0000-0000-0000000000e2",
+        status: "Cancelled",
+        request: { ...experiment().request, variant: "row=3" },
+      }),
+    ]);
+    const { navigate, user } = page(client, id);
+
+    const recent = await screen.findByRole("region", { name: "Ostatnie eksperymenty" });
+    const items = within(recent).getAllByRole("listitem");
+    expect(items[0]).toHaveClass("current");
+    expect(items[0]).toHaveTextContent("Liga: Mozaika, greedy · random");
+    expect(items[1]).toHaveTextContent("anulowany");
+    await user.click(within(items[1] ?? recent).getByRole("link"));
+    expect(navigate).toHaveBeenCalledWith("/lab/00000000-0000-0000-0000-0000000000e2");
+    expect(await screen.findByRole("region", { name: "Wyniki ligi" })).toBeInTheDocument();
+  });
+
+  it("says when the games cannot be loaded and leaves for the lobby", async () => {
+    const { navigate, user, view } = page(fakeLab(), null, () => Promise.reject(new Error("Serwer nie odpowiada.")));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Serwer nie odpowiada.");
+    await user.click(screen.getByRole("link", { name: "← Lobby" }));
+    expect(navigate).toHaveBeenCalledWith("/");
+    view.unmount();
+
+    page(fakeLab(), null, () => Promise.reject(new Error("")));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nie udało się pobrać listy gier.");
+  });
+
+  it("shows loading first and copes with an empty catalog", async () => {
+    let resolve: (g: typeof games) => void = () => undefined;
+    const { view } = page(fakeLab(), null, () => new Promise((r) => (resolve = r)));
+    expect(screen.getByText("Wczytywanie gier…")).toBeInTheDocument();
+    view.unmount();
+    resolve(games);
+
+    page(fakeLab(), null, () => Promise.resolve([]));
+    expect(await screen.findByText("Brak gier w katalogu serwera.")).toBeInTheDocument();
   });
 });
