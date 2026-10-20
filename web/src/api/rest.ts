@@ -24,6 +24,26 @@ export async function getJson<T>(url: string, schema: z.ZodType<T>, fetcher: typ
   return schema.parse(await response.json());
 }
 
+/** Wysyla JSON (POST, DELETE) i sprawdza odpowiedz schematem; odmowa serwera to {@link ApiError} z jego powodem. */
+export async function sendJson<T>(
+  method: "POST" | "DELETE",
+  url: string,
+  body: unknown,
+  schema: z.ZodType<T>,
+  fetcher: typeof fetch = fetch,
+): Promise<T> {
+  const response = await fetcher(url, {
+    method,
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+  if (!response.ok) {
+    throw new ApiError(await describe(response), response.status);
+  }
+
+  return schema.parse(await response.json());
+}
+
 async function describe(response: Response): Promise<string> {
   const fallback = response.status === 404 ? "Nie ma takiej strony." : `Serwer odpowiedzial ${String(response.status)}.`;
   try {
