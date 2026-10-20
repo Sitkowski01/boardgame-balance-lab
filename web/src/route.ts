@@ -1,9 +1,15 @@
 /** Strony aplikacji. Adresy sa zwykle (bez #), bo API serwuje index.html dla kazdej sciezki poza /api i /hubs. */
-export type Route = { page: "lobby" } | { page: "room"; id: string } | { page: "match"; id: string } | { page: "missing" };
+export type Route =
+  | { page: "lobby" }
+  | { page: "room"; id: string }
+  | { page: "match"; id: string }
+  | { page: "lab"; experiment: string | null }
+  | { page: "missing" };
 
 const id = "([0-9a-fA-F-]{36})";
 const room = new RegExp(`^/rooms/${id}/?$`);
 const match = new RegExp(`^/matches/${id}/?$`);
+const lab = new RegExp(`^/lab(?:/${id})?/?$`);
 
 export function parseRoute(path: string): Route {
   if (path === "/" || path === "") {
@@ -16,7 +22,12 @@ export function parseRoute(path: string): Route {
   }
 
   const m = match.exec(path)?.[1];
-  return m === undefined ? { page: "missing" } : { page: "match", id: m };
+  if (m !== undefined) {
+    return { page: "match", id: m };
+  }
+
+  const l = lab.exec(path);
+  return l === null ? { page: "missing" } : { page: "lab", experiment: l[1] ?? null };
 }
 
 export function routePath(route: Route): string {
@@ -28,5 +39,7 @@ export function routePath(route: Route): string {
       return `/rooms/${route.id}`;
     case "match":
       return `/matches/${route.id}`;
+    case "lab":
+      return route.experiment === null ? "/lab" : `/lab/${route.experiment}`;
   }
 }

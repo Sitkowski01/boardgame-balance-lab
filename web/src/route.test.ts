@@ -19,6 +19,16 @@ describe("route", () => {
     expect(routePath({ page: "missing" })).toBe("/");
   });
 
+  it("opens the lab with or without an experiment", () => {
+    expect(parseRoute("/lab")).toEqual({ page: "lab", experiment: null });
+    expect(parseRoute("/lab/")).toEqual({ page: "lab", experiment: null });
+    expect(parseRoute(`/lab/${roomId}`)).toEqual({ page: "lab", experiment: roomId });
+    expect(parseRoute("/lab/x")).toEqual({ page: "missing" });
+    expect(parseRoute("/labx")).toEqual({ page: "missing" });
+    expect(routePath({ page: "lab", experiment: null })).toBe("/lab");
+    expect(routePath({ page: "lab", experiment: roomId })).toBe(`/lab/${roomId}`);
+  });
+
   it("accepts a match id in any letter case only as a whole path", () => {
     expect(parseRoute(`/matches/${roomId.toUpperCase()}`)).toEqual({ page: "match", id: roomId.toUpperCase() });
     expect(parseRoute(`/matches/${roomId}x`)).toEqual({ page: "missing" });

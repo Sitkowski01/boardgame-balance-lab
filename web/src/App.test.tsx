@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+import { fakeLab } from "./test/fakeLab";
 import { fakeConnect, memoryTickets } from "./test/fakeServer";
 import { matchId, roomId } from "./test/fixtures";
 
@@ -18,7 +19,7 @@ function app(path: string) {
     vi.fn(() => Promise.resolve(new Response("[]", { status: 200 }))),
   );
   const { connect } = fakeConnect();
-  render(<App connect={connect} tickets={memoryTickets()} />);
+  render(<App connect={connect} tickets={memoryTickets()} lab={fakeLab()} />);
   return userEvent.setup();
 }
 
@@ -32,6 +33,15 @@ describe("App", () => {
   it("opens a table and a replay by address", async () => {
     app(`/rooms/${roomId}`);
     expect(await screen.findByText("Wczytywanie stołu…")).toBeInTheDocument();
+  });
+
+  it("goes from the lobby to the lab and back", async () => {
+    const user = app("/");
+
+    await user.click(await screen.findByRole("link", { name: "laboratorium" }));
+
+    expect(window.location.pathname).toBe("/lab");
+    expect(await screen.findByRole("heading", { name: "Laboratorium balansu" })).toBeInTheDocument();
   });
 
   it("opens a replay by address", () => {

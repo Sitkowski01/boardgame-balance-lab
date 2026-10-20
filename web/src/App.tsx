@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Connect } from "./api/connection";
+import { api } from "./api/rest";
+import type { LabClient } from "./lab/client";
+import { LabPage } from "./lab/LabPage";
 import { Link } from "./Link";
 import { LobbyPage } from "./lobby/LobbyPage";
 import { ReplayPage } from "./replay/ReplayPage";
@@ -10,10 +13,13 @@ import type { Tickets } from "./table/tickets";
 export interface AppProps {
   connect: Connect;
   tickets: Tickets;
+  lab: LabClient;
 }
 
-/** Trzy strony pod zwyklymi adresami; przejscia przez historie przegladarki (dziala "wstecz"). */
-export function App({ connect, tickets }: AppProps) {
+/** Strony pod zwyklymi adresami; przejscia przez historie przegladarki (dziala "wstecz"). */
+const loadGames = () => api.games();
+
+export function App({ connect, tickets, lab }: AppProps) {
   const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
   useEffect(() => {
     const back = (): void => {
@@ -36,6 +42,8 @@ export function App({ connect, tickets }: AppProps) {
       return <TablePage key={route.id} room={route.id} connect={connect} tickets={tickets} navigate={navigate} />;
     case "match":
       return <ReplayPage key={route.id} match={route.id} navigate={navigate} />;
+    case "lab":
+      return <LabPage client={lab} loadGames={loadGames} experiment={route.experiment} navigate={navigate} />;
     case "missing":
       return (
         <main>

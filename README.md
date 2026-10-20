@@ -9,7 +9,8 @@ przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w z
 > (z profilami strategii), MCTS i ISMCTS, symulator turniejów, liga z rankingiem Elo, porównanie
 > wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami oraz
 > serwer gry na żywo (SignalR): lobby, pokoje, boty na wolnych miejscach, limity czasu i powrót po rozłączeniu,
-> a w przeglądarce (React): lobby, plansze trzech gier oraz odtwarzacz powtórek z suwakiem.
+> a w przeglądarce (React): lobby, plansze trzech gier, odtwarzacz powtórek z suwakiem i laboratorium balansu
+> z wykresami (turniej, liga Elo, porównanie „co jeśli” liczone na serwerze na zamówienie).
 
 ## Architektura
 
@@ -24,6 +25,7 @@ src/BalanceLab.Reporting           raport HTML z wykresami SVG — zna tylko lic
 src/BalanceLab.Persistence         dziennik partii (EF Core + PostgreSQL): ruchy tylko dopisywane, migawki, weryfikacja
 src/BalanceLab.Catalog             katalog gier i botów (opis tekstem, np. mcts:300) dla CLI i serwera
 src/BalanceLab.Multiplayer         pokoje gry (serwer jest sędzią), lobby, archiwum partii — bez sieci
+src/BalanceLab.Experiments         laboratorium: kolejka eksperymentów (turniej, liga, A/B) z limitami i postępem — bez sieci
 src/BalanceLab.Api                 hub SignalR /hubs/game + REST /api — sam transport, bez zasad gier
 src/BalanceLab.Cli                 simulate | league | compare | play | replay
 web/                               React + TypeScript: lobby, plansze, powtórki (Vite, SignalR)
@@ -133,8 +135,8 @@ oceną, bo punkty przychodzą dopiero na koniec rundy. MCTS i ISMCTS biją za to
 dotnet run -c Release --project src/BalanceLab.Cli -- league --game mozaika --bots greedy greedy:kolumny greedy:ostrozny --games 300 --html mozaika.html
 ```
 
-Raport i CLI nazywają elementy „kartami” (napisane przy Klejnotach) — w Mozaice to pola ściany. Zmiana tych
-napisów czeka na etap z dashboardem, żeby nie psuć dowodu „bez zmian”.
+Po etapie 10 raport nazywa elementy tak, jak podaje gra (`IItemTracking.Noun`): „martwa karta” w Klejnotach,
+„martwe pole ściany” w Mozaice. Zmienione dopiero w etapie 11, żeby nie psuć dowodu „bez zmian”.
 
 ## Symulator turniejów
 
@@ -259,6 +261,34 @@ Weryfikacja: zgodna (106 ruchow, 6 migawek)
 Testy na prawdziwym PostgreSQL (Testcontainers; każdy test dostaje kopię bazy-szablonu) psują dziennik
 z pominięciem triggerów — zmieniony hash, inny legalny ruch, luka w numeracji, podmieniona migawka,
 zły wynik w nagłówku — i sprawdzają, że każda zmiana jest wykryta we właściwym miejscu.
+
+## Laboratorium balansu (dashboard)
+
+`/lab` w przeglądarce: gra, rodzaj eksperymentu, boty (z profilami strategii danej gry), liczba partii, ziarno
+i wariant zasad. Serwer liczy eksperyment w tle, strona pokazuje postęp i wyniki pod własnym adresem
+(`/lab/{id}` — da się odświeżyć albo wysłać komuś link).
+
+- **Turniej:** przewaga miejsca przy stole i siła botów z 95% przedziałami (▲▼, gdy cały przedział leży po jednej
+  stronie uczciwego udziału), wykres punktowy elementów gry — za mocne, za słabe i martwe karty albo pola.
+- **Liga:** ranking Elo względem 1500 i macierz „kto bije kogo” (skala rozbieżna z wartością w każdej komórce).
+- **Co jeśli:** różnice wariant − oryginał z przedziałami, liczone z tych samych rozdań; istotne zmiany wyraźne,
+  w granicach przypadku — przygaszone.
+
+Każdy wykres ma podpowiedź po najechaniu i przy fokusie z klawiatury oraz tabelę z liczbami; oceny niosą znak
+i słowo, nie tylko kolor; kolory mają osobne wartości dla trybu ciemnego. Wykres punktowy rysuje się w
+szerokości ekranu, więc na telefonie napisy mają normalną wielkość.
+
+Pod spodem `BalanceLab.Experiments`: zamówienie jest sprawdzane od razu (zły bot albo wariant to 400 z powodem),
+czeka w kolejce i liczy się na połowie rdzeni, jeden eksperyment naraz; limity partii, botów i iteracji MCTS,
+pełna kolejka to 503. Wynik jest dokładnie ten sam co z CLI dla tych samych botów i ziarna (test porównuje JSON).
+Ocena elementów (`ItemVerdict`) jest liczona w symulatorze i trafia do raportu — przeglądarka, HTML i CLI oceniają
+tak samo.
+
+```bash
+curl -X POST localhost:5080/api/experiments -H 'Content-Type: application/json' \
+  -d '{"game":"mozaika","kind":"League","bots":["greedy","greedy:kolumny","random"],"games":40,"seed":"1"}'
+curl localhost:5080/api/experiments/{id}     # status, postęp (done/total) i wynik
+```
 
 ## Gra na żywo (SignalR)
 
@@ -397,6 +427,7 @@ dotnet stryker              # mutation testing silnika, próg 90%
 dotnet stryker -f stryker-connectfour.json
 dotnet stryker -f stryker-klejnoty.json
 dotnet stryker -f stryker-mozaika.json
+dotnet stryker -f stryker-experiments.json
 dotnet stryker -f stryker-bots.json
 dotnet stryker -f stryker-simulation.json
 dotnet stryker -f stryker-reporting.json

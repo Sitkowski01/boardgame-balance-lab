@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { hubMessage, type Connect } from "../api/connection";
 import { api } from "../api/rest";
+import { Link } from "../Link";
 import type { GameInfo, RoomInfo } from "../api/schemas";
 import type { Tickets } from "../table/tickets";
 import { CreateRoom } from "./CreateRoom";
@@ -78,7 +79,13 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
   return (
     <main className="lobby">
       <h1>Balance Lab</h1>
-      <p className="lead">Zagraj z ludźmi i botami w gry, których balans sprawdza laboratorium.</p>
+      <p className="lead">
+        Zagraj z ludźmi i botami w gry, których balans sprawdza{" "}
+        <Link to="/lab" navigate={navigate}>
+          laboratorium
+        </Link>
+        .
+      </p>
       {error !== null && (
         <p role="alert" className="banner error">
           {error}
