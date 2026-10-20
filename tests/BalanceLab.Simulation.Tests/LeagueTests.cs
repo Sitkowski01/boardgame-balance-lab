@@ -5,6 +5,18 @@ namespace BalanceLab.Simulation.Tests;
 
 public sealed class LeagueTests
 {
+    /// <summary>Zbiera postep z wielu watkow.</summary>
+    internal sealed class Recorder(List<int> reports) : IProgress<int>
+    {
+        public void Report(int value)
+        {
+            lock (reports)
+            {
+                reports.Add(value);
+            }
+        }
+    }
+
     [Fact]
     public void Equal_results_give_equal_elo()
     {
@@ -75,6 +87,23 @@ public sealed class LeagueTests
         Assert.Equal("mcts", report.Ratings[0].Name);
         Assert.True(report.Pairs[0].SecondWins.Rate > 0.8);
         Assert.Equal(ReportJson.Serialize(report), ReportJson.Serialize(League.Run(new NimGame(), bots, new TournamentSpec(40, 11))));
+    }
+
+    [Fact]
+    public void League_reports_progress_over_all_pairs_and_can_be_cancelled()
+    {
+        Contestant<NimState, int>[] bots = [.. Enumerable.Range(0, 3).Select(i => new Contestant<NimState, int>($"r{i}", seed => new RandomBot<NimState, int>(seed)))];
+        var reports = new List<int>();
+        var progress = new Recorder(reports);
+
+        var report = League.Run(new NimGame(), bots, new TournamentSpec(10, 2), progress);
+
+        // 3 pary po 10 partii: kazda liczba 1..30 dokladnie raz (pary ida po kolei, partie w parze rownolegle).
+        Assert.Equal(Enumerable.Range(1, 30), reports.Order());
+        Assert.Equal(ReportJson.Serialize(report), ReportJson.Serialize(League.Run(new NimGame(), bots, new TournamentSpec(10, 2))));
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => League.Run(new NimGame(), bots, new TournamentSpec(10, 2), cancellationToken: cancelled.Token));
     }
 
     [Fact]

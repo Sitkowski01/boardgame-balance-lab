@@ -57,6 +57,19 @@ public sealed class ComparisonTests
     }
 
     [Fact]
+    public void Comparison_reports_progress_of_both_sides_and_can_be_cancelled()
+    {
+        var reports = new List<int>();
+
+        Comparison.Run(new KlejnotyGame(), new KlejnotyGame(), Bots(), new TournamentSpec(6, 4), new LeagueTests.Recorder(reports));
+
+        Assert.Equal(Enumerable.Range(1, 12), reports.Order());
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        Assert.ThrowsAny<OperationCanceledException>(() => Comparison.Run(new KlejnotyGame(), new KlejnotyGame(), Bots(), new TournamentSpec(6, 4), cancellationToken: cancelled.Token));
+    }
+
+    [Fact]
     public void Lower_threshold_shortens_games()
     {
         var variant = new KlejnotyGame(KlejnotyVariant.Parse("win=6"));

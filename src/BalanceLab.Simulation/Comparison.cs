@@ -69,18 +69,21 @@ public sealed record ComparisonReport(
 /// </remarks>
 public static class Comparison
 {
+    /// <param name="progress">Ile partii juz rozegrano: najpierw oryginal, potem wariant (razem 2 * liczba partii).</param>
     public static ComparisonReport Run<TState, TMove>(
         IGame<TState, TMove> baseline,
         IGame<TState, TMove> variant,
         IReadOnlyList<Contestant<TState, TMove>> contestants,
-        TournamentSpec spec)
+        TournamentSpec spec,
+        IProgress<int>? progress = null,
+        CancellationToken cancellationToken = default)
         where TState : notnull
         where TMove : notnull
     {
         // Wariant sprawdzamy przed oryginalem: blad w nim nie moze wyjsc dopiero po pierwszym turnieju.
         Tournament.Validate(variant, contestants, spec);
-        var a = Tournament.Run(baseline, contestants, spec).Report;
-        var b = Tournament.Run(variant, contestants, spec).Report;
+        var a = Tournament.Run(baseline, contestants, spec, progress, cancellationToken).Report;
+        var b = Tournament.Run(variant, contestants, spec, League.Offset(progress, spec.Games), cancellationToken).Report;
         return Compare(a, b);
     }
 

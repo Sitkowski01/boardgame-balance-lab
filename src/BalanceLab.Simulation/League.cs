@@ -26,10 +26,13 @@ public static class League
 {
     private const int Iterations = 2_000;
 
+    /// <param name="progress">Ile partii ligi juz rozegrano (wszystkie pary razem: pary * partie na pare).</param>
     public static LeagueReport Run<TState, TMove>(
         IGame<TState, TMove> game,
         IReadOnlyList<Contestant<TState, TMove>> contestants,
-        TournamentSpec perPair)
+        TournamentSpec perPair,
+        IProgress<int>? progress = null,
+        CancellationToken cancellationToken = default)
         where TState : notnull
         where TMove : notnull
     {
@@ -47,7 +50,7 @@ public static class League
             for (var j = i + 1; j < contestants.Count; j++)
             {
                 var spec = perPair with { Seed = Tournament.SeedFor(perPair.Seed, PairIndex(i, j), 7) };
-                var report = Tournament.Run(game, [contestants[i], contestants[j]], spec).Report;
+                var report = Tournament.Run(game, [contestants[i], contestants[j]], spec, Offset(progress, pairs.Count * perPair.Games), cancellationToken).Report;
                 pairs.Add(new PairResult(contestants[i].Name, contestants[j].Name, report.Completed,
                     report.Contestants[0].Wins, report.Contestants[1].Wins, report.Contestants[0].MeanScore));
             }
@@ -61,6 +64,16 @@ public static class League
     /// uczestnikow, wiec dopisanie bota na koncu listy nie zmienia ziaren par, ktore juz byly.
     /// </summary>
     internal static int PairIndex(int i, int j) => (j * (j - 1) / 2) + i;
+
+    /// <summary>Postep turnieju czesciowego przesuniety o partie rozegrane wczesniej (null, gdy nikt nie slucha).</summary>
+    internal static IProgress<int>? Offset(IProgress<int>? progress, int before) =>
+        progress is null ? null : new Progress(n => progress.Report(before + n));
+
+    /// <summary>Synchroniczne <see cref="IProgress{T}"/>: <c>Progress&lt;T&gt;</c> z .NET wysyla przez kontekst synchronizacji, czyli z opoznieniem.</summary>
+    private sealed class Progress(Action<int> report) : IProgress<int>
+    {
+        public void Report(int value) => report(value);
+    }
 
     internal static LeagueReport Summarize(string game, TournamentSpec perPair, IReadOnlyList<string> names, IReadOnlyList<PairResult> pairs)
     {
