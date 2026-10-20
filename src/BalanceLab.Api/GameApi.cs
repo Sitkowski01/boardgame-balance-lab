@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace BalanceLab.Api;
 
-/// <summary>Gra w katalogu, tak jak widzi ja lobby.</summary>
-public sealed record GameInfo(string Key, string Name, int MinPlayers, int MaxPlayers, bool HasVariants);
+/// <summary>Gra w katalogu, tak jak widzi ja lobby i laboratorium.</summary>
+/// <param name="VariantSyntax">Podpowiedz skladni wariantu zasad; null, gdy gra nie ma wariantow.</param>
+/// <param name="Profiles">Profile bota greedy (np. "silnik" = <c>greedy:silnik</c>).</param>
+public sealed record GameInfo(string Key, string Name, int MinPlayers, int MaxPlayers, bool HasVariants, string? VariantSyntax, IReadOnlyList<string> Profiles);
 
 /// <summary>REST obok hubu: katalog gier, lista pokoi i partie z dziennika (do powtorek).</summary>
 internal static class GameApi
@@ -24,7 +26,7 @@ internal static class GameApi
     }
 
     private static IEnumerable<GameInfo> Games() =>
-        GameCatalog.All.Select(g => new GameInfo(g.Key, g.Name, g.MinPlayers, g.MaxPlayers, g.HasVariants));
+        GameCatalog.All.Select(g => new GameInfo(g.Key, g.Name, g.MinPlayers, g.MaxPlayers, g.HasVariants, g.VariantSyntax, g.Profiles));
 
     /// <summary>Tabela zasad dla ekranu (np. karty wariantu); zly wariant to 400, gra bez tabeli to 404.</summary>
     private static Results<Ok<object>, NotFound, ProblemHttpResult> Rules(string key, string? variant)

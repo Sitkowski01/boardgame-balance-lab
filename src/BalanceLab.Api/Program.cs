@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using BalanceLab.Api;
+using BalanceLab.Experiments;
 using BalanceLab.Multiplayer;
 using BalanceLab.Persistence;
 using Microsoft.AspNetCore.SignalR;
@@ -27,6 +28,9 @@ builder.Services.AddSingleton(sp => new Lobby(
     sp.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddSingleton(sp => new MatchArchive(sp.GetRequiredService<JournalDb>()));
 builder.Services.AddHostedService<LobbyPruner>();
+builder.Services.AddSingleton(builder.Configuration.GetSection("Experiments").Get<ExperimentOptions>() ?? new ExperimentOptions());
+builder.Services.AddSingleton(sp => new ExperimentLab(sp.GetRequiredService<ExperimentOptions>(), sp.GetRequiredService<TimeProvider>()));
+builder.Services.AddHostedService<ExperimentWorker>();
 
 // Wyliczenia jako tekst ("Playing"), takze w SignalR: klient nie musi znac kolejnosci w C#.
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
@@ -51,7 +55,8 @@ if (app.Configuration.GetValue("Journal:Migrate", true))
     await app.Services.GetRequiredService<JournalDb>().MigrateAsync();
 }
 
-app.UseExceptionHandler();
+// Nieczytelne zadanie (zly JSON, nieznany rodzaj eksperymentu) to 400 jak w produkcji, a nie 500 w trybie deweloperskim.
+app.UseExceptionHandler(new ExceptionHandlerOptions { StatusCodeSelector = ex => ex is BadHttpRequestException bad ? bad.StatusCode : StatusCodes.Status500InternalServerError });
 
 // Zbudowany front (web/dist) z tego samego adresu co API: bez CORS i jeden proces do uruchomienia.
 // Pliki ida przed limitem zadan (strona to kilka plikow naraz), a kazda sciezka bez rozszerzenia poza /api
@@ -77,6 +82,7 @@ app.UseRouting();
 app.UseRateLimiter();
 app.MapHub<GameHub>("/hubs/game");
 app.MapGameApi();
+app.MapExperimentApi();
 
 await app.RunAsync();
 

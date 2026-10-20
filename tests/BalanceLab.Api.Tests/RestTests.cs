@@ -15,7 +15,7 @@ public sealed class RestTests(ApiFixture api)
     {
         var games = await api.Http().GetFromJsonAsync<GameInfo[]>("/api/games", ApiFixture.Json);
 
-        Assert.Equal([new GameInfo("connectfour", "ConnectFour", 2, 2, false), new GameInfo("klejnoty", "Klejnoty", 2, 4, true), new GameInfo("mozaika", "Mozaika", 2, 4, true)], games!);
+        Assert.Equal([("connectfour", "ConnectFour", 2, 2, false), ("klejnoty", "Klejnoty", 2, 4, true), ("mozaika", "Mozaika", 2, 4, true)], games!.Select(g => (g.Key, g.Name, g.MinPlayers, g.MaxPlayers, g.HasVariants)));
     }
 
     [Fact]

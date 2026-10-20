@@ -88,6 +88,14 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
+    public void Experiments_run_the_simulator_from_the_catalog_without_storage_or_network()
+    {
+        // Laboratorium liczy turnieje na zamowienie; HTTP jest w Api, a wyniki zyja w pamieci.
+        AssertNoDependency("BalanceLab.Experiments", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Persistence", "BalanceLab.Multiplayer",
+            "BalanceLab.Api", "BalanceLab.Cli", "BalanceLab.Reporting", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore");
+    }
+
+    [Fact]
     public void Server_is_only_transport_without_game_rules_or_bots()
     {
         // Api przekazuje prosby do pokoi; zasady gier, boty i baza sa schowane za Multiplayer.

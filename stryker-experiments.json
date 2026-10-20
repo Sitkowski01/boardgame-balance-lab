@@ -1,0 +1,8 @@
+{
+  "stryker-config": {
+    "project": "BalanceLab.Experiments.csproj",
+    "test-projects": [ "tests/BalanceLab.Experiments.Tests/BalanceLab.Experiments.Tests.csproj" ],
+    "reporters": [ "html", "progress", "cleartext", "json" ],
+    "thresholds": { "high": 90, "low": 90, "break": 90 }
+  }
+}

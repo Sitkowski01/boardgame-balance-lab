@@ -51,6 +51,7 @@ jobs:
           for i in $(seq 1 60); do curl -sf http://localhost:5080/health && break; sleep 1; done
           curl -sf http://localhost:5080/api/games | grep -q klejnoty
           curl -sf http://localhost:5080/api/games/mozaika/rules | grep -q floorPenalties
+          curl -sf -X POST http://localhost:5080/api/experiments -H 'Content-Type: application/json'             -d '{"game":"connectfour","kind":"Tournament","bots":["mcts:50","random"],"games":20,"seed":"1"}' | grep -q Queued
           curl -sf http://localhost:5080/api/rooms
           kill %1
 
@@ -70,7 +71,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-mozaika.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
+        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-mozaika.json, stryker-experiments.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -111,7 +112,7 @@ jobs:
         run: pnpm build
 
   e2e:
-    # Przegladarka na prawdziwym serwerze gry z PostgreSQL: dwoch graczy i bot w Klejnotach, partia i powtorka w Czworkach.
+    # Przegladarka na prawdziwym serwerze gry z PostgreSQL: gra na zywo w trzy gry, powtorki i laboratorium balansu.
     runs-on: ubuntu-latest
     services:
       postgres:

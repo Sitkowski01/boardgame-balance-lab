@@ -3,6 +3,7 @@
   <!-- Serwer to tylko transport: pokoje i zasady sa w Multiplayer i w grach. -->
   <ItemGroup>
     <ProjectReference Include="..\BalanceLab.Multiplayer\BalanceLab.Multiplayer.csproj" />
+    <ProjectReference Include="..\BalanceLab.Experiments\BalanceLab.Experiments.csproj" />
   </ItemGroup>
 
   <ItemGroup>
