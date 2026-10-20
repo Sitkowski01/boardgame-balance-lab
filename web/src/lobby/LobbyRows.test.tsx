@@ -7,8 +7,8 @@ import { matchId, room, seat } from "../test/fixtures";
 import { LobbyPage } from "./LobbyPage";
 
 const games: GameInfo[] = [
-  { key: "connectfour", name: "ConnectFour", minPlayers: 2, maxPlayers: 2, hasVariants: false },
-  { key: "klejnoty", name: "Klejnoty", minPlayers: 2, maxPlayers: 4, hasVariants: true },
+  { key: "connectfour", name: "ConnectFour", minPlayers: 2, maxPlayers: 2, hasVariants: false, variantSyntax: null, profiles: [] },
+  { key: "klejnoty", name: "Klejnoty", minPlayers: 2, maxPlayers: 4, hasVariants: true, variantSyntax: "win=N", profiles: ["silnik"] },
 ];
 const loadGames = () => Promise.resolve(games);
 

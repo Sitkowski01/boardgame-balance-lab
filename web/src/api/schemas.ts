@@ -63,6 +63,8 @@ export const gameInfo = z.object({
   minPlayers: z.number().int(),
   maxPlayers: z.number().int(),
   hasVariants: z.boolean(),
+  variantSyntax: z.string().nullable(),
+  profiles: z.array(z.string()),
 });
 export type GameInfo = z.infer<typeof gameInfo>;
 
