@@ -181,3 +181,201 @@ button.primary {
 button.primary:disabled {
   opacity: 0.5;
 }
+
+.progress-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.status {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.status.done {
+  border-color: var(--good);
+}
+.status.failed {
+  border-color: var(--critical);
+}
+.progress {
+  height: 8px;
+  margin: 12px 0 4px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--series-1);
+  border-radius: 4px;
+}
+.progress.running span {
+  transition: width 0.3s ease;
+}
+
+.results {
+  display: grid;
+  /* minmax(0, ...): wykres i tabela moga sie zwezic do ekranu telefonu, zamiast rozpychac strone. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+.stat-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.chart {
+  margin: 12px 0;
+}
+.chart figcaption {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+.chart figcaption span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.bars {
+  display: grid;
+  gap: 6px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 160px) 1fr 64px;
+  gap: 10px;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.bar-label {
+  overflow-wrap: anywhere;
+}
+.bar-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.track {
+  position: relative;
+  height: 20px;
+  border-radius: 4px;
+  outline-offset: 2px;
+}
+.track::before {
+  content: "";
+  position: absolute;
+  inset: 9px 0;
+  background: var(--viz-grid);
+}
+.fill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  background: var(--series-1);
+  border-radius: 0 4px 4px 0;
+}
+.diverging .fill.down {
+  background: var(--loss);
+  border-radius: 4px 0 0 4px;
+}
+.diverging .fill.up {
+  background: var(--win);
+}
+.faint .fill {
+  opacity: 0.35;
+}
+.whisker {
+  position: absolute;
+  top: 9px;
+  height: 2px;
+  background: var(--viz-ink);
+}
+.whisker::before,
+.whisker::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 10px;
+  background: var(--viz-ink);
+}
+.whisker::before {
+  left: 0;
+}
+.whisker::after {
+  right: 0;
+}
+.reference {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--viz-muted);
+}
+.flag {
+  font-size: 0.75rem;
+  color: var(--viz-ink-2);
+}
+.legend {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+.key-reference,
+.key-whisker,
+.key-swatch {
+  display: inline-block;
+  vertical-align: middle;
+}
+.key-reference {
+  width: 2px;
+  height: 12px;
+  background: var(--viz-muted);
+}
+.key-whisker {
+  width: 16px;
+  height: 2px;
+  background: var(--viz-ink);
+}
+.key-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.key-swatch.win {
+  background: var(--win);
+}
+.key-swatch.loss {
+  background: var(--loss);
+}
+.key-swatch.neutral {
+  background: var(--neutral);
+  border: 1px solid var(--line);
+}
