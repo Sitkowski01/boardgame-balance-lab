@@ -62,7 +62,9 @@ public sealed class ExperimentLabTests
 
         Assert.Equal(0, ran);
         Assert.Equal(ExperimentStatus.Cancelled, lab.Find(first.Id)!.Status);
-        Assert.Equal(ExperimentStatus.Done, lab.Cancel(second.Id)!.Status); // skonczony zostaje bez zmian
+        var finished = lab.Cancel(second.Id)!;
+        Assert.Equal(ExperimentStatus.Done, finished.Status); // skonczony zostaje bez zmian
+        Assert.IsType<Simulation.TournamentReport>(finished.Result); // i z wynikiem
         Assert.Null(lab.Cancel(Guid.NewGuid()));
         Assert.Null(lab.Find(Guid.NewGuid()));
     }
@@ -138,6 +140,16 @@ public sealed class ExperimentLabTests
     }
 
     [Fact]
+    public void Waiting_experiments_from_the_same_moment_are_listed_newest_first()
+    {
+        var (lab, _) = Lab();
+        var a = lab.Submit(Small);
+        var b = lab.Submit(Small);
+
+        Assert.Equal([b.Id, a.Id], lab.Recent.Select(e => e.Id));
+    }
+
+    [Fact]
     public async Task Experiment_past_its_time_limit_fails_with_the_reason()
     {
         var (lab, _) = Lab(new ExperimentOptions { Threads = 1, MaxDuration = TimeSpan.FromMilliseconds(50) });
@@ -169,10 +181,13 @@ public sealed class ExperimentLabTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { KeepFinished = -1 }, clock));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxWork = 0 }, clock));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.Zero }, clock));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.FromDays(2) }, clock));
+        var tooLong = Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.FromDays(2) }, clock));
+        Assert.Contains("od chwili do doby", tooLong.Message, StringComparison.Ordinal);
         Assert.Throws<ArgumentNullException>(() => new ExperimentLab(null!, clock));
         Assert.Throws<ArgumentNullException>(() => new ExperimentLab(good, null!));
         Assert.Empty(new ExperimentLab(good with { KeepFinished = 0, MaxDuration = TimeSpan.FromDays(1) }, clock).Recent);
+        // Domyslnie polowa rdzeni, na jednym rdzeniu jeden watek.
+        Assert.Equal((1, 1, 4), (ExperimentOptions.DefaultThreads(1), ExperimentOptions.DefaultThreads(3), ExperimentOptions.DefaultThreads(8)));
     }
 
     [Fact]

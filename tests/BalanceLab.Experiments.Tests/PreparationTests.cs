@@ -68,6 +68,8 @@ public sealed class PreparationTests
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 0, 1), "od 1 do 1000" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 1001, 1), "od 1 do 1000" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 9, 1), "wielokrotnoscia liczby uczestnikow" },
+        { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 1, 1), "wielokrotnoscia liczby uczestnikow" },
+        { new("klejnoty", ExperimentKind.Comparison, [.. Enumerable.Repeat("random", 5)], 10, 1, "win=10"), "dla 2-4 graczy" },
         { new("klejnoty", ExperimentKind.Tournament, ["random"], 10, 1), "dla 2-4 graczy" },
         { new("klejnoty", ExperimentKind.League, ["random"], 10, 1), "Liga potrzebuje co najmniej dwoch botow" },
         { new("klejnoty", ExperimentKind.Comparison, ["random", "random"], 10, 1), "Porownanie potrzebuje wariantu" },
@@ -98,6 +100,7 @@ public sealed class PreparationTests
 
         Assert.Equal(4, Preparation.Prepare(new("connectfour", ExperimentKind.Tournament, ["random", "random"], 4, 1, " "), options).Total);
         Assert.Equal(2, Preparation.Prepare(new("klejnoty", ExperimentKind.Tournament, ["random", "mcts:200"], 2, 1), Options).Total);
+        Assert.Equal(2, Preparation.Prepare(new("connectfour", ExperimentKind.League, ["random", "random"], 2, 1), Options).Total);
         Assert.Throws<ArgumentNullException>(() => Preparation.Prepare(null!, Options));
         Assert.Throws<ArgumentNullException>(() => Preparation.Prepare(new("klejnoty", ExperimentKind.Tournament, ["random"], 1, 1), null!));
     }

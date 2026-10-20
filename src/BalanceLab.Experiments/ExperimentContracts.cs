@@ -70,7 +70,7 @@ public sealed record ExperimentOptions
     public int KeepFinished { get; init; } = 20;
 
     /// <summary>Watki dla jednego eksperymentu; reszta serwera (gra na zywo) musi miec gdzie liczyc.</summary>
-    public int Threads { get; init; } = Math.Max(1, Environment.ProcessorCount / 2);
+    public int Threads { get; init; } = DefaultThreads(Environment.ProcessorCount);
 
     /// <summary>
     /// Budzet pracy: suma po partiach i miejscach wagi bota (1 dla prostych, liczba iteracji dla MCTS/ISMCTS).
@@ -80,6 +80,9 @@ public sealed record ExperimentOptions
 
     /// <summary>Po tym czasie eksperyment jest przerywany jako blad — nawet gdy budzet byl za optymistyczny.</summary>
     public TimeSpan MaxDuration { get; init; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>Polowa rdzeni, ale co najmniej jeden watek — osobno, zeby dalo sie to sprawdzic na kazdej maszynie.</summary>
+    internal static int DefaultThreads(int processors) => Math.Max(1, processors / 2);
 
     /// <summary>Zla konfiguracja ma wywrocic start serwera, a nie kazde zamowienie.</summary>
     /// <exception cref="ArgumentOutOfRangeException">Ktorys limit poza sensownym zakresem.</exception>
