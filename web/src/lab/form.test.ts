@@ -109,6 +109,43 @@ describe("experiment form", () => {
     expect(toRequest(defaultForm(mozaika)).variant).toBeNull();
   });
 
+  it("names every bot for people", () => {
+    expect(botChoices(mozaika, { ...Limits, maxBotIterations: 80 }).map((b) => b.label)).toEqual([
+      "Zachłanny",
+      "Zachłanny: kolumny",
+      "Zachłanny: ostrozny",
+      "MCTS 50",
+      "MCTS 80",
+      "ISMCTS 50",
+      "ISMCTS 80",
+      "Losowy",
+    ]);
+  });
+
+  it("reads only whole numbers and treats a blank variant as none", () => {
+    expect([weight("mcts:5x"), weight("mcts:x5")]).toEqual([1000, 1000]);
+    expect(problems({ ...defaultForm(klejnoty), seed: "1x" }, klejnoty)).toEqual(["Ziarno to liczba całkowita od 0 do 2^64−1."]);
+    expect(problems({ ...defaultForm(connectFour), variant: "  " }, connectFour)).toEqual([]);
+    expect(toRequest({ ...defaultForm(klejnoty), variant: "  " }).variant).toBeNull();
+  });
+
+  it("asks a league for an even number of games and a table without bots only for bots", () => {
+    expect(problems({ ...defaultForm(klejnoty, "League"), games: "1" }, klejnoty)).toEqual([
+      "Liczba partii musi być wielokrotnością 2, żeby każdy zaczynał tyle samo razy.",
+    ]);
+    expect(problems({ ...defaultForm(klejnoty), bots: [] }, klejnoty)).toEqual([
+      "Klejnoty to gra dla 2–4 graczy — tylu botów potrzeba przy stole.",
+    ]);
+  });
+
+  it("lets through work right at the limit and does not pile the size on top of other problems", () => {
+    const form = { ...defaultForm(klejnoty), bots: ["mcts:200", "mcts:200"], games: "100" };
+
+    expect(problems(form, klejnoty, { ...Limits, maxWork: 40_000 })).toEqual([]);
+    expect(problems(form, klejnoty, { ...Limits, maxWork: 39_999 })).toHaveLength(1);
+    expect(problems({ ...form, seed: "x" }, klejnoty, { ...Limits, maxWork: 1 })).toEqual(["Ziarno to liczba całkowita od 0 do 2^64−1."]);
+  });
+
   it("accepts exactly the game counts that are a multiple of the players", () => {
     fc.assert(
       fc.property(fc.integer({ min: 1, max: Limits.maxGames }), fc.integer({ min: 2, max: 4 }), (count, players) => {

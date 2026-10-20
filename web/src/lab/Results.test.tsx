@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { comparison, fields, league, tournament } from "../test/labReports";
+import { comparison, d, fields, league, tournament } from "../test/labReports";
 import { sideOf } from "./charts/IntervalBars";
 import { niceStep } from "./charts/ItemScatter";
 import { cellColor, inkOn } from "./charts/PairMatrix";
@@ -148,6 +148,77 @@ describe("Results", () => {
     expect(screen.getAllByText("Tabela")).toHaveLength(2);
     expect(screen.queryByText("Długość partii")).not.toBeInTheDocument();
     expect(screen.getAllByRole("row").some((r) => r.textContent === "miejsce 1−4.0 pp−8.0 pp do −1.0 pptak50.0% → 46.0%")).toBe(true);
+  });
+
+  it("sums up each kind of experiment in tiles", () => {
+    const tiles = (): (string | null)[] => [...document.querySelectorAll(".stat")].map((t) => t.textContent);
+
+    const { unmount } = render(<Results result={{ kind: "Tournament", report: tournament() }} />);
+    expect(tiles()).toEqual(["Ukończone partie98 z 100ziarno 7", "Remisy4.1%", "Długość partii62.4 ruchumediana 61, 90% poniżej 80"]);
+    unmount();
+    const ranking = render(<Results result={{ kind: "League", report: league() }} />);
+    expect(tiles()).toEqual(["NajlepszygreedyElo 1720", "Pary340 partii na parę"]);
+    ranking.unmount();
+    const empty = render(<Results result={{ kind: "League", report: league({ ratings: [], pairs: [] }) }} />);
+    expect(tiles()).toEqual(["Najlepszy—", "Pary040 partii na parę"]);
+    empty.unmount();
+    render(<Results result={{ kind: "Comparison", report: comparison() }} />);
+    expect(tiles()).toEqual([
+      "OryginałKlejnoty98 partii",
+      "WariantKlejnoty (win=13)98 partii z tych samych ziaren",
+      "Długość partii−6.5 ruchuistotna zmiana",
+    ]);
+  });
+
+  it("writes an Elo of exactly 1500 as ±0 and never marks Elo bars as significant", () => {
+    const report = league({ ratings: [{ name: "sredni", elo: 1500, meanScore: 0.5 }] });
+    render(<Results result={{ kind: "League", report }} />);
+
+    const bar = within(list("Ranking Elo")).getByRole("listitem");
+    expect(bar).toHaveAttribute("aria-label", "sredni: ±0 · Elo 1500, średni wynik 50.0%");
+    expect(within(bar).queryByText("●")).toBeNull();
+  });
+
+  it("shows an unchanged game length as +0.0", () => {
+    const report = comparison();
+    if (report.length === null) throw new Error("dane testu");
+    render(<Results result={{ kind: "Comparison", report: { ...report, length: { ...report.length, delta: 0 } } }} />);
+
+    expect(screen.getByText("+0.0 ruchu")).toBeInTheDocument();
+  });
+
+  it("lists items that changed by the biggest change first, the fifteen biggest at most", () => {
+    const changed = (id: number, taken: number, wins: number) => ({
+      id,
+      name: `#${String(id)}`,
+      taken: d(taken, taken - 0.01, taken + 0.01),
+      ownerWins: d(wins, wins - 0.01, wins + 0.01),
+    });
+    const three = [
+      changed(1, 0.01, 0.05),
+      changed(2, 0.3, -0.06),
+      changed(3, 0, 0.12),
+      { ...changed(4, 0.5, 0.5), ownerWins: d(0.5, -0.1, 1) },
+    ];
+    const { unmount } = render(<Results result={{ kind: "Comparison", report: comparison({ items: three }) }} />);
+
+    const rows = within(list("Karty, które zmieniły się istotnie")).getAllByRole("listitem");
+    expect(rows.map((r) => r.getAttribute("aria-label"))).toEqual([
+      "#2: −6.0 pp (95%: −7.0 pp do −5.0 pp), istotna · udział w partiach +30.0 pp, właściciel wygrywa 50.0% → 44.0%",
+      "#3: +12.0 pp (95%: +11.0 pp do +13.0 pp), istotna · udział w partiach ±0.0 pp, właściciel wygrywa 50.0% → 62.0%",
+      "#1: +5.0 pp (95%: +4.0 pp do +6.0 pp), istotna · udział w partiach +1.0 pp, właściciel wygrywa 50.0% → 55.0%",
+    ]);
+    expect(screen.getByText("Zmiana wygranych właściciela; 3 z 4.")).toBeInTheDocument();
+    unmount();
+
+    const fifteen = Array.from({ length: 15 }, (_, i) => changed(i, 0, 0.02 + i / 100));
+    const at15 = render(<Results result={{ kind: "Comparison", report: comparison({ items: fifteen }) }} />);
+    expect(screen.getByText("Zmiana wygranych właściciela; 15 z 15.")).toBeInTheDocument();
+    at15.unmount();
+    render(<Results result={{ kind: "Comparison", report: comparison({ items: [...fifteen, changed(15, 0, 0.2)] }) }} />);
+    expect(screen.getByText("Zmiana wygranych właściciela; 16 z 16, poniżej 15 największych.")).toBeInTheDocument();
+    expect(within(list("Karty, które zmieniły się istotnie")).getAllByRole("listitem")).toHaveLength(15);
+    expect(screen.queryByRole("listitem", { name: /^#0:/u })).toBeNull();
   });
 });
 
