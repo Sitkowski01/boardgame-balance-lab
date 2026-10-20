@@ -265,6 +265,71 @@ describe("LabPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Nie udało się pobrać listy gier.");
   });
 
+  it("draws the progress of the open experiment with what it plays", async () => {
+    const request = { ...experiment().request, variant: "tiles=3" };
+    page(fakeLab(experiment({ status: "Running", done: 30, total: 120, request })), id);
+
+    const bar = await screen.findByRole("progressbar", { name: "Postęp eksperymentu" });
+    expect(bar).toHaveAttribute("class", "progress running");
+    expect(bar.querySelector("span")?.style.width).toBe("25%");
+    expect(document.querySelector(".progress-head strong")?.textContent).toBe("Turniej: Mozaika (tiles=3)");
+    expect(screen.getByText("liczy się", { selector: ".progress-head .status" })).toHaveAttribute("class", "status running");
+    expect(screen.getByText("30 z 120 partii · boty: greedy, random · ziarno 1")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Wyniki turnieju" })).toBeNull();
+  });
+
+  it("shows a queued experiment with no games yet and a finished one without the running stripes", async () => {
+    const queued = page(fakeLab(experiment({ status: "Queued", total: 0 })), id);
+    const bar = await screen.findByRole("progressbar");
+    expect(bar.querySelector("span")?.style.width).toBe("0%");
+    expect(document.querySelector(".progress-head strong")?.textContent).toBe("Turniej: Mozaika");
+    expect(screen.getByText("w kolejce", { selector: ".progress-head .status" })).toHaveAttribute("class", "status queued");
+    queued.view.unmount();
+
+    page(fakeLab(experiment({ status: "Failed", done: 10 })), id);
+    expect(await screen.findByRole("progressbar")).toHaveAttribute("class", "progress");
+    expect(screen.getByText("błąd", { selector: ".progress-head .status" })).toBeInTheDocument();
+  });
+
+  it("without an open experiment shows no panel and lists only the last eight, polling while any runs", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const client = fakeLab();
+    client.recent.mockResolvedValue(
+      Array.from({ length: 9 }, (_, i) => experiment({ id: `e${String(i)}`, status: i === 0 ? "Running" : "Done" })),
+    );
+    page(client);
+    expect(screen.queryByRole("region", { name: "Ostatnie eksperymenty" })).toBeNull();
+
+    const recent = await screen.findByRole("region", { name: "Ostatnie eksperymenty" });
+    const items = within(recent).getAllByRole("listitem");
+    expect(items).toHaveLength(8);
+    expect(items[1]?.className).toBe("");
+    expect(within(items[0] ?? recent).getByText("liczy się")).toHaveAttribute("class", "status running");
+    expect(screen.queryByRole("region", { name: "Eksperyment" })).toBeNull();
+    const calls = client.recent.mock.calls.length;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RecentEvery);
+    });
+    expect(client.recent.mock.calls.length).toBeGreaterThan(calls); // jeden liczony wystarczy
+  });
+
+  it("refreshes the recent list when the open experiment changes state", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const client = fakeLab(experiment({ status: "Running" }));
+    page(client, id);
+    await screen.findByRole("progressbar");
+    const calls = client.recent.mock.calls.length;
+
+    client.get.mockResolvedValue(experiment({ status: "Done", done: 100, result: tournament() }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PollEvery);
+    });
+
+    expect(await screen.findByRole("region", { name: "Wyniki turnieju" })).toBeInTheDocument();
+    expect(client.recent.mock.calls.length).toBeGreaterThan(calls);
+  });
+
   it("shows loading first and copes with an empty catalog", async () => {
     let resolve: (g: typeof games) => void = () => undefined;
     const { view } = page(fakeLab(), null, () => new Promise((r) => (resolve = r)));
