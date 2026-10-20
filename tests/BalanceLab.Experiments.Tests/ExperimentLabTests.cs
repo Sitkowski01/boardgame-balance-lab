@@ -105,6 +105,98 @@ public sealed class ExperimentLabTests
         Assert.Throws<FormatException>(() => lab.Submit(Small with { Game = "szachy" }));
     }
 
+    [Fact]
+    public void Only_the_newest_finished_experiments_are_remembered()
+    {
+        var (lab, clock) = Lab(new ExperimentOptions { KeepFinished = 2, Threads = 1 });
+        var ids = new List<Guid>();
+        for (var i = 0; i < 4; i++)
+        {
+            ids.Add(lab.Submit(Small).Id);
+            lab.Cancel(ids[^1]);
+            clock.Now += TimeSpan.FromSeconds(1);
+        }
+
+        var waiting = lab.Submit(Small);
+
+        Assert.Equal([waiting.Id, ids[3], ids[2]], lab.Recent.Select(e => e.Id));
+        Assert.Null(lab.Find(ids[0]));
+        Assert.Same(lab.Options, lab.Options);
+    }
+
+    [Fact]
+    public void Experiments_from_the_same_moment_keep_the_order_they_came_in()
+    {
+        var (lab, _) = Lab(new ExperimentOptions { KeepFinished = 1, Threads = 1 });
+        var a = lab.Submit(Small);
+        var b = lab.Submit(Small);
+        lab.Cancel(a.Id);
+        lab.Cancel(b.Id);
+
+        // Ta sama chwila zegara: zostaje pozniej wstawiony.
+        Assert.Equal([b.Id], lab.Recent.Select(e => e.Id));
+    }
+
+    [Fact]
+    public async Task Experiment_past_its_time_limit_fails_with_the_reason()
+    {
+        var (lab, _) = Lab(new ExperimentOptions { Threads = 1, MaxDuration = TimeSpan.FromMilliseconds(50) });
+        var info = lab.Enqueue(Small, new PreparedExperiment(1, (_, token) =>
+        {
+            token.WaitHandle.WaitOne();
+            token.ThrowIfCancellationRequested();
+            return "nigdy";
+        }));
+        using var run = new Runner(lab);
+
+        var failed = await WaitAsync(lab, info.Id, ExperimentStatus.Failed);
+
+        Assert.Equal("Eksperyment liczyl sie dluzej niz 0 min i zostal przerwany - zamow mniej partii albo slabsze boty.", failed.Error);
+    }
+
+    [Fact]
+    public void Bad_limits_stop_the_server_at_start_and_good_ones_are_shown_to_the_form()
+    {
+        var clock = new FakeClock();
+        ExperimentOptions good = new() { MaxGames = 50, MaxBots = 3, MaxBotIterations = 20, MaxWork = 99, Threads = 1 };
+
+        Assert.Equal(new ExperimentLimits(50, 3, 20, 99), good.Limits);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { Threads = 0 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxGames = 0 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxBots = 1 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxBotIterations = 0 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxQueued = 0 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { KeepFinished = -1 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxWork = 0 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.Zero }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.FromDays(2) }, clock));
+        Assert.Throws<ArgumentNullException>(() => new ExperimentLab(null!, clock));
+        Assert.Throws<ArgumentNullException>(() => new ExperimentLab(good, null!));
+        Assert.Empty(new ExperimentLab(good with { KeepFinished = 0, MaxDuration = TimeSpan.FromDays(1) }, clock).Recent);
+    }
+
+    [Fact]
+    public async Task Stopping_the_server_cancels_the_running_experiment()
+    {
+        var (lab, _) = Lab();
+        var gate = new Gate();
+        var info = lab.Enqueue(Small, new PreparedExperiment(1, (_, token) =>
+        {
+            gate.Started.Set();
+            token.WaitHandle.WaitOne();
+            token.ThrowIfCancellationRequested();
+            return "nigdy";
+        }));
+        using var stop = new CancellationTokenSource();
+        var loop = lab.RunAsync(stop.Token);
+        gate.Started.Wait();
+
+        await stop.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => loop);
+        Assert.Equal(ExperimentStatus.Cancelled, (await WaitAsync(lab, info.Id, ExperimentStatus.Cancelled)).Status);
+    }
+
     private static (ExperimentLab Lab, FakeClock Clock) Lab(ExperimentOptions? options = null)
     {
         var clock = new FakeClock();
