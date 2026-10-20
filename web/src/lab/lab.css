@@ -484,3 +484,85 @@ button.primary:disabled {
 .tag.dead {
   color: var(--muted);
 }
+
+.chart table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+.chart th,
+.chart td {
+  text-align: left;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.table-view summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-top: 8px;
+}
+.matrix-scroll {
+  overflow-x: auto;
+}
+.matrix {
+  width: auto;
+}
+.matrix td.cell {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
+  padding: 8px 12px;
+  border: 2px solid var(--panel);
+  border-radius: 4px;
+}
+.matrix td.ink-light {
+  color: #fff;
+}
+.matrix td.ink-dark {
+  color: #0b0b0b;
+}
+.matrix td.ink-theme {
+  color: var(--viz-ink);
+}
+.matrix td.empty {
+  text-align: center;
+  color: var(--muted);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.recent ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+.recent li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.recent li.current {
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .bar-row {
+    grid-template-columns: 1fr 56px;
+  }
+  .bar-row .bar-label {
+    grid-column: 1 / -1;
+  }
+  .kinds {
+    flex-wrap: wrap;
+  }
+}
