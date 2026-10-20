@@ -379,3 +379,108 @@ button.primary:disabled {
   background: var(--neutral);
   border: 1px solid var(--line);
 }
+
+/* Podpowiedz po najechaniu i przy fokusie z klawiatury; tekst z atrybutu, wiec bez wstawiania HTML. */
+[data-tip] {
+  position: relative;
+}
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  bottom: calc(100% + 6px);
+  width: max-content;
+  max-width: min(320px, 80vw);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--viz-ink);
+  color: var(--viz-surface);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  pointer-events: none;
+}
+
+.scatter {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.scatter .grid {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+.scatter .axis {
+  stroke: var(--viz-axis);
+  stroke-width: 1;
+}
+.scatter .tick,
+.scatter .axis-title {
+  fill: var(--viz-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.dot {
+  cursor: pointer;
+  outline: none;
+}
+.dot .hit {
+  fill: transparent;
+}
+.dot .mark {
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+.dot.none .mark {
+  fill: var(--viz-muted);
+  opacity: 0.55;
+}
+.dot.strong .mark {
+  fill: var(--critical);
+}
+.dot.weak .mark {
+  fill: var(--serious);
+}
+.dot.dead .mark {
+  fill: var(--panel);
+  stroke: var(--viz-muted);
+  stroke-width: 1.5;
+}
+.dot.focused .mark,
+.dot:focus-visible .mark {
+  stroke: var(--viz-ink);
+  stroke-width: 2;
+  opacity: 1;
+}
+.readout {
+  min-height: 1.4em;
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+}
+.key-dot {
+  font-size: 0.9rem;
+}
+.key-dot.strong {
+  color: var(--critical);
+}
+.key-dot.weak {
+  color: var(--serious);
+}
+.key-dot.none,
+.key-dot.dead {
+  color: var(--viz-muted);
+}
+.tag {
+  white-space: nowrap;
+  font-weight: 600;
+}
+.tag.strong {
+  color: var(--critical);
+}
+.tag.weak {
+  color: var(--serious);
+}
+.tag.dead {
+  color: var(--muted);
+}
