@@ -24,6 +24,7 @@
     <Project Path="tests/BalanceLab.Catalog.Tests/BalanceLab.Catalog.Tests.csproj" />
     <Project Path="tests/BalanceLab.Cli.Tests/BalanceLab.Cli.Tests.csproj" />
     <Project Path="tests/BalanceLab.Engine.Tests/BalanceLab.Engine.Tests.csproj" />
+    <Project Path="tests/BalanceLab.Experiments.Tests/BalanceLab.Experiments.Tests.csproj" />
     <Project Path="tests/BalanceLab.Games.ConnectFour.Tests/BalanceLab.Games.ConnectFour.Tests.csproj" />
     <Project Path="tests/BalanceLab.Games.Klejnoty.Tests/BalanceLab.Games.Klejnoty.Tests.csproj" />
     <Project Path="tests/BalanceLab.Games.Mozaika.Tests/BalanceLab.Games.Mozaika.Tests.csproj" />
