@@ -36,10 +36,10 @@ internal static class Summary
             var flagged = report.Items.Select(i => (Item: i, Verdict: ItemVerdicts.Of(i, report.GroupOf(i)))).Where(j => j.Verdict != ItemVerdict.None).ToArray();
             var groups = string.Join(", ", report.ItemGroups.Select(g => $"{g.Group} {Percent(g.OwnerWins.Rate)}"));
             output.WriteLine();
-            output.WriteLine(string.Create(c, $"Karty: wlasciciel przecietnej karty wygrywa ({groups}); odstaje {flagged.Length} z {report.Items.Length}"));
+            output.WriteLine(string.Create(c, $"{Capitalize(report.ItemNoun.Plural)}: wlasciciel przecietnego elementu wygrywa ({groups}); odstaje {flagged.Length} z {report.Items.Length}"));
             foreach (var (item, verdict) in flagged.OrderBy(f => f.Verdict).Take(10))
             {
-                output.WriteLine(string.Create(c, $"  {ItemVerdicts.Describe(verdict),-10} {item.Name,-40} brana {Percent(item.Taken.Rate),6}, wlasciciel wygrywa {Rate(item.OwnerWins)}"));
+                output.WriteLine(string.Create(c, $"  {ItemVerdicts.Describe(verdict, report.ItemNoun),-10} {item.Name,-40} w {Percent(item.Taken.Rate),6} partii, wlasciciel wygrywa {Rate(item.OwnerWins)}"));
             }
         }
 
@@ -77,12 +77,14 @@ internal static class Summary
         var changed = report.Items.Count(i => i.Taken.Significant || i.OwnerWins.Significant);
         if (!report.Items.IsEmpty)
         {
-            output.WriteLine($"Karty zmienione istotnie: {changed} z {report.Items.Length}");
+            output.WriteLine($"{Capitalize(report.Variant.ItemNoun.Plural)} zmienione istotnie: {changed} z {report.Items.Length}");
         }
     }
 
     private static string Change(Difference d) => string.Create(CultureInfo.InvariantCulture,
         $"{d.Delta * 100:+0.0;-0.0;0.0} pp ({d.Low * 100:+0.0;-0.0;0.0} - {d.High * 100:+0.0;-0.0;0.0}){(d.Significant ? " *" : "")}");
+
+    private static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
 
     // Bez ukonczonych partii "0%" sugerowaloby zmierzony wynik, a to brak danych.
     private static string Rate(Proportion p) => p.Trials == 0 ? "-" : Percent(p.Rate);

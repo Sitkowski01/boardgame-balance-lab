@@ -70,7 +70,8 @@ internal static class Statistics
         // lacznie z ocenianym — mocna karta lekko podnosi wlasna poprzeczke (przy ~30 kartach w grupie niewiele).
         var groups = Enumerable.Range(0, items.Count).GroupBy(item => items[item].Group).Select(group =>
             new GroupStats(group.Key, Proportion.Of(group.Sum(item => ownerWins[item]), group.Sum(item => owned[item]))));
-        return ([.. stats], [.. groups]);
+        GroupStats[] all = [.. groups];
+        return ([.. stats.Select(s => s with { Verdict = ItemVerdicts.Of(s, all.First(g => g.Group == s.Group).OwnerWins) })], [.. all]);
     }
 
     private static LengthStats? Lengths(GameRecord[] completed)

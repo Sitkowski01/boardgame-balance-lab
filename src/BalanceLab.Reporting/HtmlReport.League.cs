@@ -48,11 +48,12 @@ public static partial class HtmlReport
             .OrderByDescending(i => Math.Max(Math.Abs(i.Taken.Delta), Math.Abs(i.OwnerWins.Delta))).ToArray();
         if (!report.Items.IsEmpty)
         {
-            html.Section("Karty, ktore zmienily sie istotnie",
-                "Zmiana jednej karty przesuwa tez inne: gracze kupuja co innego. Tu tylko karty, ktorych wybieralnosc albo wygrane wlasciciela zmienily sie poza przypadkiem.", null,
-                changed.Length == 0 ? "<p class=\"note\">Zadna karta nie zmienila sie istotnie.</p>" :
+            var noun = b.ItemNoun;
+            html.Section($"{Html.Capitalize(noun.Plural)}, ktore zmienily sie istotnie",
+                $"Zmiana jednego elementu przesuwa tez inne: gracze wybieraja co innego. Tu tylko {noun.Plural}, ktorych wybieralnosc albo wygrane wlasciciela zmienily sie poza przypadkiem.", null,
+                changed.Length == 0 ? "<p class=\"note\">Nic nie zmienilo sie istotnie.</p>" :
                     $"<p class=\"note\">Istotnie zmienionych: {changed.Length} z {report.Items.Length}{(changed.Length > MaxChanged ? $"; ponizej {MaxChanged} najwiekszych zmian" : "")}.</p>" +
-                    Html.Table(["Karta (w wariancie)", "Brana", "Wlasciciel wygrywa"],
+                    Html.Table([$"{Html.Capitalize(noun.Singular)} (w wariancie)", "W partiach", "Wlasciciel wygrywa"],
                         changed.Take(MaxChanged).Select(i => (IReadOnlyList<string>)[Html.Encode(i.Name), Html.Points(i.Taken), Html.Points(i.OwnerWins)])));
         }
 

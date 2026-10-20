@@ -106,9 +106,9 @@ public sealed class SummaryTests
         var expected = string.Join(Environment.NewLine,
             "od 7 do 42",
             "",
-            "Karty: wlasciciel przecietnej karty wygrywa (poziom 1 40.0%); odstaje 2 z 3",
-            "  za mocna   mocna                                    brana  50.5%, wlasciciel wygrywa 70.0%",
-            "  za slaba   slaba                                    brana  50.5%, wlasciciel wygrywa 20.0%",
+            "Karty: wlasciciel przecietnego elementu wygrywa (poziom 1 40.0%); odstaje 2 z 3",
+            "  za mocna   mocna                                    w  50.5% partii, wlasciciel wygrywa 70.0%",
+            "  za slaba   slaba                                    w  50.5% partii, wlasciciel wygrywa 20.0%",
             "Czas");
         Assert.Contains(expected, text, StringComparison.Ordinal);
     }

@@ -50,6 +50,9 @@ internal sealed class Html
 
     public static string Encode(string text) => WebUtility.HtmlEncode(text);
 
+    /// <summary>Nazwa z wielkiej litery na poczatek zdania albo naglowek kolumny ("karty" -> "Karty").</summary>
+    public static string Capitalize(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..];
+
     public static string Percent(double rate) => string.Create(Culture, $"{rate * 100:0.0}%");
 
     /// <summary>Np. "54.0% (49.1% - 58.8%)"; bez partii — "brak danych", a nie mylace "0%".</summary>

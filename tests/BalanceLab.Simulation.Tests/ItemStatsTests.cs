@@ -35,6 +35,9 @@ public sealed class ItemStatsTests
         Assert.Equal(["bron", "bron", "dystans", "dystans"], report.Items.Select(i => i.Group));
         Assert.Equal([new GroupStats("bron", Proportion.Of(3, 6)), new GroupStats("dystans", Proportion.Of(1, 2))], report.ItemGroups.ToArray());
         Assert.Equal(Proportion.Of(1, 2), report.GroupOf(report.Items[3]));
+        // Ocena trafia do raportu: "nic" nikt nie wzial, a reszta z trzech partii nie odstaje.
+        Assert.Equal([ItemVerdict.None, ItemVerdict.None, ItemVerdict.None, ItemVerdict.Dead], report.Items.Select(i => i.Verdict));
+        Assert.Contains("\"verdict\": \"Dead\"", ReportJson.Serialize(report), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -109,6 +112,7 @@ public sealed class ItemStatsTests
 
         Assert.Equal([4, 0, 4], report.Items.Select(i => i.OwnerWins.Trials));
         Assert.Equal(["element 0", "element 1", "element 2"], report.Items.Select(i => i.Name));
+        Assert.Same(Engine.ItemNoun.Cards, report.ItemNoun); // gra nie podala nazwy: domyslnie karty
     }
 
 

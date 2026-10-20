@@ -69,6 +69,9 @@ public sealed partial class MozaikaGame(MozaikaVariant? variant = null) : IGame<
         return [.. Enumerable.Range(0, Wall.Cells).Where(cell => (wall & (1 << cell)) != 0)];
     }
 
+    /// <summary>Raport balansu mowi o polach sciany, a nie o kartach.</summary>
+    public ItemNoun Noun { get; } = new("pole sciany", "pola sciany", "za mocne", "za slabe", "martwe");
+
     public static string ColorName(Tile tile) => ColorNames[(int)tile];
 
     private static (int Row, int Column) Cell(int item)

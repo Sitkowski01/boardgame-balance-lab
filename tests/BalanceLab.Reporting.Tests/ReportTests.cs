@@ -36,6 +36,18 @@ public sealed class ReportTests
         Assert.Equal("", ItemVerdicts.Describe(ItemVerdict.None));
     }
 
+    [Theory]
+    [InlineData(ItemVerdict.Strong, "za mocne")]
+    [InlineData(ItemVerdict.Weak, "za slabe")]
+    [InlineData(ItemVerdict.Dead, "martwe")]
+    public void Verdict_word_agrees_with_the_item_noun(ItemVerdict verdict, string word)
+    {
+        var field = new Engine.ItemNoun("pole sciany", "pola sciany", "za mocne", "za slabe", "martwe");
+
+        Assert.EndsWith($" {word}</span>", HtmlReport.Tag(verdict, field), StringComparison.Ordinal);
+        Assert.Equal(word, ItemVerdicts.Describe(verdict, field));
+    }
+
     [Fact]
     public void Tournament_report_shows_seats_contestants_length_and_flagged_cards()
     {
@@ -52,6 +64,18 @@ public sealed class ReportTests
         Assert.Contains("poziom 1: 40.0%", html, StringComparison.Ordinal);
         Assert.Contains(">#0</text>", html, StringComparison.Ordinal); // mocna podpisana na wykresie
         Assert.DoesNotContain(">#2</text>", html, StringComparison.Ordinal); // martwa i zwykla nie
+    }
+
+    [Fact]
+    public void Items_are_named_the_way_the_game_names_them()
+    {
+        var html = HtmlReport.Tournament(Tournament(items: true) with { ItemNoun = new("pole sciany", "pola sciany") });
+
+        Assert.Contains("Pola sciany: martwe i za mocne", html, StringComparison.Ordinal);
+        Assert.Contains("Kazdy punkt to pole sciany:", html, StringComparison.Ordinal);
+        Assert.Contains("<th>Pole sciany</th>", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("Karty", html, StringComparison.Ordinal);
+        Assert.Equal("", Html.Capitalize(""));
     }
 
     [Fact]
@@ -105,7 +129,7 @@ public sealed class ReportTests
 
         var html = HtmlReport.Comparison(Comparison.Compare(a, a));
 
-        Assert.Contains("Zadna karta nie zmienila sie istotnie.", html, StringComparison.Ordinal);
+        Assert.Contains("Nic nie zmienilo sie istotnie.", html, StringComparison.Ordinal);
         Assert.Contains("<td>nie</td>", html, StringComparison.Ordinal);
     }
 

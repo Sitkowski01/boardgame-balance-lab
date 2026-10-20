@@ -18,7 +18,7 @@ public sealed class BalanceCommandsTests : IDisposable
 
         Assert.Equal((0, ""), (code, error));
         Assert.Contains("Klejnoty (win=10): 20 partii", output, StringComparison.Ordinal);
-        Assert.Contains("Karty: wlasciciel przecietnej karty wygrywa (poziom 1", output, StringComparison.Ordinal);
+        Assert.Contains("Karty: wlasciciel przecietnego elementu wygrywa (poziom 1", output, StringComparison.Ordinal);
         Assert.Contains($"Raport HTML: {html}", output, StringComparison.Ordinal);
         Assert.Contains("<h1>Klejnoty (win=10): raport balansu</h1>", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
         Assert.Equal(90, Json(json).GetProperty("items").GetArrayLength());
@@ -33,6 +33,8 @@ public sealed class BalanceCommandsTests : IDisposable
 
         Assert.Equal((0, ""), (code, error));
         Assert.Contains("Mozaika (column=3): 20 partii", output, StringComparison.Ordinal);
+        Assert.Contains("Pola sciany: wlasciciel przecietnego elementu wygrywa (turkus", output, StringComparison.Ordinal);
+        Assert.Contains("Pola sciany: martwe i za mocne", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
         Assert.Contains("<h1>Mozaika (column=3): raport balansu</h1>", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
         Assert.Contains("rzad 3, kolumna 3 (turkus)", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
         Assert.Equal(25, Json(json).GetProperty("items").GetArrayLength());

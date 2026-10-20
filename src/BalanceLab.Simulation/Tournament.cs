@@ -54,7 +54,8 @@ public static class Tournament
         ItemInfo[] items = game is IItemTracking<TState> tracking
             ? [.. Enumerable.Range(0, tracking.ItemCount).Select(i => new ItemInfo(tracking.ItemName(i), tracking.ItemGroup(i)))]
             : [];
-        var report = Statistics.Summarize(game.Name, spec, [.. contestants.Select(c => c.Name)], records, items);
+        var report = Statistics.Summarize(game.Name, spec, [.. contestants.Select(c => c.Name)], records, items)
+            with { ItemNoun = game is IItemTracking<TState> named ? named.Noun : ItemNoun.Cards };
         return new TournamentResult(report, [.. records]);
     }
 

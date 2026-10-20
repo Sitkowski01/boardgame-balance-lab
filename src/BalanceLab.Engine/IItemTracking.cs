@@ -22,4 +22,16 @@ public interface IItemTracking<in TState>
 
     /// <summary>Numery elementow, ktore <paramref name="player"/> ma w (koncowym) stanie partii.</summary>
     IReadOnlyList<int> ItemsOf(TState state, int player);
+
+    /// <summary>Jak raport nazywa elementy tej gry; domyslnie karty.</summary>
+    ItemNoun Noun => ItemNoun.Cards;
+}
+
+/// <summary>
+/// Nazwa elementu w raporcie: pojedynczo ("karta", "pole sciany"), w liczbie mnogiej ("karty") i oceny w jego
+/// rodzaju ("za mocna" karta, "za mocne" pole) — raport mowi poprawnie po polsku o kazdej grze.
+/// </summary>
+public sealed record ItemNoun(string Singular, string Plural, string Strong = "za mocna", string Weak = "za slaba", string Dead = "martwa")
+{
+    public static ItemNoun Cards { get; } = new("karta", "karty");
 }

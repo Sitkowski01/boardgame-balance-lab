@@ -77,7 +77,11 @@ public sealed record ItemInfo(string Name, string Group);
 /// wygrywa wyraznie czesciej niz przy przecietnym elemencie jego grupy (<see cref="GroupStats"/>)
 /// = podejrzanie mocny. To korelacja, nie dowod: silny gracz kupuje tez dobre karty.
 /// </summary>
-public sealed record ItemStats(int Id, string Name, string Group, Proportion Taken, Proportion OwnerWins);
+public sealed record ItemStats(int Id, string Name, string Group, Proportion Taken, Proportion OwnerWins)
+{
+    /// <summary>Ocena wobec grupy (<see cref="ItemVerdicts.Of"/>) — w raporcie, zeby kazdy odbiorca ocenial tak samo.</summary>
+    public ItemVerdict Verdict { get; init; }
+}
 
 /// <summary>Jak czesto wygrywa wlasciciel przecietnego elementu grupy — punkt odniesienia dla jej elementow.</summary>
 public sealed record GroupStats(string Group, Proportion OwnerWins);
@@ -95,6 +99,9 @@ public sealed record TournamentReport(
 {
     /// <summary>Statystyki elementow gry; puste, gdy gra ich nie sledzi.</summary>
     public ImmutableArray<ItemStats> Items { get; init; } = [];
+
+    /// <summary>Jak nazywaja sie elementy tej gry (np. karty, pola sciany).</summary>
+    public ItemNoun ItemNoun { get; init; } = ItemNoun.Cards;
 
     /// <summary>
     /// Grupy elementow (np. poziomy kart). Tanie karty kupuje kazdy, drogie glownie prowadzacy, wiec

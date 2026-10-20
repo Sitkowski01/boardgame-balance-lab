@@ -1,7 +1,10 @@
-using BalanceLab.Simulation;
+using System.Text.Json.Serialization;
+using BalanceLab.Engine;
 
-namespace BalanceLab.Reporting;
+namespace BalanceLab.Simulation;
 
+/// <summary>Ocena elementu w raporcie; w JSON jako tekst ("Strong"), zeby przegladarka nie znala kolejnosci w C#.</summary>
+[JsonConverter(typeof(JsonStringEnumConverter<ItemVerdict>))]
 public enum ItemVerdict
 {
     /// <summary>Nic podejrzanego przy tej liczbie partii.</summary>
@@ -56,11 +59,16 @@ public static class ItemVerdicts
         return item.OwnerWins.High < group.Rate - Margin ? ItemVerdict.Weak : ItemVerdict.None;
     }
 
-    public static string Describe(ItemVerdict verdict) => verdict switch
+    /// <summary>Ocena slowem w rodzaju nazwy elementu ("martwa" karta, "martwe" pole); domyslnie jak dla kart.</summary>
+    public static string Describe(ItemVerdict verdict, ItemNoun? noun = null)
     {
-        ItemVerdict.Strong => "za mocna",
-        ItemVerdict.Weak => "za slaba",
-        ItemVerdict.Dead => "martwa",
-        _ => "",
-    };
+        var words = noun ?? ItemNoun.Cards;
+        return verdict switch
+        {
+            ItemVerdict.Strong => words.Strong,
+            ItemVerdict.Weak => words.Weak,
+            ItemVerdict.Dead => words.Dead,
+            _ => "",
+        };
+    }
 }
