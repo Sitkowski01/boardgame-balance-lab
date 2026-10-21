@@ -15,6 +15,7 @@ function replay(patch: Partial<MatchReplay> = {}): MatchReplay {
     players: ["Ala", "Ola"],
     status: "Finished",
     moves: ["0", "1", "2"],
+    movers: [0, 1, 0],
     scores: [0.5, 0.5],
     verified: true,
     problem: null,

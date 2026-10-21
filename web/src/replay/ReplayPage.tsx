@@ -164,18 +164,23 @@ export function ReplayPage({
           <section className="moves panel" aria-label="Lista ruchów">
             <h2>Ruchy</h2>
             <ol aria-label="Ruchy partii">
-              {match.moves.map((move, i) => (
-                <li key={i} className={i + 1 === position ? "current" : ""}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      go(i + 1);
-                    }}
-                  >
-                    {describe(move)}
-                  </button>
-                </li>
-              ))}
+              {match.moves.map((move, i) => {
+                // Bez autora (dziennik niezgodny z zasadami) zostaje sam ruch.
+                const who = players[match.movers[i] ?? -1];
+                return (
+                  <li key={i} className={i + 1 === position ? "current" : ""}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        go(i + 1);
+                      }}
+                    >
+                      {who !== undefined && <strong>{who}: </strong>}
+                      {describe(move)}
+                    </button>
+                  </li>
+                );
+              })}
             </ol>
           </section>
         </aside>

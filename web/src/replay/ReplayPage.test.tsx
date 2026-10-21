@@ -15,6 +15,7 @@ function replay(patch: Partial<MatchReplay> = {}): MatchReplay {
     players: ["Ala", "random"],
     status: "Finished",
     moves: ["3", "4", "3"],
+    movers: [0, 1, 0],
     scores: [1, 0],
     verified: true,
     problem: null,
@@ -54,6 +55,7 @@ describe("ReplayPage", () => {
     expect(screen.getByText("Wczytywanie partii…")).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "Powtórka: Czwórki" })).toBeInTheDocument();
     expect(screen.getByText("Ala vs Losowy")).toBeInTheDocument();
+    expect(screen.getByText("sprawdzona z dziennika")).toBeInTheDocument();
     await waitFor(() => {
       expect(position()).toBe("ruch 0 z 3");
     });
@@ -64,6 +66,10 @@ describe("ReplayPage", () => {
     await waitFor(() => {
       expect(discs()).toBe(1);
     });
+    // Powtorke sie oglada: zadna kolumna planszy nie przyjmuje ruchu.
+    const columns = screen.getAllByRole("button", { name: /^Kolumna \d$/u });
+    expect(columns).toHaveLength(7);
+    for (const column of columns) expect(column).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Koniec ⏭" }));
     await waitFor(() => {
       expect(discs()).toBe(3);
@@ -96,7 +102,7 @@ describe("ReplayPage", () => {
       within(list)
         .getAllByRole("button")
         .map((b) => b.textContent),
-    ).toEqual(["wrzuca do kolumny 4", "wrzuca do kolumny 5", "wrzuca do kolumny 4"]);
+    ).toEqual(["Ala: wrzuca do kolumny 4", "Losowy: wrzuca do kolumny 5", "Ala: wrzuca do kolumny 4"]);
     expect(within(list).getAllByRole("listitem")[1]).toHaveClass("current");
     await user.click(within(list).getAllByRole("button")[0] as HTMLElement);
     await waitFor(() => {
@@ -125,11 +131,20 @@ describe("ReplayPage", () => {
   it("marks a running match and a journal that does not match the rules", async () => {
     page({
       loadMatch: () =>
-        Promise.resolve(replay({ status: "InProgress", scores: [], verified: false, problem: "Ruch 2 nie zgadza sie z dziennikiem." })),
+        Promise.resolve(
+          replay({ status: "InProgress", movers: [], scores: [], verified: false, problem: "Ruch 2 nie zgadza sie z dziennikiem." }),
+        ),
     });
 
     expect(await screen.findByText("partia trwa")).toBeInTheDocument();
     expect(screen.getByText("Ruch 2 nie zgadza sie z dziennikiem.")).toBeInTheDocument();
+    expect(screen.queryByText("sprawdzona z dziennika")).not.toBeInTheDocument();
+    // Bez sprawdzonego dziennika nie wiadomo, kto zagral — same ruchy.
+    expect(
+      within(screen.getByRole("list", { name: "Ruchy partii" }))
+        .getAllByRole("button")
+        .map((b) => b.textContent),
+    ).toEqual(["wrzuca do kolumny 4", "wrzuca do kolumny 5", "wrzuca do kolumny 4"]);
   });
 
   it("shows why the match or a frame could not be loaded", async () => {

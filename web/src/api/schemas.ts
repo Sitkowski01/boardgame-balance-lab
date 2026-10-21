@@ -76,6 +76,8 @@ export const matchReplay = z.object({
   players: z.array(z.string()),
   status: z.enum(["InProgress", "Finished", "Abandoned"]),
   moves: z.array(z.string()),
+  /** Miejsce gracza, ktory zagral kazdy ruch; puste, gdy dziennik nie zgadza sie z zasadami. */
+  movers: z.array(z.number().int()),
   scores: z.array(z.number()),
   verified: z.boolean(),
   problem: z.string().nullable(),
