@@ -144,3 +144,28 @@ describe("MozaikaBoard", () => {
     expect(screen.queryByText("ty")).not.toBeInTheDocument();
   });
 });
+
+describe("Mozaika floor and workshops drawing", () => {
+  it("lays the floor out on its penalty slots, marker first", () => {
+    board({ view: mozaika({ players: [mozaikaPlayer({ floor: [0, 2, 0, 1, 0], marker: true }), mozaikaPlayer()] }) });
+
+    const slots = within(ala()).getByLabelText("Podłoga").querySelector(".floor-slots");
+    const cells = Array.from(slots?.children ?? []).map((el) => el.className);
+    const penalties = mozaikaRules().floorPenalties;
+    expect(cells.slice(0, 3)).toEqual(["marker", "floor-group", "floor-group"]);
+    expect(slots?.querySelectorAll(".tile")).toHaveLength(3);
+    expect(slots?.querySelectorAll(".slot")).toHaveLength(penalties.length - 4);
+    expect(Array.from(slots?.querySelectorAll(".penalty") ?? []).map((p) => p.textContent)).toEqual(penalties.map((n) => `−${String(n)}`));
+    expect(slots).toHaveStyle({ "--slots": String(penalties.length) });
+    expect(within(ala()).getByLabelText("grafit: 1")).toBeInTheDocument();
+  });
+
+  it("shows every tile in a workshop and a count in the center", () => {
+    board({ view: mozaika({ factories: [[2, 1, 0, 1, 0]], center: [0, 0, 5, 0, 0] }) });
+
+    const workshop = screen.getByRole("group", { name: "Warsztat 1" });
+    expect(workshop.querySelectorAll(".tile")).toHaveLength(4);
+    expect(within(workshop).queryAllByRole("img")).toHaveLength(0);
+    expect(within(screen.getByRole("group", { name: "Środek" })).getByRole("img", { name: "karmin: 5" })).toHaveTextContent("5");
+  });
+});

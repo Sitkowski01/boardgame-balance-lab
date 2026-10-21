@@ -46,13 +46,14 @@ export function PlayerBoard({ player, name, me, toMove, sheet, placements, onMov
         <div className="lines" role="list" aria-label="Rzędy wzoru">
           {player.lines.map((line, row) => (
             <div key={row} className="line" role="listitem" aria-label={lineLabel(row, line.color, line.count)}>
-              {place(row, "Tutaj", `Połóż na rząd ${String(row + 1)}`)}
+              {place(row, "→", `Połóż na rząd ${String(row + 1)}`)}
               {Array.from({ length: row + 1 }, (_, slot) =>
                 line.color !== null && slot < line.count ? <Tile key={slot} tile={line.color} /> : <span key={slot} className="slot" />,
               )}
             </div>
           ))}
         </div>
+        <span className="arrow" aria-hidden="true" />
         <div className="wall" role="grid" aria-label="Ściana">
           {sheet.wall.map((colors, row) => (
             <div key={row} role="row" className="wall-row">
@@ -66,14 +67,32 @@ export function PlayerBoard({ player, name, me, toMove, sheet, placements, onMov
         </div>
       </div>
       <div className="floor" aria-label="Podłoga">
+        <div className="floor-slots" style={{ ["--slots" as string]: String(sheet.floorPenalties.length) }}>
+          {player.marker && (
+            <span className="marker" role="img" aria-label="Znacznik pierwszego gracza">
+              1
+            </span>
+          )}
+          {player.floor.map((n, tile) =>
+            n > 0 ? (
+              <span key={tile} className="floor-group" role="img" aria-label={`${tileName(tile)}: ${String(n)}`}>
+                {Array.from({ length: n }, (_, i) => (
+                  <Tile key={i} tile={tile} decorative />
+                ))}
+              </span>
+            ) : null,
+          )}
+          {Array.from({ length: Math.max(0, sheet.floorPenalties.length - floorCount(player)) }, (_, i) => (
+            <span key={`free-${String(i)}`} className="slot" />
+          ))}
+          {sheet.floorPenalties.map((n, i) => (
+            <span key={`penalty-${String(i)}`} className="penalty" aria-hidden="true">
+              −{n}
+            </span>
+          ))}
+        </div>
+        {floorCount(player) > 0 && <span className="floor-penalty">−{floorPenalty(player, sheet)} pkt</span>}
         {place("floor", "Na podłogę", "Połóż na podłogę")}
-        {player.floor.map((n, tile) => (n > 0 ? <Tile key={tile} tile={tile} count={n} /> : null))}
-        {player.marker && (
-          <span className="marker" role="img" aria-label="Znacznik pierwszego gracza">
-            1
-          </span>
-        )}
-        {floorCount(player) > 0 && <span className="muted">−{floorPenalty(player, sheet)} pkt</span>}
       </div>
     </article>
   );

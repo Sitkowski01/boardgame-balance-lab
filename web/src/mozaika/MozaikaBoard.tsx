@@ -55,7 +55,11 @@ export function MozaikaBoard({ view, sheet, legalMoves, seat, names, onMove }: M
               pick(selected ? null : { source, color });
             }}
           >
-            <Tile tile={color} count={count} />
+            {source === "center" ? (
+              <Tile tile={color} count={count} />
+            ) : (
+              Array.from({ length: count }, (_, i) => <Tile key={i} tile={color} decorative />)
+            )}
           </button>
         );
       })}
@@ -71,7 +75,9 @@ export function MozaikaBoard({ view, sheet, legalMoves, seat, names, onMove }: M
     <div className="mozaika">
       <section aria-label="Warsztaty" className="table">
         {view.factories.map((tiles, f) => (
-          <div key={f}>{sourceTiles(f, tiles, `Warsztat ${String(f + 1)}`)}</div>
+          <div key={f} className="factory">
+            {sourceTiles(f, tiles, `Warsztat ${String(f + 1)}`)}
+          </div>
         ))}
         {sourceTiles("center", view.center, "Środek")}
       </section>

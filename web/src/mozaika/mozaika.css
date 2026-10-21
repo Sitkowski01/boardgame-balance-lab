@@ -1,34 +1,110 @@
-/* Mozaika: warsztaty, srodek stolu i plansze graczy (rzedy wzoru, sciana, podloga). */
+/* Mozaika: ceramiczne warsztaty, srodek stolu i plansze graczy (rzedy wzoru, sciana, podloga z karami). */
+.mozaika {
+  --board: #f1e6cc;
+  --board-edge: #d8c69c;
+  --board-ink: #5a4a2a;
+  --t0: #1c9c92;
+  --t1: #d99a2c;
+  --t2: #b8263e;
+  --t3: #45484d;
+  --t4: #efe5cb;
+  display: grid;
+  gap: 16px;
+}
+:root[data-theme="dark"] .mozaika {
+  --board: #2b2822;
+  --board-edge: #3d382e;
+  --board-ink: #c9b98f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .mozaika {
+    --board: #2b2822;
+    --board-edge: #3d382e;
+    --board-ink: #c9b98f;
+  }
+}
+
+/* Kafelek: szkliwo z odblaskiem i wzorek w rogu, inny dla kazdego koloru. */
 .tile {
+  --t: var(--t0);
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border: 1px solid rgb(0 0 0 / 0.25);
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 750;
   color: #fff;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--t) 70%, #fff) 0%, var(--t) 45%, color-mix(in srgb, var(--t) 85%, #000) 100%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(255 255 255 / 0.22),
+    inset 0 -2px 0 rgb(0 0 0 / 0.18),
+    0 1px 1.5px rgb(0 0 0 / 0.3);
+}
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1.5px solid rgb(255 255 255 / 0.45);
+  pointer-events: none;
 }
 .tile-0 {
-  background: #1f9e94;
+  --t: var(--t0);
+}
+.tile-0::after {
+  transform: rotate(45deg);
 }
 .tile-1 {
-  background: #d4952a;
+  --t: var(--t1);
+}
+.tile-1::after {
+  border-radius: 50%;
 }
 .tile-2 {
-  background: #b3243b;
+  --t: var(--t2);
+}
+.tile-2::after {
+  border-radius: 50% 0;
 }
 .tile-3 {
-  background: #4a4c50;
+  --t: var(--t3);
+}
+.tile-3::after {
+  inset: 9px;
+  background: rgb(255 255 255 / 0.4);
+  border: 0;
+  border-radius: 50%;
 }
 .tile-4 {
-  background: #efe6cf;
-  color: #222;
+  --t: var(--t4);
+  color: #3a3020;
+  text-shadow: none;
+}
+.tile-4::after {
+  border-color: rgb(120 95 50 / 0.45);
+  border-radius: 2px;
+  transform: rotate(45deg);
+  inset: 8px;
 }
 .tile.faint {
   opacity: 0.22;
+  box-shadow: none;
+  filter: saturate(0.7);
+}
+.tile.faint::after {
+  opacity: 0.6;
+}
+:root[data-theme="dark"] .tile.faint {
+  opacity: 0.32;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .tile.faint {
+    opacity: 0.32;
+  }
 }
 
 .mozaika {
