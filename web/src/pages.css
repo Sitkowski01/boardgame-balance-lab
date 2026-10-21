@@ -415,9 +415,116 @@
   flex: 1;
   min-width: 0;
 }
-.moves ol {
-  padding-left: 24px;
+.table-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 20px;
+  align-items: start;
 }
+.board-area {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.table-side {
+  display: grid;
+  gap: 14px;
+  position: sticky;
+  top: 76px;
+}
+.your-turn {
+  margin: 0;
+  justify-self: start;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+.moves {
+  padding: 14px 16px;
+}
+.moves h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.moves ol {
+  margin: 0;
+  padding-left: 26px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.88rem;
+  max-height: 360px;
+  overflow: auto;
+}
+.moves li::marker {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.moves li:last-child {
+  font-weight: 600;
+}
+.result {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border-color: var(--gold);
+  background: linear-gradient(120deg, var(--panel), color-mix(in srgb, var(--gold) 16%, var(--panel)));
+}
+.result.abandoned {
+  border-color: var(--line-strong);
+  background: var(--panel);
+}
+.result-mark {
+  font-size: 2.2rem;
+}
+.result-body {
+  flex: 1;
+}
+.result h2 {
+  margin: 0;
+}
+.result-winner {
+  margin: 2px 0;
+  font-weight: 650;
+}
+.result-scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.result-scores .best {
+  color: var(--text);
+  font-weight: 650;
+}
+.result a {
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 650;
+  text-decoration: none;
+}
+.back {
+  margin-top: 28px;
+}
+/* Wynik stoi nad plansza; ta sama wiadomosc pod plansza Czworek bylaby powtorzeniem. */
+.board-area:has(.result) .connectfour > .note {
+  display: none;
+}
+
 .replay .moves {
   columns: 3 220px;
 }
