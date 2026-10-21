@@ -4,13 +4,26 @@ Laboratorium balansu gier planszowych. Zasady gry podpina się jako plugin, boty
 rozgrywają tysiące partii, a raport pokazuje, co jest niezbalansowane: przewagę miejsca
 przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w zasadach.
 
-> Projekt w budowie. Gotowe: kontrakt silnika z ukrytą informacją, deterministyczny generator,
-> Czwórki (ConnectFour), Klejnoty (gra karciana w stylu Splendora) i Mozaika (kafelki w stylu Azula), boty: losowy, heurystyczny
-> (z profilami strategii), MCTS i ISMCTS, symulator turniejów, liga z rankingiem Elo, porównanie
-> wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami oraz
-> serwer gry na żywo (SignalR): lobby, pokoje, boty na wolnych miejscach, limity czasu i powrót po rozłączeniu,
-> a w przeglądarce (React): lobby, plansze trzech gier, odtwarzacz powtórek z suwakiem i laboratorium balansu
-> z wykresami (turniej, liga Elo, porównanie „co jeśli” liczone na serwerze na zamówienie).
+**Polski** · [English](README.en.md)
+
+Trzy gry: Czwórki (ConnectFour), Klejnoty (gra karciana w stylu Splendora) i Mozaika (kafelki w stylu Azula);
+boty: losowy, heurystyczny (z profilami strategii), MCTS i ISMCTS; symulator turniejów, liga z rankingiem Elo,
+porównanie wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami, serwer gry
+na żywo (SignalR) i front w React: lobby, plansze, odtwarzacz powtórek i laboratorium balansu z wykresami.
+
+![Stół Klejnotów: rynek kart, bank żetonów i gracze](docs/screens/klejnoty.png)
+
+![Partia Czwórek z botem MCTS](docs/game.gif)
+
+| Lobby | Mozaika | Laboratorium | Telefon, tryb ciemny |
+|---|---|---|---|
+| ![Lobby](docs/screens/lobby.png) | ![Mozaika](docs/screens/mozaika.png) | ![Laboratorium](docs/screens/lab.png) | ![Telefon](docs/screens/phone-dark.png) |
+
+```bash
+docker compose up        # http://localhost:8080 — lobby, stoły, powtórki i laboratorium
+```
+
+Jeden obraz: serwer ASP.NET Core (hub SignalR + REST) serwuje też zbudowany front, obok PostgreSQL na dziennik partii.
 
 ## Architektura
 
@@ -333,8 +346,13 @@ dotnet run --project src/BalanceLab.Api    # gra i front pod localhost:5080
 ```
 
 Lobby pokazuje pokoje na żywo i zakłada nowe (gra, miejsca, wariant zasad). Przy stole gospodarz sadza boty
-i zaczyna, a każdy gra ze swojego miejsca; widz ogląda bez cudzych kart. Powtórka `/matches/{id}` przewija
-partię z dziennika suwakiem — klatki liczy serwer, przeglądarka je tylko pamięta.
+i zaczyna (link do stołu kopiuje się jednym przyciskiem), a każdy gra ze swojego miejsca; widz ogląda bez cudzych
+kart. Powtórka `/matches/{id}` przewija partię z dziennika suwakiem — klatki liczy serwer, przeglądarka je tylko pamięta.
+
+Wygląd jest własny, bez bibliotek komponentów: kolory jako role w CSS z osobnymi wartościami dla trybu ciemnego
+(za systemem albo z przełącznika, wybór zostaje w przeglądarce), plansze i ilustracje w SVG i CSS. W Czwórkach
+krążek spada do swojego pola, ostatni ruch ma obwódkę, a zwycięska czwórka świeci; w Klejnotach karta, którą
+stać gracza, jest wyróżniona, a nowa karta na rynku wjeżdża animacją. Animacje wyłącza `prefers-reduced-motion`.
 
 - **Front nie zna zasad.** Klik w żetony i karty składa ruch, ale przycisk „Weź” czy „Kup” pojawia się tylko,
   gdy taki ruch jest na liście legalnych ruchów od serwera. Test własności (fast-check): żadna sekwencja klików
