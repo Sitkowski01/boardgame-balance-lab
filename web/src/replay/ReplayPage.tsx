@@ -3,6 +3,8 @@ import { api } from "../api/rest";
 import type { MatchReplay, ReplayFrame } from "../api/schemas";
 import { describe, GameBoard } from "../games";
 import { Link } from "../Link";
+import { GameArt } from "../lobby/GameArt";
+import { gameTitle, playerName } from "../names";
 import { winners } from "../table/table";
 import { Controls } from "./Controls";
 import { clampPosition, frameCache } from "./frames";
@@ -109,16 +111,27 @@ export function ReplayPage({
   }
 
   if (match === null) {
-    return <p>Wczytywanie partii…</p>;
+    return (
+      <main>
+        <p className="muted">Wczytywanie partii…</p>
+      </main>
+    );
   }
 
   const best = winners(match.scores);
+  const players = match.players.map(playerName);
   return (
     <main className="replay">
       <header className="table-head">
-        <h1>Powtórka: {match.gameName}</h1>
-        <span className="muted">{match.players.join(" vs ")}</span>
-        {match.status === "InProgress" && <span className="badge">partia trwa</span>}
+        <GameArt game={match.game} />
+        <div>
+          <h1>Powtórka: {gameTitle(match.gameName)}</h1>
+          <div className="table-meta">
+            <span className="muted">{players.join(" vs ")}</span>
+            {match.status === "InProgress" && <span className="badge">partia trwa</span>}
+            {match.verified && <span className="badge accent">sprawdzona z dziennika</span>}
+          </div>
+        </div>
       </header>
       {!match.verified && match.problem !== null && <p className="banner error">{match.problem}</p>}
       {frameError !== null && (
@@ -126,34 +139,47 @@ export function ReplayPage({
           Nie udało się pobrać pozycji: {frameError}
         </p>
       )}
-      <Controls position={position} last={last} running={running} onGo={go} onPlay={setPlaying} />
-      {frame !== null && (
-        <GameBoard
-          game={match.game}
-          variant={match.variant}
-          view={frame.view}
-          legalMoves={[]}
-          seat={null}
-          names={match.players}
-          onMove={() => undefined}
-        />
-      )}
-      {position === last && best.length > 0 && <p>Wygrywa: {best.map((s) => match.players[s]).join(", ")}</p>}
-      <ol className="moves" aria-label="Ruchy partii">
-        {match.moves.map((move, i) => (
-          <li key={i} className={i + 1 === position ? "current" : ""}>
-            <button
-              type="button"
-              onClick={() => {
-                go(i + 1);
-              }}
-            >
-              {describe(match.game, move)}
-            </button>
-          </li>
-        ))}
-      </ol>
-      <p>
+      <div className="table-layout">
+        <div className="board-area">
+          <div className="panel">
+            <Controls position={position} last={last} running={running} onGo={go} onPlay={setPlaying} />
+          </div>
+          {position === last && best.length > 0 && <p className="result-winner">Wygrywa: {best.map((s) => players[s]).join(", ")}</p>}
+          {frame === null ? (
+            <p className="muted">Wczytywanie pozycji…</p>
+          ) : (
+            <GameBoard
+              game={match.game}
+              variant={match.variant}
+              view={frame.view}
+              legalMoves={[]}
+              seat={null}
+              names={players}
+              onMove={() => undefined}
+            />
+          )}
+        </div>
+        <aside className="table-side">
+          <section className="moves panel" aria-label="Lista ruchów">
+            <h2>Ruchy</h2>
+            <ol aria-label="Ruchy partii">
+              {match.moves.map((move, i) => (
+                <li key={i} className={i + 1 === position ? "current" : ""}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      go(i + 1);
+                    }}
+                  >
+                    {describe(match.game, move)}
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </aside>
+      </div>
+      <p className="back">
         <Link to="/" navigate={navigate}>
           ← Lobby
         </Link>

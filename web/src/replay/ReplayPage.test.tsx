@@ -44,7 +44,7 @@ function page(patch: Partial<ReplayPageProps> = {}) {
   return { loadFrame, navigate, user: userEvent.setup() };
 }
 
-const discs = (): number => screen.queryAllByRole("img", { name: /Ala|random/u }).length;
+const discs = (): number => screen.queryAllByRole("img", { name: /Ala|Losowy/u }).length;
 const position = (): string | null => screen.getByLabelText("Pozycja").textContent;
 
 describe("ReplayPage", () => {
@@ -52,8 +52,8 @@ describe("ReplayPage", () => {
     const { loadFrame, user } = page();
 
     expect(screen.getByText("Wczytywanie partii…")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Powtórka: ConnectFour" })).toBeInTheDocument();
-    expect(screen.getByText("Ala vs random")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Powtórka: Czwórki" })).toBeInTheDocument();
+    expect(screen.getByText("Ala vs Losowy")).toBeInTheDocument();
     await waitFor(() => {
       expect(position()).toBe("ruch 0 z 3");
     });

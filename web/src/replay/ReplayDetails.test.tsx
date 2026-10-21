@@ -50,7 +50,7 @@ const slider = (): HTMLElement => screen.getByRole("slider", { name: "Ruch" });
 describe("replay details", () => {
   it("names the winners only at the end and marks the current move", async () => {
     const { user } = page();
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
 
     expect(screen.queryByText(/Wygrywa/u)).toBeNull();
     expect(screen.queryByText("partia trwa")).toBeNull();
@@ -65,7 +65,7 @@ describe("replay details", () => {
 
   it("shows no problem for a verified match or one without a message", async () => {
     page({ loadMatch: () => Promise.resolve(replay({ verified: false, problem: null })) });
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
 
     expect(document.querySelector(".banner")).toBeNull();
   });
@@ -76,7 +76,7 @@ describe("replay details", () => {
       moves === 1 ? new Promise<ReplayFrame>((r) => (late = r)) : Promise.resolve(frame(moves)),
     );
     page({ loadFrame });
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
 
     fireEvent.change(slider(), { target: { value: "1" } });
     fireEvent.change(slider(), { target: { value: "3" } });
@@ -93,7 +93,7 @@ describe("replay details", () => {
 
   it("waits until the slider stops before asking for a frame", async () => {
     const { loadFrame } = page({ settle: 60 });
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
     await waitFor(() => {
       expect(loadFrame).toHaveBeenCalledWith(matchId, 0);
     });
@@ -111,7 +111,7 @@ describe("replay details", () => {
 
   it("prefetches the next position after showing one", async () => {
     const { loadFrame } = page();
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
 
     await waitFor(() => {
       expect(loadFrame.mock.calls.map(([, n]) => n)).toEqual([0, 1]);
@@ -123,11 +123,11 @@ describe("replay details", () => {
       moves === 2 ? Promise.reject(new Error("Serwer odpowiedzial 429.")) : Promise.resolve(frame(moves)),
     );
     page({ loadFrame });
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
 
     fireEvent.change(slider(), { target: { value: "2" } });
     expect(await screen.findByRole("alert")).toHaveTextContent("Nie udało się pobrać pozycji: Serwer odpowiedzial 429.");
-    expect(screen.getByRole("heading", { name: "Powtórka: ConnectFour" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Powtórka: Czwórki" })).toBeInTheDocument();
 
     fireEvent.change(slider(), { target: { value: "3" } });
     await waitFor(() => {
@@ -137,7 +137,7 @@ describe("replay details", () => {
 
   it("stops moving as soon as it is paused", async () => {
     const { user } = page({ pace: 80 });
-    await screen.findByRole("heading", { name: "Powtórka: ConnectFour" });
+    await screen.findByRole("heading", { name: "Powtórka: Czwórki" });
 
     await user.click(screen.getByRole("button", { name: "▶ Odtwarzaj" }));
     await user.click(screen.getByRole("button", { name: "⏸ Pauza" }));

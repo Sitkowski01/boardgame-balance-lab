@@ -525,25 +525,47 @@
   display: none;
 }
 
-.replay .moves {
-  columns: 3 220px;
+/* Powtorka: plansza z suwakiem i lista ruchow obok. */
+.replay .moves ol {
+  max-height: 520px;
+}
+.replay .moves li {
+  font-weight: 400;
 }
 .replay .moves li.current button {
-  border-color: var(--accent);
-  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 650;
 }
 .replay .moves button {
+  width: 100%;
   border: none;
+  box-shadow: none;
+  background: transparent;
   text-align: left;
-  padding: 2px 4px;
+  padding: 3px 8px;
+  font-weight: 450;
 }
 .controls {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  margin: 12px 0;
+  padding: 10px 12px;
 }
 .controls input[type="range"] {
   flex: 1 1 200px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .table-layout {
+    grid-template-columns: 1fr;
+  }
+  .table-side {
+    position: static;
+  }
+  .table-head .game-art {
+    width: 56px;
+  }
 }
