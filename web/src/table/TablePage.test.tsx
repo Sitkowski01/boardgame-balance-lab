@@ -45,6 +45,12 @@ describe("TablePage", () => {
     expect(screen.getByText("oglądasz")).toBeInTheDocument();
     expect(screen.getByText("czeka na graczy")).toBeInTheDocument();
     expect(within(screen.getByRole("list", { name: "Miejsca" })).getByText("wolne miejsce")).toBeInTheDocument();
+    expect(screen.queryByText(/^wariant:/u)).not.toBeInTheDocument();
+
+    send(last(links), (e) => {
+      e.room(room({ version: 2, variant: "win=9" }));
+    });
+    expect(screen.getByText("wariant: win=9")).toHaveClass("badge", "accent");
   });
 
   it("returns to the seat with the ticket from this browser tab", async () => {

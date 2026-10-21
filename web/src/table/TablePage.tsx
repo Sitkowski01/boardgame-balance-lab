@@ -1,5 +1,5 @@
 import type { Connect } from "../api/connection";
-import { describe, GameBoard } from "../games";
+import { GameBoard, useDescribe } from "../games";
 import { Link } from "../Link";
 import { GameArt } from "../lobby/GameArt";
 import { gameTitle, seatName } from "../names";
@@ -34,6 +34,7 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
   const { room, view, moves } = table;
   const role = myRole(table);
   const names = room?.seats.map((s) => seatName(s) ?? `Miejsce ${String(s.seat + 1)}`) ?? [];
+  const describe = useDescribe(room?.game ?? null, room?.variant ?? null);
 
   return (
     <main className="table-page">
@@ -110,7 +111,7 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
                       {moves.map((m) => (
                         <li key={m.number} value={m.number} className={`seat-${String(m.seat)}`}>
                           <strong>{names[m.seat]}</strong>
-                          {m.byBot && room.seats[m.seat]?.kind === "Human" ? " (bot za gracza)" : ""}: {describe(room.game, m.move)}
+                          {m.byBot && room.seats[m.seat]?.kind === "Human" ? " (bot za gracza)" : ""}: {describe(m.move)}
                         </li>
                       ))}
                     </ol>

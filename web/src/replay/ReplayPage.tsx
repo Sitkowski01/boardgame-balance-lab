@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api/rest";
 import type { MatchReplay, ReplayFrame } from "../api/schemas";
-import { describe, GameBoard } from "../games";
+import { GameBoard, useDescribe } from "../games";
 import { Link } from "../Link";
 import { GameArt } from "../lobby/GameArt";
 import { gameTitle, playerName } from "../names";
@@ -41,6 +41,7 @@ export function ReplayPage({
   const [frameError, setFrameError] = useState<string | null>(null);
   const frames = useMemo(() => frameCache((moves) => loadFrame(id, moves)), [id, loadFrame]);
   const last = match?.moves.length ?? 0;
+  const describe = useDescribe(match?.game ?? null, match?.variant ?? null);
 
   // Strona jest kluczowana numerem partii (App), wiec odpowiedz zawsze dotyczy tej partii.
   useEffect(() => {
@@ -171,7 +172,7 @@ export function ReplayPage({
                       go(i + 1);
                     }}
                   >
-                    {describe(match.game, move)}
+                    {describe(move)}
                   </button>
                 </li>
               ))}

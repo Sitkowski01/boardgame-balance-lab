@@ -64,6 +64,22 @@ export function describe(game: string, move: string, cards?: readonly CardSheet[
 }
 
 const defaultLoad = (game: string, variant: string | null): Promise<unknown> => api.rules(game, variant, z.unknown());
+const noSheet = (): Promise<unknown> => Promise.resolve(null);
+const cardsSheet = klejnotySheet.nullable();
+
+/**
+ * Opis ruchow partii dla listy ruchow. Klejnoty opisuja karte jej kolorem i punktami z tabeli zasad wariantu —
+ * sam numer karty nic graczowi nie mowi; bez tabeli (jeszcze nie przyszla albo blad) zostaje numer.
+ */
+export function useDescribe(
+  game: string | null,
+  variant: string | null,
+  load: (game: string, variant: string | null) => Promise<unknown> = defaultLoad,
+): (move: string) => string {
+  const sheet = useSheet(game ?? "", variant, cardsSheet, game === "klejnoty" ? load : noSheet);
+  const cards = sheet !== null && typeof sheet !== "string" ? sheet.cards : undefined;
+  return (move) => describe(game ?? "", move, cards);
+}
 
 /** Wybiera plansze po nazwie gry i sprawdza widok jej schematem. */
 export function GameBoard(props: BoardProps) {

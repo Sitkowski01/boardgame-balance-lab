@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { render, renderHook, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { botsFor, describe as describeMove, GameBoard } from "./games";
+import { botsFor, describe as describeMove, GameBoard, useDescribe } from "./games";
 import { connectFour, klejnoty, mozaika, mozaikaRules, sheet } from "./test/boards";
 
 describe("GameBoard", () => {
@@ -117,5 +117,31 @@ describe("games", () => {
     expect(describeMove("klejnoty", "dziwny")).toBe("dziwny");
     expect(describeMove("mozaika", "f0:O:floor")).toBe("bierze ochrę z warsztatu 1 na podłogę");
     expect(describeMove("mozaika", "dziwny")).toBe("dziwny");
+  });
+
+  it("names Klejnoty cards by colour and points once the rules of the variant arrive", async () => {
+    const load = vi.fn().mockResolvedValue(sheet());
+    const { result } = renderHook(() => useDescribe("klejnoty", "win=9", load));
+
+    expect(result.current("buy:41")).toBe("kupuje kartę #41");
+    await waitFor(() => {
+      expect(result.current("buy:41")).toBe("kupuje kartę (niebieski, 1 pkt)");
+    });
+    expect(load).toHaveBeenCalledWith("klejnoty", "win=9");
+  });
+
+  it("keeps card numbers when the rules fail and asks for no rules in other games", async () => {
+    const failed = renderHook(() => useDescribe("klejnoty", null, () => Promise.reject(new Error("nie"))));
+    await waitFor(() => {
+      expect(failed.result.current("reserve:7")).toBe("rezerwuje kartę #7");
+    });
+
+    const load = vi.fn().mockResolvedValue(sheet());
+    const other = renderHook(() => useDescribe("mozaika", null, load));
+    expect(other.result.current("c:I:floor")).toBe("bierze perłę ze środka na podłogę");
+    const none = renderHook(() => useDescribe(null, null, load));
+    expect(none.result.current("6")).toBe("wrzuca do kolumny 7");
+    await Promise.resolve();
+    expect(load).not.toHaveBeenCalled();
   });
 });
