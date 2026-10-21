@@ -107,52 +107,94 @@
   }
 }
 
-.mozaika {
-  display: grid;
-  gap: 12px;
-  margin-top: 12px;
-}
+/* Warsztaty i srodek stolu. */
 .mozaika .table {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
+  align-items: center;
+}
+.factory .source {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fbf5e6, #e6d6b0 70%, #d4bf8f);
+  border: 1px solid #c7b184;
+  box-shadow:
+    var(--shadow-1),
+    inset 0 -4px 8px rgb(120 90 40 / 0.18);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px;
+}
+:root[data-theme="dark"] .factory .source {
+  background: radial-gradient(circle at 40% 35%, #4a4436, #343024 70%, #2a2720);
+  border-color: #4d4637;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .factory .source {
+    background: radial-gradient(circle at 40% 35%, #4a4436, #343024 70%, #2a2720);
+    border-color: #4d4637;
+  }
 }
 .source {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
-  min-width: 84px;
-  min-height: 40px;
-  padding: 8px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  justify-content: center;
 }
 .source.center {
-  border-radius: 8px;
-  border-style: dashed;
-  flex: 1 1 160px;
+  flex: 1 1 200px;
+  min-height: 72px;
+  padding: 12px;
+  justify-content: center;
+  border-radius: var(--radius);
+  border: 1.5px dashed var(--line-strong);
+  background: var(--panel-2);
 }
 .source button {
-  padding: 2px;
-  border-radius: 6px;
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.source button:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.35);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.source button:disabled {
+  opacity: 1;
 }
 .source button.picked {
-  outline: 3px solid var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .marker {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
   background: var(--text);
   color: var(--bg);
-  font-weight: 700;
+  font-weight: 800;
+  font-family: var(--display);
 }
+.mozaika > .note {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 550;
+}
+
 .mozaika-player {
   flex: 1 1 300px;
   padding: 8px;
