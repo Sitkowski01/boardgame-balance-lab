@@ -1,50 +1,124 @@
-/* Klejnoty: zetony, karty, rynek, bank i panele graczy. Kolory zetonow sa w :root (styles.css). */
+/* Klejnoty: zetony jak zetony do pokera, karty z klejnotem, rewersy talii, patroni, bank i panele graczy. */
+.klejnoty {
+  --card-face: #fffaf0;
+  --tier-1: #4f9a5d;
+  --tier-2: #c99a2e;
+  --tier-3: #3f6fc0;
+  display: grid;
+  gap: 16px;
+}
+:root[data-theme="dark"] .klejnoty {
+  --card-face: #25292a;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .klejnoty {
+    --card-face: #25292a;
+  }
+}
+
+/* Zeton: kolo w kolorze; w banku i u graczy z paskami na obrzezu jak zeton do pokera. */
 .gem {
+  --c: var(--gem-0);
+  --ink: #222;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 22px;
   height: 22px;
   border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border: 1px solid rgb(0 0 0 / 0.25);
-}
-.gem-0 {
-  background: var(--gem-0);
-  color: #222;
+  font-size: 0.74rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  background: var(--c);
+  color: var(--ink);
+  box-shadow:
+    inset 0 -2px 0 rgb(0 0 0 / 0.18),
+    0 0 0 1px rgb(0 0 0 / 0.18);
 }
 .gem-1 {
-  background: var(--gem-1);
-  color: #fff;
+  --c: var(--gem-1);
+  --ink: #fff;
 }
 .gem-2 {
-  background: var(--gem-2);
-  color: #fff;
+  --c: var(--gem-2);
+  --ink: #fff;
 }
 .gem-3 {
-  background: var(--gem-3);
-  color: #fff;
+  --c: var(--gem-3);
+  --ink: #fff;
 }
 .gem-4 {
-  background: var(--gem-4);
-  color: #fff;
+  --c: var(--gem-4);
+  --ink: #fff;
 }
 .gem-5 {
-  background: var(--gem-5);
-  color: #222;
+  --c: var(--gem-5);
+  --ink: #2a1f00;
+}
+.bank .gem,
+.player .tokens .gem,
+.returns .gem,
+.take .gem {
+  width: 34px;
+  height: 34px;
+  font-size: 0.9rem;
+  background:
+    radial-gradient(circle, var(--c) 0 56%, transparent 57%), repeating-conic-gradient(var(--c) 0 22deg, rgb(255 255 255 / 0.6) 22deg 33deg);
+}
+.player .tokens .gem {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
 }
 .cost {
   display: inline-flex;
-  gap: 2px;
+  gap: 3px;
   flex-wrap: wrap;
 }
 .row {
   display: flex;
-  gap: 4px;
+  gap: 5px;
   align-items: center;
   flex-wrap: wrap;
-  margin: 4px 0;
+  margin: 6px 0;
+}
+
+/* Klejnot rabatu na karcie. */
+.gem-icon {
+  --g: var(--gem-0);
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.3));
+}
+.gem-icon-1 {
+  --g: var(--gem-1);
+}
+.gem-icon-2 {
+  --g: var(--gem-2);
+}
+.gem-icon-3 {
+  --g: var(--gem-3);
+}
+.gem-icon-4 {
+  --g: #4a4a4a;
+}
+.gem-icon-5 {
+  --g: var(--gem-5);
+}
+.facet-base {
+  fill: var(--g);
+  stroke: rgb(0 0 0 / 0.35);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
+.facet-top {
+  fill: color-mix(in srgb, var(--g) 60%, #fff);
+}
+.facet-shine {
+  fill: rgb(255 255 255 / 0.55);
+}
+.facet-shade {
+  fill: rgb(0 0 0 / 0.14);
 }
 
 .klejnoty {

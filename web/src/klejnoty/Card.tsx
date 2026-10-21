@@ -1,4 +1,4 @@
-import { Cost, Gem } from "./Gem";
+import { Cost, GemIcon } from "./Gem";
 import { gemName, type CardSheet } from "./model";
 import { cardMoves } from "./moves";
 
@@ -19,7 +19,7 @@ export function Card({ card, id, legalMoves, onMove }: CardProps) {
         <>
           <div className="card-head">
             <strong>{card.points > 0 ? card.points : ""}</strong>
-            <Gem gem={card.bonus} label={`rabat: ${gemName(card.bonus)}`} />
+            <GemIcon gem={card.bonus} label={`rabat: ${gemName(card.bonus)}`} />
           </div>
           <Cost counts={card.cost} />
         </>
@@ -28,6 +28,7 @@ export function Card({ card, id, legalMoves, onMove }: CardProps) {
         {buy !== null && (
           <button
             type="button"
+            className="buy"
             onClick={() => {
               onMove(buy);
             }}

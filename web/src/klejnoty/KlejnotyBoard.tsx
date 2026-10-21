@@ -28,6 +28,9 @@ export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, onMove }: 
           const patron = sheet.patrons[id];
           return patron === undefined ? null : (
             <div key={id} className="patron" aria-label={`Patron #${String(id)}`}>
+              <span className="patron-crown" aria-hidden="true">
+                ♛
+              </span>
               <strong>{patron.points}</strong>
               <Cost counts={patron.requirement} />
             </div>
@@ -44,8 +47,8 @@ export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, onMove }: 
             return (
               <div key={tier} className="market-row">
                 <div className={`deck tier-${String(tier)}`} aria-label={`Talia ${String(tier)}`}>
-                  <span>poziom {tier}</span>
-                  <span>{view.deckSizes[tier - 1]} kart</span>
+                  <span className="deck-tier">{"I".repeat(tier)}</span>
+                  <span className="deck-count">{view.deckSizes[tier - 1]} kart</span>
                   {deck !== null && (
                     <button
                       type="button"
