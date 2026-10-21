@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { winningCells } from "./model";
+import { newDiscs, sameRows, winningCells } from "./model";
 
 type Cell = number | null;
 const empty = (): Cell[][] => Array.from({ length: 6 }, () => Array.from({ length: 7 }, (): Cell => null));
@@ -162,3 +162,46 @@ describe("winning four", () => {
   });
 });
 
+describe("last move", () => {
+  it("is the one new disc since the previous position", () => {
+    const before = put(empty(), [[5, 0]], 0);
+    expect(sorted(newDiscs(before, put(before, [[5, 3]], 1)))).toEqual([38]);
+  });
+
+  it("is the reply when a move and the answer arrive together", () => {
+    const one = put(empty(), [[5, 0]], 0);
+    expect(sorted(newDiscs(empty(), put(one, [[5, 1]], 1)))).toEqual([36]);
+    const three = put(put(one, [[5, 1]], 1), [[4, 0]], 0);
+    expect(sorted(newDiscs(one, three))).toEqual([28]);
+  });
+
+  it("is nothing at the start, after going back or after a jump of several moves", () => {
+    const one = put(empty(), [[5, 0]], 0);
+    expect(newDiscs(null, one).size).toBe(0);
+    expect(newDiscs(one, empty()).size).toBe(0);
+    expect(newDiscs(one, one).size).toBe(0);
+    const four = put(
+      put(
+        one,
+        [
+          [5, 1],
+          [5, 2],
+        ],
+        1,
+      ),
+      [[4, 0]],
+      0,
+    );
+    expect(newDiscs(one, four).size).toBe(0);
+  });
+
+  it("compares positions by their cells", () => {
+    const one = put(empty(), [[5, 0]], 0);
+    expect(sameRows(one, put(empty(), [[5, 0]], 0))).toBe(true);
+    expect(sameRows(one, put(empty(), [[5, 0]], 1))).toBe(false);
+    expect(sameRows(one, empty())).toBe(false);
+    expect(sameRows(one, one.slice(1))).toBe(false);
+    expect(sameRows([[0, null]], [[0]])).toBe(false);
+    expect(sameRows([], [])).toBe(true);
+  });
+});
