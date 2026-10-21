@@ -195,29 +195,40 @@
   font-weight: 550;
 }
 
+/* Plansze graczy. */
+.mozaika .players {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 12px;
+}
 .mozaika-player {
-  flex: 1 1 300px;
-  padding: 8px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--board);
+  border: 1px solid var(--board-edge);
+  box-shadow: var(--shadow-1);
+  color: var(--text);
 }
 .mozaika-player.to-move {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .mozaika-player header {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 .mozaika-player .points {
   margin-left: auto;
+  font-family: var(--display);
   font-weight: 700;
+  font-size: 1.15rem;
 }
 .mozaika-boards {
   display: flex;
-  gap: 12px;
-  margin: 8px 0;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
 }
 .lines,
 .wall {
@@ -232,30 +243,91 @@
   min-height: 26px;
 }
 .slot {
-  width: 24px;
-  height: 24px;
-  border: 1px dashed var(--line);
-  border-radius: 4px;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 1.5px dashed color-mix(in srgb, var(--board-ink) 35%, transparent);
+  border-radius: 5px;
+  background: rgb(255 255 255 / 0.12);
+}
+.arrow {
+  width: 0;
+  height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 7px solid color-mix(in srgb, var(--board-ink) 40%, transparent);
+}
+.wall {
+  padding: 4px;
+  border-radius: 7px;
+  background: rgb(0 0 0 / 0.05);
 }
 .wall-row {
   display: flex;
   gap: 3px;
 }
+.place {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  margin-right: 4px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  animation: pulse 1.6s ease-in-out infinite;
+}
 .floor {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px 12px;
   align-items: center;
-  min-height: 28px;
 }
-.place {
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-color: var(--accent);
+.floor-slots {
+  display: grid;
+  grid-template-columns: repeat(var(--slots, 7), 26px);
+  gap: 3px;
+}
+.floor-group {
+  display: contents;
+}
+.penalty {
+  font-size: 0.68rem;
+  text-align: center;
+  color: var(--board-ink);
+  font-weight: 600;
+}
+.floor-penalty {
+  font-weight: 700;
+  color: var(--warn);
+}
+.floor .place {
+  width: auto;
+  padding: 0 10px;
+  font-size: 0.8rem;
 }
 
 @media (max-width: 640px) {
-  .mozaika-boards {
-    flex-direction: column;
+  .factory .source {
+    width: 108px;
+    height: 108px;
+    padding: 10px;
+  }
+  .mozaika .table {
+    gap: 8px;
+    justify-content: center;
+  }
+  .mozaika .players {
+    grid-template-columns: 1fr;
+  }
+  .tile,
+  .slot,
+  .marker {
+    width: 24px;
+    height: 24px;
+  }
+  .floor-slots {
+    grid-template-columns: repeat(var(--slots, 7), 24px);
   }
 }
