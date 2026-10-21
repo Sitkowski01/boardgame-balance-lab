@@ -50,7 +50,7 @@ export function Bank({ bank, legalMoves, onMove }: BankProps) {
         );
       })}
       <div className="take">
-        <span aria-label="Wybrane zetony">
+        <span aria-label="Wybrane żetony">
           {selection.map((gem, i) => (
             <Gem key={i} gem={gem} />
           ))}

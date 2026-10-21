@@ -24,11 +24,11 @@ test("two players and a bot play Klejnoty live, a hidden card stays hidden and a
   // Ala bierze trzy rozne zetony.
   await expect(yourTurn(alice)).toBeVisible();
   await expect(yourTurn(olga)).toBeHidden();
-  for (const color of ["bialy", "niebieski", "zielony"]) {
+  for (const color of ["biały", "niebieski", "zielony"]) {
     await alice.getByRole("button", { name: new RegExp(`^Bank: ${color}`, "u") }).click();
   }
   await alice.getByRole("button", { name: "Weź żetony" }).click();
-  await expect(olga.getByRole("region", { name: "Ostatnie ruchy" })).toContainText("Ala: bierze bialy, niebieski, zielony");
+  await expect(olga.getByRole("region", { name: "Ostatnie ruchy" })).toContainText("Ala: bierze biały, niebieski, zielony");
 
   // Ola bierze dwa czerwone (w banku 5 przy trzech graczach).
   await expect(yourTurn(olga)).toBeVisible();

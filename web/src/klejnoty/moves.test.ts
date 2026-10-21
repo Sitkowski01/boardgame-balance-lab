@@ -123,13 +123,13 @@ describe("describeMove", () => {
   it("says what happened in words, with the card when the sheet is known", () => {
     const cards = sheet().cards;
 
-    expect(describeMove("take:WUG")).toBe("bierze bialy, niebieski, zielony");
+    expect(describeMove("take:WUG")).toBe("bierze biały, niebieski, zielony");
     expect(describeMove("take2:KK")).toBe("bierze dwa: czarny");
-    expect(describeMove("return:Z")).toBe("oddaje zloto");
-    expect(describeMove("buy:41", cards)).toBe("kupuje karte #41 (niebieski, 1 pkt)");
-    expect(describeMove("buy:41")).toBe("kupuje karte #41");
-    expect(describeMove("buy-reserved:2", cards)).toBe("kupuje z rezerwy karte #2 (zielony, 0 pkt)");
-    expect(describeMove("reserve:7")).toBe("rezerwuje karte #7");
+    expect(describeMove("return:Z")).toBe("oddaje złoto");
+    expect(describeMove("buy:41", cards)).toBe("kupuje kartę (niebieski, 1 pkt)");
+    expect(describeMove("buy:41")).toBe("kupuje kartę #41");
+    expect(describeMove("buy-reserved:2", cards)).toBe("kupuje z rezerwy kartę (zielony, 0 pkt)");
+    expect(describeMove("reserve:7")).toBe("rezerwuje kartę #7");
     expect(describeMove("deck:3")).toBe("rezerwuje w ciemno z talii 3");
     expect(describeMove("pass")).toBe("pasuje");
   });

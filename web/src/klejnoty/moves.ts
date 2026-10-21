@@ -116,7 +116,7 @@ export function describeMove(text: string, cards: readonly CardSheet[] = []): st
   const move = parseMove(text);
   const card = (id: number): string => {
     const sheet = cards[id];
-    return sheet === undefined ? `karte #${String(id)}` : `karte #${String(id)} (${gemName(sheet.bonus)}, ${String(sheet.points)} pkt)`;
+    return sheet === undefined ? `kartę #${String(id)}` : `kartę (${gemName(sheet.bonus)}, ${String(sheet.points)} pkt)`;
   };
   switch (move.kind) {
     case "take":

@@ -34,8 +34,8 @@ describe("gems", () => {
 
     expect(screen.getByLabelText("zielony: 3")).toHaveTextContent("3");
     expect(screen.getByLabelText("zielony: 3")).toHaveClass("gem", "gem-2");
-    expect(screen.getByLabelText("zloto")).toHaveTextContent("");
-    expect(screen.getByLabelText("zloto")).toHaveAttribute("title", "zloto");
+    expect(screen.getByLabelText("złoto")).toHaveTextContent("");
+    expect(screen.getByLabelText("złoto")).toHaveAttribute("title", "złoto");
     expect(screen.getByLabelText("rabat")).toHaveTextContent("0");
   });
 
@@ -55,31 +55,31 @@ describe("board details", () => {
   it("shows bank counts and marks picked tokens", async () => {
     const { user } = board({ legalMoves: openingMoves() });
 
-    expect(bank("bialy")).toHaveTextContent("4");
-    expect(bank("zloto")).toHaveTextContent("5");
-    await user.click(bank("bialy"));
+    expect(bank("biały")).toHaveTextContent("4");
+    expect(bank("złoto")).toHaveTextContent("5");
+    await user.click(bank("biały"));
 
-    expect(bank("bialy")).toHaveClass("picked");
+    expect(bank("biały")).toHaveClass("picked");
     expect(bank("niebieski")).not.toHaveClass("picked");
-    expect(within(screen.getByLabelText("Wybrane zetony")).getAllByLabelText("bialy")).toHaveLength(1);
+    expect(within(screen.getByLabelText("Wybrane żetony")).getAllByLabelText("biały")).toHaveLength(1);
   });
 
   it("drops a single color clicked again when two of it may not be taken", async () => {
     const { user } = board({ legalMoves: ["take:WUG"] });
 
-    await user.click(bank("bialy"));
-    await user.click(bank("bialy"));
+    await user.click(bank("biały"));
+    await user.click(bank("biały"));
 
-    expect(bank("bialy")).toHaveAttribute("aria-pressed", "false");
+    expect(bank("biały")).toHaveAttribute("aria-pressed", "false");
   });
 
   it("starts the choice again when the position changes", async () => {
     const { user, rerender, props } = board({ legalMoves: openingMoves() });
-    await user.click(bank("bialy"));
+    await user.click(bank("biały"));
 
     rerender(<KlejnotyBoard {...props} legalMoves={openingMoves()} />);
 
-    expect(bank("bialy")).toHaveAttribute("aria-pressed", "false");
+    expect(bank("biały")).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("button", { name: "Wyczyść" })).toBeNull();
   });
 
@@ -90,10 +90,10 @@ describe("board details", () => {
     const ala = screen.getByLabelText("Gracz Ala");
     expect(
       within(within(ala).getByLabelText("Żetony"))
-        .getAllByLabelText(/^(bialy|zloto): \d$/u)
+        .getAllByLabelText(/^(biały|złoto): \d$/u)
         .map((g) => g.getAttribute("aria-label")),
-    ).toEqual(["bialy: 2", "zloto: 1"]);
-    expect(within(within(ala).getByLabelText("Żetony")).getByText("(3/10)")).toBeInTheDocument();
+    ).toEqual(["biały: 2", "złoto: 1"]);
+    expect(within(within(ala).getByLabelText("Żetony")).getByText("żetony: 3/10")).toBeInTheDocument();
     expect(
       within(within(ala).getByLabelText("Rabaty"))
         .getAllByLabelText(/^rabat/u)

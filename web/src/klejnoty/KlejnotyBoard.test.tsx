@@ -33,7 +33,7 @@ describe("KlejnotyBoard", () => {
     const { onMove, user } = board({ legalMoves: openingMoves() });
 
     await user.click(bank("zielony"));
-    await user.click(bank("bialy"));
+    await user.click(bank("biały"));
     expect(screen.getByRole("button", { name: "Weź żetony" })).toBeDisabled();
     await user.click(bank("niebieski"));
     expect(bank("niebieski")).toHaveAttribute("aria-pressed", "true");
@@ -48,7 +48,7 @@ describe("KlejnotyBoard", () => {
 
     await user.click(bank("czerwony"));
     await user.click(bank("czerwony"));
-    expect(within(screen.getByLabelText("Wybrane zetony")).getAllByLabelText("czerwony")).toHaveLength(2);
+    expect(within(screen.getByLabelText("Wybrane żetony")).getAllByLabelText("czerwony")).toHaveLength(2);
     await user.click(screen.getByRole("button", { name: "Wyczyść" }));
     expect(screen.queryByRole("button", { name: "Wyczyść" })).not.toBeInTheDocument();
     await user.click(bank("czerwony"));
@@ -61,15 +61,15 @@ describe("KlejnotyBoard", () => {
   it("locks the bank when no move uses it and never offers gold", () => {
     board({ legalMoves: ["take:WUG"] });
 
-    expect(bank("bialy")).toBeEnabled();
+    expect(bank("biały")).toBeEnabled();
     expect(bank("czarny")).toBeDisabled();
-    expect(bank("zloto")).toBeDisabled();
+    expect(bank("złoto")).toBeDisabled();
   });
 
   it("locks an empty pile", () => {
     board({ view: klejnoty({ bank: [0, 4, 4, 4, 4, 5] }), legalMoves: openingMoves() });
 
-    expect(bank("bialy")).toBeDisabled();
+    expect(bank("biały")).toBeDisabled();
   });
 
   it("offers buying and reserving only where legal", async () => {
@@ -102,7 +102,7 @@ describe("KlejnotyBoard", () => {
 
     const returns = screen.getByRole("group", { name: "Oddaj żeton" });
     expect(within(returns).getAllByRole("button")).toHaveLength(2);
-    expect(within(screen.getByLabelText("Gracz Ala")).getByText("(11/10)")).toBeInTheDocument();
+    expect(within(screen.getByLabelText("Gracz Ala")).getByText("żetony: 11/10")).toBeInTheDocument();
     await user.click(within(returns).getByRole("button", { name: "Oddaj: czerwony" }));
 
     expect(onMove).toHaveBeenCalledWith("return:R");
@@ -127,7 +127,7 @@ describe("KlejnotyBoard", () => {
     const first = screen.getByLabelText("Gracz Gracz 1");
     expect(within(first).getByText("kart: 2")).toBeInTheDocument();
     expect(within(first).getByText("patroni: 1")).toBeInTheDocument();
-    expect(within(first).getByLabelText("rabat bialy: 1")).toBeInTheDocument();
+    expect(within(first).getByLabelText("rabat biały: 1")).toBeInTheDocument();
     expect(screen.queryByText("ty")).not.toBeInTheDocument();
   });
 

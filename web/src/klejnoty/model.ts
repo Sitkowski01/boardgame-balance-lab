@@ -4,7 +4,7 @@ import { z } from "zod";
 export const Letters = "WUGRKZ";
 export const Gold = 5;
 export const Colors = 5;
-export const GemNames = ["bialy", "niebieski", "zielony", "czerwony", "czarny", "zloto"] as const;
+export const GemNames = ["biały", "niebieski", "zielony", "czerwony", "czarny", "złoto"] as const;
 
 /** Nazwa koloru; numer spoza 0-5 to "?" (nie powinien przyjsc z serwera, ale napis zostaje czytelny). */
 export function gemName(gem: number): string {

@@ -112,7 +112,7 @@ describe("games", () => {
 
   it("describes moves of each game and falls back to the raw move", () => {
     expect(describeMove("klejnoty", "pass")).toBe("pasuje");
-    expect(describeMove("klejnoty", "buy:41", sheet().cards)).toBe("kupuje karte #41 (niebieski, 1 pkt)");
+    expect(describeMove("klejnoty", "buy:41", sheet().cards)).toBe("kupuje kartę (niebieski, 1 pkt)");
     expect(describeMove("connectfour", "6")).toBe("wrzuca do kolumny 7");
     expect(describeMove("klejnoty", "dziwny")).toBe("dziwny");
     expect(describeMove("mozaika", "f0:O:floor")).toBe("bierze ochra z warsztatu 1 na podłogę");

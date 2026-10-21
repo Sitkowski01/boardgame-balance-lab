@@ -27,7 +27,7 @@ export function PlayerPanel({ player, name, me, toMove, sheet, legalMoves, onMov
       </header>
       <div className="row tokens" aria-label="Żetony">
         {player.tokens.map((n, gem) => (n > 0 ? <Gem key={gem} gem={gem} count={n} /> : null))}
-        <span className="muted">({totalTokens(player)}/10)</span>
+        <span className="muted">żetony: {totalTokens(player)}/10</span>
       </div>
       <div className="row bonuses" aria-label="Rabaty">
         {player.bonuses.map((n, gem) =>
