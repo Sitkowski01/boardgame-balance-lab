@@ -138,11 +138,14 @@ export function resultOf(info: ExperimentInfo): ExperimentResult | null {
 
 export const finished = (status: ExperimentStatus): boolean => status !== "Queued" && status !== "Running";
 
-/** Procent z jednym miejscem po przecinku, jak w raporcie HTML ("52.3%"). */
-export const percent = (rate: number): string => `${(rate * 100).toFixed(1)}%`;
+/** Liczba z przecinkiem dziesietnym, jak pisze sie po polsku ("52,3"); raport HTML z CLI zostaje przy kropce. */
+export const decimal = (value: number, digits: number): string => value.toFixed(digits).replace(".", ",");
 
-/** Punkty procentowe ze znakiem ("+4.1 pp"). */
-export const points = (delta: number): string => `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${Math.abs(delta * 100).toFixed(1)} pp`;
+/** Procent z jednym miejscem po przecinku ("52,3%"). */
+export const percent = (rate: number): string => `${decimal(rate * 100, 1)}%`;
+
+/** Punkty procentowe ze znakiem ("+4,1 pp"). */
+export const points = (delta: number): string => `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${decimal(Math.abs(delta * 100), 1)} pp`;
 
 /** Komorka macierzy ligi: sredni wynik wiersza przeciw kolumnie (0-1), null na przekatnej i bez partii. */
 export function pairScore(report: LeagueReport, row: string, column: string): number | null {

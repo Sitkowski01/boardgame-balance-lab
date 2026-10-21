@@ -77,15 +77,15 @@ describe("IntervalBars", () => {
         .map((r) => r.textContent),
     ).toEqual([
       "KtoOdsetek95% przedziałDane",
-      "wyzej62.0%60.0%–70.0%z 10",
-      "nizej30.0%20.0%–40.0%z 10",
-      "srodek50.0%40.0%–60.0%z 10",
-      "poza120.0%-10.0%–150.0%z 10",
+      "wyzej62,0%60,0%–70,0%z 10",
+      "nizej30,0%20,0%–40,0%z 10",
+      "srodek50,0%40,0%–60,0%z 10",
+      "poza120,0%-10,0%–150,0%z 10",
     ]);
     expect(screen.getByRole("list", { name: "Miejsca" })).toBeInTheDocument();
     expect(screen.getByText("wyzej", { selector: ".bar-label" }).nextSibling).toHaveAttribute(
       "data-tip",
-      "wyzej: 62.0% (95%: 60.0%–70.0%) z 10",
+      "wyzej: 62,0% (95%: 60,0%–70,0%) z 10",
     );
   });
 

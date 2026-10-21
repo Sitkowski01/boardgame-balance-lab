@@ -31,8 +31,8 @@ describe("lab model", () => {
   });
 
   it("formats rates and differences", () => {
-    expect(percent(0.523)).toBe("52.3%");
-    expect([points(0.041), points(-0.041), points(0)]).toEqual(["+4.1 pp", "−4.1 pp", "±0.0 pp"]);
+    expect(percent(0.523)).toBe("52,3%");
+    expect([points(0.041), points(-0.041), points(0)]).toEqual(["+4,1 pp", "−4,1 pp", "±0,0 pp"]);
   });
 
   it("reads a league cell from either side of the pair and skips pairs without games", () => {

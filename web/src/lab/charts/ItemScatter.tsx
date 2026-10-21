@@ -54,7 +54,7 @@ export function ItemScatter({ report }: { report: TournamentReport }) {
             <g key={t}>
               <line className="grid" x1={x(t)} x2={x(t)} y1={M.top} y2={H - M.bottom} />
               <text className="tick" x={x(t)} y={H - M.bottom + 16} textAnchor="middle">
-                {percent(t).replace(".0", "")}
+                {percent(t).replace(",0", "")}
               </text>
             </g>
           ))}

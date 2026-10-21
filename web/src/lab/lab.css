@@ -196,6 +196,10 @@ button.primary:disabled {
 }
 .status.done {
   border-color: var(--good);
+  color: var(--accent);
+}
+.status.done::before {
+  background: var(--good);
 }
 .status.failed {
   border-color: var(--critical);
@@ -210,7 +214,7 @@ button.primary:disabled {
 .progress span {
   display: block;
   height: 100%;
-  background: var(--series-1);
+  background: var(--accent);
   border-radius: 4px;
 }
 .progress.running span {
@@ -268,7 +272,7 @@ button.primary:disabled {
 }
 .bar-row {
   display: grid;
-  grid-template-columns: minmax(90px, 160px) 1fr 64px;
+  grid-template-columns: minmax(90px, 160px) 1fr auto;
   gap: 10px;
   align-items: center;
   font-size: 0.85rem;
@@ -277,8 +281,10 @@ button.primary:disabled {
   overflow-wrap: anywhere;
 }
 .bar-value {
+  min-width: 64px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .track {
   position: relative;
@@ -557,7 +563,7 @@ button.primary:disabled {
 
 @media (max-width: 640px) {
   .bar-row {
-    grid-template-columns: 1fr 56px;
+    grid-template-columns: 1fr auto;
   }
   .bar-row .bar-label {
     grid-column: 1 / -1;

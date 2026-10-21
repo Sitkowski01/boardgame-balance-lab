@@ -55,7 +55,7 @@ describe("LabPage", () => {
     await user.type(within(form).getByLabelText("Partie"), "60");
     await user.clear(within(form).getByLabelText("Ziarno"));
     await user.type(within(form).getByLabelText("Ziarno"), "99");
-    expect(within(form).getByText("zmiany po srednikach: win=N")).toBeInTheDocument();
+    expect(within(form).getByText("Zmiany oddzielaj średnikami: win=N")).toBeInTheDocument();
     await user.click(within(form).getByRole("button", { name: "Uruchom eksperyment" }));
 
     expect(client.submit).toHaveBeenCalledWith({

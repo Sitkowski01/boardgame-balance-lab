@@ -14,14 +14,14 @@ describe("Results", () => {
 
     expect(screen.getByText("98 z 100")).toBeInTheDocument();
     expect(screen.getByText("ziarno 7")).toBeInTheDocument();
-    expect(screen.getByText("62.4 ruchu")).toBeInTheDocument();
+    expect(screen.getByText("62,4 ruchu")).toBeInTheDocument();
     expect(screen.getByText("mediana 61, 90% poniżej 80")).toBeInTheDocument();
     const seats = within(list("Przewaga miejsca przy stole")).getAllByRole("listitem");
     expect(seats.map((s) => s.getAttribute("aria-label"))).toEqual([
-      "miejsce 1: 56.1% (95%: 46.0%–65.0%) z 98 partii",
-      "miejsce 2: 39.8% (95%: 31.0%–49.0%) z 98 partii",
+      "miejsce 1: 56,1% (95%: 46,0%–65,0%) z 98 partii",
+      "miejsce 2: 39,8% (95%: 31,0%–49,0%) z 98 partii",
     ]);
-    expect(screen.getAllByText("uczciwy udział 50.0%", { exact: false })).toHaveLength(2);
+    expect(screen.getAllByText("uczciwy udział 50,0%", { exact: false })).toHaveLength(2);
     // Boty: greedy caly przedzial ponad 50%, random caly ponizej.
     expect(within(list("Boty")).getByText("▲", { exact: false })).toBeInTheDocument();
     expect(within(list("Boty")).getByText("▼", { exact: false })).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("Results", () => {
     expect(dots).toHaveLength(4); // "#4 nikt" bez wlascicieli
     fireEvent.pointerEnter(dots[0] ?? document.body);
     expect(
-      screen.getByText(/^#0 mocna: w 50.0% partii, właściciel wygrywa 80.0% \(\+40.0 pp wobec grupy „poziom 1”\) — za mocna$/u),
+      screen.getByText(/^#0 mocna: w 50,0% partii, właściciel wygrywa 80,0% \(\+40,0 pp wobec grupy „poziom 1”\) — za mocna$/u),
     ).toBeInTheDocument();
     fireEvent.pointerEnter(dots[3] ?? document.body);
     expect(screen.getByText(/^#3 zwykla: .*grupy „poziom 2”\)$/u)).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("Results", () => {
 
     expect(screen.queryByText(/martwe i za mocne/u)).not.toBeInTheDocument();
     expect(screen.queryByText("Długość partii")).not.toBeInTheDocument();
-    expect(screen.getByText("0.0%")).toBeInTheDocument();
+    expect(screen.getByText("0,0%")).toBeInTheDocument();
   });
 
   it("says when nothing stands out", () => {
@@ -85,14 +85,14 @@ describe("Results", () => {
         .getAllByRole("listitem")
         .map((r) => r.getAttribute("aria-label")),
     ).toEqual([
-      "greedy: +220 · Elo 1720, średni wynik 80.0%",
-      "ismcts:50: −20 · Elo 1480, średni wynik 45.0%",
-      "random: −200 · Elo 1300, średni wynik 20.0%",
+      "greedy: +220 · Elo 1720, średni wynik 80,0%",
+      "ismcts:50: −20 · Elo 1480, średni wynik 45,0%",
+      "random: −200 · Elo 1300, średni wynik 20,0%",
     ]);
     const matrix = screen.getByRole("table", { name: "Kto bije kogo" });
-    expect(within(matrix).getByText("95.0%")).toHaveAttribute("title", "greedy przeciw random");
-    expect(within(matrix).getByText("95.0%")).toHaveClass("ink-light");
-    expect(within(matrix).getByText("5.0%")).toBeInTheDocument();
+    expect(within(matrix).getByText("95,0%")).toHaveAttribute("title", "greedy przeciw random");
+    expect(within(matrix).getByText("95,0%")).toHaveClass("ink-light");
+    expect(within(matrix).getByText("5,0%")).toBeInTheDocument();
     expect(within(matrix).getAllByText("brak partii")).toHaveLength(2);
     expect(within(matrix).getAllByText("—")).toHaveLength(3);
   });
@@ -101,12 +101,12 @@ describe("Results", () => {
     render(<Results result={{ kind: "Comparison", report: comparison() }} />);
 
     expect(screen.getByText("Klejnoty (win=13)")).toBeInTheDocument();
-    expect(screen.getByText("−6.5 ruchu")).toBeInTheDocument();
+    expect(screen.getByText("−6,5 ruchu")).toBeInTheDocument();
     expect(screen.getByText("istotna zmiana")).toBeInTheDocument();
     const bots = within(list("Boty: zmiana odsetka wygranych")).getAllByRole("listitem");
     expect(bots[0]).toHaveClass("significant");
     expect(bots[1]).toHaveClass("faint");
-    expect(bots[0]).toHaveAttribute("aria-label", "greedy: +6.0 pp (95%: +2.0 pp do +10.0 pp), istotna · 70.0% → 76.0%");
+    expect(bots[0]).toHaveAttribute("aria-label", "greedy: +6,0 pp (95%: +2,0 pp do +10,0 pp), istotna · 70,0% → 76,0%");
     expect(screen.getByText("Karty, które zmieniły się istotnie")).toBeInTheDocument();
     expect(within(list("Karty, które zmieniły się istotnie")).getAllByRole("listitem")).toHaveLength(1);
   });
@@ -129,7 +129,7 @@ describe("Results", () => {
     );
 
     expect(screen.getByText("Żadne karty nie zmieniły się istotnie.")).toBeInTheDocument();
-    expect(screen.getByText("+0.5 ruchu")).toBeInTheDocument();
+    expect(screen.getByText("+0,5 ruchu")).toBeInTheDocument();
     expect(screen.getByText("w granicach przypadku")).toBeInTheDocument();
   });
 
@@ -147,14 +147,14 @@ describe("Results", () => {
 
     expect(screen.getAllByText("Tabela")).toHaveLength(2);
     expect(screen.queryByText("Długość partii")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("row").some((r) => r.textContent === "miejsce 1−4.0 pp−8.0 pp do −1.0 pptak50.0% → 46.0%")).toBe(true);
+    expect(screen.getAllByRole("row").some((r) => r.textContent === "miejsce 1−4,0 pp−8,0 pp do −1,0 pptak50,0% → 46,0%")).toBe(true);
   });
 
   it("sums up each kind of experiment in tiles", () => {
     const tiles = (): (string | null)[] => [...document.querySelectorAll(".stat")].map((t) => t.textContent);
 
     const { unmount } = render(<Results result={{ kind: "Tournament", report: tournament() }} />);
-    expect(tiles()).toEqual(["Ukończone partie98 z 100ziarno 7", "Remisy4.1%", "Długość partii62.4 ruchumediana 61, 90% poniżej 80"]);
+    expect(tiles()).toEqual(["Ukończone partie98 z 100ziarno 7", "Remisy4,1%", "Długość partii62,4 ruchumediana 61, 90% poniżej 80"]);
     unmount();
     const ranking = render(<Results result={{ kind: "League", report: league() }} />);
     expect(tiles()).toEqual(["NajlepszygreedyElo 1720", "Pary340 partii na parę"]);
@@ -166,7 +166,7 @@ describe("Results", () => {
     expect(tiles()).toEqual([
       "OryginałKlejnoty98 partii",
       "WariantKlejnoty (win=13)98 partii z tych samych ziaren",
-      "Długość partii−6.5 ruchuistotna zmiana",
+      "Długość partii−6,5 ruchuistotna zmiana",
     ]);
   });
 
@@ -175,7 +175,7 @@ describe("Results", () => {
     render(<Results result={{ kind: "League", report }} />);
 
     const bar = within(list("Ranking Elo")).getByRole("listitem");
-    expect(bar).toHaveAttribute("aria-label", "sredni: ±0 · Elo 1500, średni wynik 50.0%");
+    expect(bar).toHaveAttribute("aria-label", "sredni: ±0 · Elo 1500, średni wynik 50,0%");
     expect(within(bar).queryByText("●")).toBeNull();
   });
 
@@ -184,7 +184,7 @@ describe("Results", () => {
     if (report.length === null) throw new Error("dane testu");
     render(<Results result={{ kind: "Comparison", report: { ...report, length: { ...report.length, delta: 0 } } }} />);
 
-    expect(screen.getByText("+0.0 ruchu")).toBeInTheDocument();
+    expect(screen.getByText("+0,0 ruchu")).toBeInTheDocument();
   });
 
   it("lists items that changed by the biggest change first, the fifteen biggest at most", () => {
@@ -204,9 +204,9 @@ describe("Results", () => {
 
     const rows = within(list("Karty, które zmieniły się istotnie")).getAllByRole("listitem");
     expect(rows.map((r) => r.getAttribute("aria-label"))).toEqual([
-      "#2: −6.0 pp (95%: −7.0 pp do −5.0 pp), istotna · udział w partiach +30.0 pp, właściciel wygrywa 50.0% → 44.0%",
-      "#3: +12.0 pp (95%: +11.0 pp do +13.0 pp), istotna · udział w partiach ±0.0 pp, właściciel wygrywa 50.0% → 62.0%",
-      "#1: +5.0 pp (95%: +4.0 pp do +6.0 pp), istotna · udział w partiach +1.0 pp, właściciel wygrywa 50.0% → 55.0%",
+      "#2: −6,0 pp (95%: −7,0 pp do −5,0 pp), istotna · udział w partiach +30,0 pp, właściciel wygrywa 50,0% → 44,0%",
+      "#3: +12,0 pp (95%: +11,0 pp do +13,0 pp), istotna · udział w partiach ±0,0 pp, właściciel wygrywa 50,0% → 62,0%",
+      "#1: +5,0 pp (95%: +4,0 pp do +6,0 pp), istotna · udział w partiach +1,0 pp, właściciel wygrywa 50,0% → 55,0%",
     ]);
     expect(screen.getByText("Zmiana wygranych właściciela; 3 z 4.")).toBeInTheDocument();
     unmount();

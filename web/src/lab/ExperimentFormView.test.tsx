@@ -63,7 +63,7 @@ describe("ExperimentFormView", () => {
     expect(optional).toHaveAttribute("placeholder", "puste = oryginał");
     await user.click(within(form).getByLabelText("Co jeśli"));
     expect(within(form).getByLabelText(/^Wariant \(co jeśli\)/u)).toHaveAttribute("placeholder", "zmiana zasad — składnia poniżej");
-    expect(form.querySelector(".variant .hint")).toHaveTextContent("zmiany po srednikach: win=N");
+    expect(form.querySelector(".variant .hint")).toHaveTextContent(/^Zmiany oddzielaj średnikami: win=N$/u);
   });
 
   it("leaves out the syntax hint of a game without one", () => {

@@ -25,6 +25,9 @@ export interface ExperimentFormProps {
 
 const kinds: ExperimentKind[] = ["Tournament", "League", "Comparison"];
 
+/** Skladnia wariantu z serwera ("zmiany po srednikach: win=N; ...") z polskim wstepem; sam zapis zostaje jak w CLI. */
+const syntaxHint = (syntax: string): string => `Zmiany oddzielaj średnikami: ${syntax.replace(/^zmiany po srednikach: /u, "")}`;
+
 /** Zamowienie eksperymentu: gra, rodzaj, boty, liczba partii, ziarno i wariant zasad. */
 export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit }: ExperimentFormProps) {
   const id = useId();
@@ -144,7 +147,7 @@ export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit }: 
                 set({ variant: e.target.value });
               }}
             />
-            {game.variantSyntax !== null && <span className="hint">{game.variantSyntax}</span>}
+            {game.variantSyntax !== null && <span className="hint">{syntaxHint(game.variantSyntax)}</span>}
           </label>
         )}
       </div>

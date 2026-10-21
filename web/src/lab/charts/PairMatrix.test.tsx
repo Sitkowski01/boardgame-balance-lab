@@ -14,8 +14,8 @@ describe("PairMatrix", () => {
         .map((h) => h.textContent),
     ).toEqual(["wiersz przeciw kolumnie", "greedy", "ismcts:50", "random"]);
     const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows.map((r) => r.textContent)).toEqual(["greedy—75.0%95.0%", "ismcts:5025.0%—brak partii", "random5.0%brak partii—"]);
-    const cell = within(rows[0] as HTMLElement).getByText("75.0%");
+    expect(rows.map((r) => r.textContent)).toEqual(["greedy—75,0%95,0%", "ismcts:5025,0%—brak partii", "random5,0%brak partii—"]);
+    const cell = within(rows[0] as HTMLElement).getByText("75,0%");
     expect(cell).toHaveAttribute("title", "greedy przeciw ismcts:50");
     expect(cell).toHaveClass("cell ink-dark");
     expect(cell.style.background).toContain("var(--win) 50%");

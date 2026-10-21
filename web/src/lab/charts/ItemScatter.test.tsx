@@ -158,7 +158,7 @@ describe("ItemScatter", () => {
 
     expect(dot("#2 slaba").getAttribute("class")).toBe("dot weak focused");
     expect(dot("#0 mocna").getAttribute("class")).toBe("dot strong");
-    expect(screen.getByText(/^#2 slaba: w 50.0% partii/u)).toHaveClass("readout");
+    expect(screen.getByText(/^#2 slaba: w 50,0% partii/u)).toHaveClass("readout");
     expect(screen.getByRole("group", { name: "Karty: wykres punktowy" })).toBeInTheDocument();
   });
 
@@ -169,11 +169,11 @@ describe("ItemScatter", () => {
     const rows = within(screen.getByRole("table", { name: "Karty: tabela" })).getAllByRole("row");
     expect(rows.map((r) => r.textContent)).toEqual([
       "KartaGrupaW partiachWłaściciel wygrywa",
-      "#0 mocnapoziom 150.0%80.0% (67.0%–89.0%)",
-      "#1 martwapoziom 12.0%50.0% (45.0%–55.0%)",
-      "#2 slabapoziom 250.0%10.0% (4.0%–21.0%)",
-      "#3 zwyklapoziom 250.0%40.0% (35.0%–45.0%)",
-      "#4 niktpoziom 10.0%brak danych",
+      "#0 mocnapoziom 150,0%80,0% (67,0%–89,0%)",
+      "#1 martwapoziom 12,0%50,0% (45,0%–55,0%)",
+      "#2 slabapoziom 250,0%10,0% (4,0%–21,0%)",
+      "#3 zwyklapoziom 250,0%40,0% (35,0%–45,0%)",
+      "#4 niktpoziom 10,0%brak danych",
     ]);
     expect(screen.getByText("za mocna", { exact: false, selector: ".legend" })).toHaveTextContent(
       "▲ za mocna · ▼ za slaba · ○ martwa (w < 5% partii) · ● bez zastrzeżeń",
@@ -189,7 +189,7 @@ describe("ItemScatter", () => {
       .slice(1);
     expect(rows).toHaveLength(12);
     expect(rows.map((r) => r.firstChild?.textContent).slice(0, 3)).toEqual(["#13", "#12", "#11"]);
-    expect(rows[0]).toHaveTextContent("#13▲ za mocna50.0%68.0% (63.0%–73.0%)");
+    expect(rows[0]).toHaveTextContent("#13▲ za mocna50,0%68,0% (63,0%–73,0%)");
     expect(within(rows[0] as HTMLElement).getByText("▲ za mocna")).toHaveClass("tag strong");
   });
 });

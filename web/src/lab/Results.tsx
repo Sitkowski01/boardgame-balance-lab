@@ -3,6 +3,7 @@ import { IntervalBars, type IntervalRow } from "./charts/IntervalBars";
 import { ItemScatter } from "./charts/ItemScatter";
 import { PairMatrix } from "./charts/PairMatrix";
 import {
+  decimal,
   percent,
   points,
   type ComparisonReport,
@@ -60,7 +61,7 @@ export function TournamentResults({ report }: { report: TournamentReport }) {
             : [
                 {
                   label: "Długość partii",
-                  value: `${report.length.mean.toFixed(1)} ruchu`,
+                  value: `${decimal(report.length.mean, 1)} ruchu`,
                   note: `mediana ${String(report.length.median)}, 90% poniżej ${String(report.length.p90)}`,
                 },
               ]),
@@ -137,7 +138,7 @@ export function ComparisonResults({ report }: { report: ComparisonReport }) {
             : [
                 {
                   label: "Długość partii",
-                  value: `${report.length.delta >= 0 ? "+" : "−"}${Math.abs(report.length.delta).toFixed(1)} ruchu`,
+                  value: `${report.length.delta >= 0 ? "+" : "−"}${decimal(Math.abs(report.length.delta), 1)} ruchu`,
                   note: report.length.significant ? "istotna zmiana" : "w granicach przypadku",
                 },
               ]),
