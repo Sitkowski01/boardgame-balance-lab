@@ -18,7 +18,7 @@ test("two players and a bot play Klejnoty live, a hidden card stays hidden and a
   await expect(alice.getByRole("list", { name: "Miejsca" })).toContainText("Ola");
 
   await addBot(alice, 3, "Losowy");
-  await expect(alice.getByRole("list", { name: "Miejsca" })).toContainText("random");
+  await expect(alice.getByRole("list", { name: "Miejsca" })).toContainText("Losowy");
   await alice.getByRole("button", { name: "Zacznij partię" }).click();
 
   // Ala bierze trzy rozne zetony.
@@ -39,7 +39,7 @@ test("two players and a bot play Klejnoty live, a hidden card stays hidden and a
 
   // Bot gra sam, potem znow Ala: rezerwuje w ciemno z talii 1.
   await expect(yourTurn(alice)).toBeVisible();
-  await expect(alice.getByRole("region", { name: "Ostatnie ruchy" })).toContainText("random:");
+  await expect(alice.getByRole("region", { name: "Ostatnie ruchy" })).toContainText("Losowy:");
   await alice.getByLabel("Talia 1").getByRole("button", { name: "Rezerwuj w ciemno" }).click();
 
   // Ala widzi swoja karte, Ola tylko jej poziom.

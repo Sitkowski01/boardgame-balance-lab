@@ -93,8 +93,8 @@ describe("what each person sees at the table", () => {
     expect(
       within(screen.getByRole("list", { name: "Miejsca" }))
         .getAllByRole("listitem")
-        .map((li) => li.className),
-    ).toEqual(["", "to-move"]);
+        .map((li) => li.classList.contains("to-move")),
+    ).toEqual([false, true]);
   });
 
   it("the clock counts down", async () => {
@@ -126,9 +126,9 @@ describe("what each person sees at the table", () => {
       HTMLElement,
       HTMLElement,
     ];
-    expect(ala).toHaveTextContent(/^Alagospodarz$/u);
-    expect(bot).toHaveTextContent(/^randombot$/u);
-    expect(ola).toHaveTextContent(/^Olarozłączonygra za niego bot$/u);
+    expect(ala).toHaveTextContent(/^AAlagospodarz$/u);
+    expect(bot).toHaveTextContent(/^⚙Losowybot$/u);
+    expect(ola).toHaveTextContent(/^OOlarozłączonygra za niego bot$/u);
   });
 
   it("no connection banner once online", async () => {

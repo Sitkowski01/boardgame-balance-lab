@@ -132,7 +132,7 @@ describe("moves and connection", () => {
     });
 
     expect(within(screen.getByRole("region", { name: "Ostatnie ruchy" })).getByRole("listitem")).toHaveTextContent(
-      /^random: wrzuca do kolumny 1$/u,
+      /^Losowy: wrzuca do kolumny 1$/u,
     );
   });
 });

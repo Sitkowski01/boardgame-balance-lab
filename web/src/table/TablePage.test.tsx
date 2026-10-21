@@ -41,7 +41,7 @@ describe("TablePage", () => {
       e.room(room());
     });
 
-    expect(screen.getByRole("heading", { name: "ConnectFour" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Czwórki" })).toBeInTheDocument();
     expect(screen.getByText("oglądasz")).toBeInTheDocument();
     expect(screen.getByText("czeka na graczy")).toBeInTheDocument();
     expect(within(screen.getByRole("list", { name: "Miejsca" })).getByText("wolne miejsce")).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe("TablePage", () => {
       within(screen.getByRole("region", { name: "Ostatnie ruchy" }))
         .getAllByRole("listitem")
         .map((li) => li.textContent),
-    ).toEqual(["Ala: wrzuca do kolumny 4", "random: wrzuca do kolumny 5"]);
+    ).toEqual(["Ala: wrzuca do kolumny 4", "Losowy: wrzuca do kolumny 5"]);
     await user.click(screen.getByRole("button", { name: "Kolumna 4" }));
     expect(last(links).server.makeMove).toHaveBeenCalledWith(2, "3");
 
@@ -144,7 +144,9 @@ describe("TablePage", () => {
     expect(screen.getByText("rozłączony")).toBeInTheDocument();
     expect(screen.getByText("gra za niego bot")).toBeInTheDocument();
     expect(screen.getByText("gospodarz")).toBeInTheDocument();
-    expect(screen.getByText(/Ala \(bot za gracza\)/u)).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Ostatnie ruchy" })).getByRole("listitem")).toHaveTextContent(
+      /^Ala \(bot za gracza\): /u,
+    );
     expect(screen.queryByLabelText("Czas na ruch")).not.toBeInTheDocument();
     expect(screen.queryByText("Twoje imię")).not.toBeInTheDocument();
   });
