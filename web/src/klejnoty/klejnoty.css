@@ -394,14 +394,48 @@
   min-height: 72px;
 }
 
+/* Telefon: talia jako pasek nad czterema kartami swojego poziomu — bez dziur w siatce, a patroni w jednym rzedzie. */
 @media (max-width: 640px) {
-  .market-row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+  .patrons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 6px;
   }
-  .card,
+  .patron {
+    padding: 6px 8px;
+    gap: 2px 6px;
+  }
+  .patron-crown {
+    font-size: 1.15rem;
+  }
+  .market-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
   .deck {
-    min-height: 124px;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    min-height: 0;
+    padding: 6px 10px;
+  }
+  .deck-tier {
+    font-size: 1.2rem;
+  }
+  .deck button {
+    margin-left: auto;
+  }
+  .card {
+    min-height: 118px;
+    padding: 7px;
+  }
+  .card-head strong {
+    font-size: 1.3rem;
+  }
+  .card-actions button {
+    padding: 3px 6px;
+    font-size: 0.72rem;
   }
   .take {
     margin-left: 0;

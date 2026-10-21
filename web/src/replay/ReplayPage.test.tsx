@@ -60,9 +60,9 @@ describe("ReplayPage", () => {
       expect(position()).toBe("ruch 0 z 3");
     });
     expect(screen.getByRole("button", { name: "⏮ Początek" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "◀ Poprzedni" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "‹ Poprzedni" })).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: "Następny ▶" }));
+    await user.click(screen.getByRole("button", { name: "Następny ›" }));
     await waitFor(() => {
       expect(discs()).toBe(1);
     });
@@ -75,9 +75,9 @@ describe("ReplayPage", () => {
       expect(discs()).toBe(3);
     });
     expect(screen.getByText("Wygrywa: Ala")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Następny ▶" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Następny ›" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "▶ Odtwarzaj" })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "◀ Poprzedni" }));
+    await user.click(screen.getByRole("button", { name: "‹ Poprzedni" }));
     await waitFor(() => {
       expect(position()).toBe("ruch 2 z 3");
     });

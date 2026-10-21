@@ -52,6 +52,24 @@
   border: 1.5px solid rgb(255 255 255 / 0.45);
   pointer-events: none;
 }
+/* Liczba kafelkow jako plakietka w rogu — na srodku zlewala sie ze wzorkiem kafelka. */
+.tile-count {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  z-index: 1;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.68rem;
+  line-height: 16px;
+  text-align: center;
+  text-shadow: none;
+  box-shadow: 0 0 0 1.5px var(--panel);
+}
 .tile-0 {
   --t: var(--t0);
 }

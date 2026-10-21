@@ -34,7 +34,7 @@ test("a full game against a bot ends with a result and a replay that can be scro
   await expect(page.getByRole("img", { name: "puste" })).toHaveCount(42);
   await expect(page.getByRole("img", { name: /Ala|MCTS|Losowy/u })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Następny ▶" }).click();
+  await page.getByRole("button", { name: "Następny ›" }).click();
   await expect(page.getByRole("img", { name: "Ala" })).toHaveCount(1);
 
   const total = Number((await page.getByLabel("Pozycja").textContent())?.split(" z ")[1]);

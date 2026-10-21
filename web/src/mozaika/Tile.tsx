@@ -19,7 +19,7 @@ export function Tile({ tile, count, faint = false, decorative = false }: TilePro
 
   return (
     <span className={className} role="img" aria-label={count === undefined ? name : `${name}: ${String(count)}`}>
-      {count !== undefined && count > 1 ? count : ""}
+      {count !== undefined && count > 1 && <span className="tile-count">{count}</span>}
     </span>
   );
 }

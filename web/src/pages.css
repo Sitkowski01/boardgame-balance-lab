@@ -557,6 +557,28 @@
   flex: 1 1 200px;
   accent-color: var(--accent);
 }
+@media (max-width: 640px) {
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .controls button {
+    padding-inline: 0;
+    font-size: 1.1rem;
+  }
+  .controls .word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .controls input[type="range"],
+  .controls output {
+    grid-column: 1 / -1;
+  }
+}
 
 @media (max-width: 900px) {
   .table-layout {

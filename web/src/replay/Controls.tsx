@@ -7,7 +7,10 @@ export interface ControlsProps {
   onPlay: (play: boolean) => void;
 }
 
-/** Przewijanie powtorki: skoki o ruch, na poczatek i koniec, odtwarzanie i suwak. */
+/**
+ * Przewijanie powtorki: skoki o ruch, na poczatek i koniec, odtwarzanie i suwak. Na telefonie przyciski
+ * pokazuja same symbole w jednym rzedzie; slowa zostaja dla czytnika ekranu (nazwa przycisku sie nie zmienia).
+ */
 export function Controls({ position, last, running, onGo, onPlay }: ControlsProps) {
   return (
     <div className="controls" role="group" aria-label="Przewijanie">
@@ -18,7 +21,7 @@ export function Controls({ position, last, running, onGo, onPlay }: ControlsProp
         }}
         disabled={position === 0}
       >
-        ⏮ Początek
+        ⏮ <span className="word">Początek</span>
       </button>
       <button
         type="button"
@@ -27,7 +30,7 @@ export function Controls({ position, last, running, onGo, onPlay }: ControlsProp
         }}
         disabled={position === 0}
       >
-        ◀ Poprzedni
+        ‹ <span className="word">Poprzedni</span>
       </button>
       <button
         type="button"
@@ -36,7 +39,7 @@ export function Controls({ position, last, running, onGo, onPlay }: ControlsProp
         }}
         disabled={position >= last}
       >
-        {running ? "⏸ Pauza" : "▶ Odtwarzaj"}
+        {running ? "⏸" : "▶"} <span className="word">{running ? "Pauza" : "Odtwarzaj"}</span>
       </button>
       <button
         type="button"
@@ -45,7 +48,7 @@ export function Controls({ position, last, running, onGo, onPlay }: ControlsProp
         }}
         disabled={position >= last}
       >
-        Następny ▶
+        <span className="word">Następny</span> ›
       </button>
       <button
         type="button"
@@ -54,7 +57,7 @@ export function Controls({ position, last, running, onGo, onPlay }: ControlsProp
         }}
         disabled={position >= last}
       >
-        Koniec ⏭
+        <span className="word">Koniec</span> ⏭
       </button>
       <input
         type="range"
