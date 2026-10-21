@@ -150,58 +150,135 @@
   line-height: 1;
 }
 
+/* Rynek: rzad na poziom, talia z lewej. */
 .market {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 .market-row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 .card,
 .deck {
-  min-height: 96px;
-  padding: 6px;
-  border-radius: 8px;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  position: relative;
+  min-height: 138px;
+  padding: 10px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.85rem;
+  overflow: hidden;
 }
-.card.empty {
-  opacity: 0.3;
+.card {
+  --tier: var(--line-strong);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tier) 18%, var(--card-face)) 0 46px, var(--card-face) 46px);
+  border: 1px solid color-mix(in srgb, var(--tier) 45%, var(--line));
+  box-shadow: var(--shadow-1);
+  animation: card-in 0.35s ease-out;
 }
-.card.back {
-  justify-content: center;
-  align-items: center;
-  color: var(--muted);
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
 }
 .card.tier-1,
 .deck.tier-1 {
-  border-top: 4px solid #6aa36f;
+  --tier: var(--tier-1);
 }
 .card.tier-2,
 .deck.tier-2 {
-  border-top: 4px solid #d1a43c;
+  --tier: var(--tier-2);
 }
 .card.tier-3,
 .deck.tier-3 {
-  border-top: 4px solid #4f7bc4;
+  --tier: var(--tier-3);
+}
+.card.empty {
+  background: transparent;
+  border: 1.5px dashed var(--line);
+  box-shadow: none;
+  animation: none;
 }
 .card-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 28px;
+}
+.card-head strong {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  line-height: 1;
+  font-weight: 700;
+}
+.card .cost {
+  margin-top: auto;
 }
 .card-actions {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
 }
+.card-actions button {
+  padding: 3px 9px;
+  font-size: 0.8rem;
+}
+.card-actions .buy {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.card:has(.buy) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.deck,
+.card.back {
+  color: #fff;
+  border: 1px solid rgb(0 0 0 / 0.2);
+  background:
+    radial-gradient(circle at 50% 38%, rgb(255 255 255 / 0.22), transparent 55%),
+    repeating-linear-gradient(45deg, rgb(255 255 255 / 0.07) 0 8px, transparent 8px 16px), var(--tier);
+  box-shadow: var(--shadow-1);
+}
+.deck {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.deck-tier,
+.card.back {
+  font-family: var(--display);
+  font-weight: 700;
+}
+.deck-tier {
+  font-size: 1.7rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+.deck-count {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+.deck button {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  background: rgb(255 255 255 / 0.92);
+  color: #1d1b17;
+  border-color: transparent;
+}
+.card.back {
+  justify-content: center;
+  align-items: center;
+  font-size: 1.3rem;
+  min-height: 96px;
+}
+
 .bank button {
   border-radius: 999px;
   padding: 2px;
