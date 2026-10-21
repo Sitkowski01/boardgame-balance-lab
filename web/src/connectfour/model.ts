@@ -24,13 +24,14 @@ const directions = [
 export function winningCells(rows: readonly (readonly (number | null)[])[]): Set<number> {
   const cells = new Set<number>();
   const width = rows[0]?.length ?? 0;
+  // Poza plansza (takze kolumna -1 albo za ostatnia) nie ma krazka, wiec linia nie zawija sie do sasiedniego wiersza.
   const at = (r: number, c: number): number | null => rows[r]?.[c] ?? null;
   rows.forEach((row, r) => {
     row.forEach((cell, c) => {
       if (cell === null) return;
       for (const [dr, dc] of directions) {
         const line = [0, 1, 2, 3].map((k) => [r + k * dr, c + k * dc] as const);
-        if (line.every(([lr, lc]) => lc >= 0 && lc < width && at(lr, lc) === cell)) {
+        if (line.every(([lr, lc]) => at(lr, lc) === cell)) {
           for (const [lr, lc] of line) cells.add(lr * width + lc);
         }
       }
@@ -52,7 +53,7 @@ export function newDiscs(before: Grid | null, after: Grid): Set<number> {
   if (before === null) return cells;
   const width = after[0]?.length ?? 0;
   const discs = after.flat().filter((cell) => cell !== null).length;
-  const mover = (discs + 1) % 2;
+  const mover = 1 - (discs % 2);
   after.forEach((row, r) => {
     row.forEach((cell, c) => {
       if (cell === mover && (before[r]?.[c] ?? null) === null) cells.add(r * width + c);

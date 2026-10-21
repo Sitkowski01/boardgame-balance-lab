@@ -195,6 +195,15 @@ describe("last move", () => {
     expect(newDiscs(one, four).size).toBe(0);
   });
 
+  it("counts discs, not empty cells, to know who moved", () => {
+    // Na planszy o nieparzystej liczbie pol puste pola daja inna parzystosc niz krazki.
+    expect(sorted(newDiscs([[null, null, null]], [[0, null, null]]))).toEqual([0]);
+    // Krazek gracza 1, ktory juz lezal, nie jest nowy.
+    const two = put(put(empty(), [[5, 0]], 0), [[5, 1]], 1);
+    const four = put(put(two, [[5, 2]], 0), [[4, 0]], 1);
+    expect(sorted(newDiscs(two, four))).toEqual([28]);
+  });
+
   it("compares positions by their cells", () => {
     const one = put(empty(), [[5, 0]], 0);
     expect(sameRows(one, put(empty(), [[5, 0]], 0))).toBe(true);
@@ -202,6 +211,8 @@ describe("last move", () => {
     expect(sameRows(one, empty())).toBe(false);
     expect(sameRows(one, one.slice(1))).toBe(false);
     expect(sameRows([[0, null]], [[0]])).toBe(false);
+    expect(sameRows([[0]], [[0, null]])).toBe(false);
+    expect(sameRows([], [[0]])).toBe(false);
     expect(sameRows([], [])).toBe(true);
   });
 });

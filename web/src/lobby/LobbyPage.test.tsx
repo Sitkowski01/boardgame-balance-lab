@@ -84,6 +84,48 @@ describe("LobbyPage", () => {
     expect(localStorage.getItem("balance-lab:name")).toBe("Ala");
   });
 
+  it("describes the games in the hero and on the cards to choose from", async () => {
+    const mozaika: GameInfo = {
+      key: "mozaika",
+      name: "Mozaika",
+      minPlayers: 2,
+      maxPlayers: 4,
+      hasVariants: true,
+      variantSyntax: null,
+      profiles: [],
+    };
+    const { user } = page(undefined, () => Promise.resolve([...games, mozaika]));
+    const form = await screen.findByRole("form", { name: "Nowy pokój" });
+
+    expect(within(screen.getByRole("list", { name: "W skrócie" })).getAllByRole("listitem")[0]).toHaveTextContent(
+      /^3 gry, od 2 do 4 graczy$/u,
+    );
+    const card = (name: string) => within(form).getByRole("radio", { name }).closest("label");
+    expect(card("Czwórki")).toHaveClass("game-card", "chosen");
+    expect(card("Czwórki")).toHaveTextContent("2 graczy");
+    expect(card("Czwórki")).toHaveTextContent("Cztery krążki w linii");
+    expect(card("Klejnoty")).not.toHaveClass("chosen");
+    expect(card("Klejnoty")).toHaveTextContent("2–4 graczy");
+    expect(within(form).getByRole("radio", { name: "Czwórki" })).toBeChecked();
+
+    await user.click(within(form).getByRole("radio", { name: "Klejnoty" }));
+    expect(card("Klejnoty")).toHaveClass("game-card", "chosen");
+    expect(card("Czwórki")?.className).toBe("game-card");
+    expect(within(form).getByRole("radio", { name: "Czwórki" })).not.toBeChecked();
+    expect(within(form).getByLabelText("Wariant zasad")).toHaveAttribute("placeholder", "np. card17.points=2; win=13");
+
+    await user.click(within(form).getByRole("radio", { name: "Mozaika" }));
+    expect(within(form).getByLabelText("Wariant zasad")).toHaveAttribute("placeholder", "puste = zasady podstawowe");
+  });
+
+  it("leaves out the games fact until the list of games arrives", async () => {
+    page(undefined, () => Promise.resolve([]));
+    await waitFor(() => {
+      expect(within(screen.getByRole("list", { name: "W skrócie" })).getAllByRole("listitem")).toHaveLength(2);
+    });
+    expect(screen.getByRole("list", { name: "W skrócie" })).not.toHaveTextContent(/gr[ay]|gier/u);
+  });
+
   it("sends no variant for an empty field or a game without variants", async () => {
     const { links, user } = page();
     const form = await screen.findByRole("form", { name: "Nowy pokój" });
