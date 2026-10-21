@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/node_modules
+**/StrykerOutput
+**/.stryker-tmp
+web/dist
+web/coverage
+web/reports
+web/test-results
+BenchmarkDotNet.Artifacts
+tests
+benchmarks
+.git

@@ -1,0 +1,28 @@
+# docker compose up -> http://localhost:8080 (lobby, stoly, powtorki i laboratorium).
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: balance
+      POSTGRES_PASSWORD: balance
+      POSTGRES_DB: balance_lab
+    volumes:
+      - journal:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U balance -d balance_lab"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BALANCE_LAB_DB: Host=db;Username=balance;Password=balance;Database=balance_lab
+    ports:
+      - "8080:8080"
+
+volumes:
+  journal:
