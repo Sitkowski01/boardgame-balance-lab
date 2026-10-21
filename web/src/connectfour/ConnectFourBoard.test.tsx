@@ -60,3 +60,60 @@ describe("Connect Four drawing", () => {
     expect(fireEvent.click(screen.getByRole("button", { name: "Kolumna 1" }))).toBe(true);
   });
 });
+
+describe("Connect Four last move and win", () => {
+  const bottom = (cells: (number | null)[]) => connectFour().rows.map((row, r) => (r === 5 ? cells : row));
+
+  it("rings the disc that has just fallen and drops it from its row", () => {
+    const first = connectFour({ rows: bottom([0, null, null, null, null, null, null]) });
+    const { rerender } = render(<ConnectFourBoard view={first} legalMoves={[]} names={["Ala", "Ola"]} onMove={vi.fn()} />);
+    expect(screen.getByRole("img", { name: "Ala" })).not.toHaveClass("last");
+
+    rerender(
+      <ConnectFourBoard
+        view={connectFour({ rows: bottom([0, 1, null, null, null, null, null]), toMove: 1 })}
+        legalMoves={[]}
+        names={["Ala", "Ola"]}
+        onMove={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Ola" })).toHaveClass("last");
+    expect(screen.getByRole("img", { name: "Ola" })).toHaveStyle({ "--drop": "6" });
+    expect(screen.getByRole("img", { name: "Ala" })).not.toHaveClass("last");
+    expect(screen.getByRole("img", { name: "Ala" }).getAttribute("style")).toBeNull();
+    expect(screen.getByRole("group", { name: "Plansza" }).parentElement?.parentElement).toHaveClass("connectfour", "turn-p1");
+  });
+
+  it("lights up the winning four only when the game is won", () => {
+    const rows = bottom([0, 0, 0, 0, 1, 1, 1]);
+    const { rerender } = render(<ConnectFourBoard view={connectFour({ rows })} legalMoves={[]} names={["Ala", "Ola"]} onMove={vi.fn()} />);
+    expect(document.querySelectorAll(".win")).toHaveLength(0);
+
+    rerender(
+      <ConnectFourBoard view={connectFour({ rows, over: true, winner: 0 })} legalMoves={[]} names={["Ala", "Ola"]} onMove={vi.fn()} />,
+    );
+    expect(screen.getAllByRole("img", { name: "Ala" }).every((d) => d.classList.contains("win"))).toBe(true);
+    expect(screen.getAllByRole("img", { name: "Ola" }).some((d) => d.classList.contains("win"))).toBe(false);
+
+    rerender(<ConnectFourBoard view={connectFour({ rows, over: true })} legalMoves={[]} names={["Ala", "Ola"]} onMove={vi.fn()} />);
+    expect(document.querySelectorAll(".win")).toHaveLength(0);
+  });
+
+  it("names the colors of both players under the board", () => {
+    render(<ConnectFourBoard view={connectFour()} legalMoves={[]} names={["Ala"]} onMove={vi.fn()} />);
+    expect(screen.getByText(/Ala/u).closest("p")).toHaveTextContent("Ala gracz 2");
+  });
+});
+
+describe("Connect Four last move across renders", () => {
+  it("keeps the ring when the same position arrives again as new arrays", () => {
+    const rows = (cells: (number | null)[]) => connectFour().rows.map((row, r) => (r === 5 ? [...cells] : [...row]));
+    const props = { legalMoves: [], names: ["Ala", "Ola"], onMove: vi.fn() };
+    const { rerender } = render(
+      <ConnectFourBoard view={connectFour({ rows: rows([0, null, null, null, null, null, null]) })} {...props} />,
+    );
+    rerender(<ConnectFourBoard view={connectFour({ rows: rows([0, 1, null, null, null, null, null]) })} {...props} />);
+    rerender(<ConnectFourBoard view={connectFour({ rows: rows([0, 1, null, null, null, null, null]) })} {...props} />);
+    expect(screen.getByRole("img", { name: "Ola" })).toHaveClass("last");
+  });
+});
