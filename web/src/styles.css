@@ -287,38 +287,76 @@ select:focus {
   border-color: var(--accent);
 }
 
+/* Drobne elementy wspolne dla stron. */
 .muted,
 .lead {
   color: var(--muted);
 }
+.lead {
+  font-size: 1.05rem;
+  max-width: 62ch;
+}
 .badge {
-  font-size: 0.75rem;
-  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.6;
+  border: 1px solid var(--line-strong);
+  color: var(--muted);
   border-radius: 999px;
   padding: 0 8px;
   margin-left: 6px;
+  white-space: nowrap;
 }
 .badge.warn {
   color: var(--warn);
   border-color: var(--warn);
 }
+.badge.accent {
+  color: var(--accent-strong);
+  border-color: transparent;
+  background: var(--accent-soft);
+}
 .banner {
-  padding: 8px 12px;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
   background: var(--panel);
   border: 1px solid var(--line);
 }
 .banner.error {
   border-color: var(--warn);
+  background: var(--warn-soft);
   color: var(--warn);
 }
 .status {
-  font-size: 0.85rem;
-  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--muted);
+}
+.status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
 }
 .status.Playing {
   color: var(--accent);
+}
+.status.Playing::before {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.status.Waiting::before {
+  background: var(--gold);
 }
 .note,
 .your-turn {
@@ -326,4 +364,48 @@ select:focus {
 }
 .your-turn {
   color: var(--accent);
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  main {
+    padding: 20px 16px 40px;
+  }
+  .topbar-inner,
+  .footer-inner {
+    padding-left: 16px;
+    padding-right: 16px;
+    gap: 10px;
+  }
+  .nav-link a {
+    padding: 6px 10px;
+  }
+}
+@media (max-width: 400px) {
+  .brand span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
