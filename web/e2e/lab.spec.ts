@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 test("a league of Mozaika bots runs from the lab and its result survives a reload", async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto("/");
-  await page.getByRole("link", { name: "laboratorium" }).click();
+  await page.getByRole("link", { name: "laboratorium", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Laboratorium balansu" })).toBeVisible();
 
   const form = page.getByRole("form", { name: "Nowy eksperyment" });

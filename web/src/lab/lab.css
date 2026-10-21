@@ -566,3 +566,7 @@ button.primary:disabled {
     flex-wrap: wrap;
   }
 }
+
+.recent h2 {
+  margin-top: 0;
+}

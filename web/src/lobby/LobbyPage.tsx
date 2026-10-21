@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { hubMessage, type Connect } from "../api/connection";
 import { api } from "../api/rest";
 import { Link } from "../Link";
+import { gamesFact } from "../names";
 import type { GameInfo, RoomInfo } from "../api/schemas";
 import type { Tickets } from "../table/tickets";
 import { CreateRoom } from "./CreateRoom";
@@ -78,24 +79,36 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
 
   return (
     <main className="lobby">
-      <h1>Balance Lab</h1>
-      <p className="lead">
-        Zagraj z ludźmi i botami w gry, których balans sprawdza{" "}
-        <Link to="/lab" navigate={navigate}>
-          laboratorium
-        </Link>
-        .
-      </p>
+      <section className="hero">
+        <div className="hero-text">
+          <p className="eyebrow">Laboratorium balansu gier planszowych</p>
+          <h1>Balance Lab</h1>
+          <p className="lead">
+            Zagraj z ludźmi i botami w gry, których balans sprawdza{" "}
+            <Link to="/lab" navigate={navigate}>
+              laboratorium
+            </Link>
+            . Boty MCTS rozgrywają tysiące partii i pokazują, która karta, kafelek czy miejsce przy stole daje za dużo.
+          </p>
+          <ul className="hero-facts" aria-label="W skrócie">
+            {games.length > 0 && <li>{gamesFact(games)}</li>}
+            <li>boty od losowego po ISMCTS</li>
+            <li>powtórka każdej partii</li>
+          </ul>
+        </div>
+        <HeroArt />
+      </section>
       {error !== null && (
         <p role="alert" className="banner error">
           {error}
         </p>
       )}
+      <h2>Nowy stół</h2>
       <CreateRoom games={games} onCreate={create} />
-      <section aria-label="Pokoje">
+      <section aria-label="Pokoje" className="rooms-section">
         <h2>Pokoje</h2>
         {rooms.length === 0 ? (
-          <p className="muted">Nie ma jeszcze żadnego pokoju — załóż pierwszy.</p>
+          <p className="empty-rooms">Nie ma jeszcze żadnego pokoju — załóż pierwszy.</p>
         ) : (
           <ul className="rooms">
             {sortRooms(rooms).map((room) => (
@@ -104,6 +117,68 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
           </ul>
         )}
       </section>
+      <section className="lab-teaser panel" aria-label="Laboratorium">
+        <div>
+          <h2>Co jeśli karta kosztuje o jeden mniej?</h2>
+          <p className="muted">
+            W laboratorium zamawiasz turniej, ligę albo porównanie wariantów zasad. Wynik to ranking Elo, macierz „kto bije kogo”, przewaga
+            pierwszego gracza i karty, które wygrywają za często — każda liczba z 95% przedziałem.
+          </p>
+        </div>
+        <Link to="/lab" navigate={navigate}>
+          Otwórz laboratorium →
+        </Link>
+      </section>
     </main>
+  );
+}
+
+/** Ozdoba wstepu: elementy trzech gier na zielonym suknie stolu. */
+function HeroArt() {
+  return (
+    <svg className="hero-art" viewBox="0 0 320 220" aria-hidden="true">
+      <rect x="6" y="10" width="308" height="200" rx="28" fill="var(--felt)" />
+      <rect x="6" y="10" width="308" height="200" rx="28" fill="url(#hero-sheen)" />
+      <defs>
+        <radialGradient id="hero-sheen" cx="30%" cy="20%" r="90%">
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.16" />
+          <stop offset="1" stopColor="#000000" stopOpacity="0.18" />
+        </radialGradient>
+      </defs>
+      <g transform="rotate(-9 92 104)">
+        <rect x="52" y="48" width="80" height="112" rx="10" fill="#fffaf0" stroke="#d1a43c" strokeWidth="3" />
+        <text x="64" y="76" fontSize="22" fontWeight="700" fill="#2b2b2b" fontFamily="Inter Variable, sans-serif">
+          4
+        </text>
+        <path d="M92 84l16 12-16 28-16-28z" fill="#2f6fd1" />
+        <path d="M92 84l16 12h-32z" fill="#78a6ee" />
+        <circle cx="68" cy="144" r="7" fill="#2e9a4f" />
+        <circle cx="86" cy="144" r="7" fill="#c9353b" />
+        <circle cx="104" cy="144" r="7" fill="#2b2b2b" />
+      </g>
+      <g>
+        {[
+          [212, 52, "#1f9e94"],
+          [236, 52, "#d4952a"],
+          [260, 52, "#b3243b"],
+          [212, 76, "#4a4c50"],
+          [236, 76, "#1f9e94"],
+          [260, 76, "#d4952a"],
+          [212, 100, "#efe6cf"],
+          [236, 100, "#4a4c50"],
+          [260, 100, "#1f9e94"],
+        ].map(([x, y, fill], i) => (
+          <rect key={i} x={x} y={y} width="21" height="21" rx="4" fill={String(fill)} opacity={i % 4 === 3 ? 0.35 : 1} />
+        ))}
+      </g>
+      <g>
+        <circle cx="176" cy="168" r="17" fill="#d33c3c" stroke="rgb(0 0 0 / 0.25)" />
+        <circle cx="176" cy="168" r="11" fill="none" stroke="#ffd0d0" strokeWidth="2" strokeDasharray="4 3" />
+        <circle cx="214" cy="160" r="17" fill="#e8c23a" stroke="rgb(0 0 0 / 0.25)" />
+        <circle cx="214" cy="160" r="11" fill="none" stroke="#fff2c0" strokeWidth="2" strokeDasharray="4 3" />
+        <circle cx="252" cy="170" r="17" fill="#f5f3ee" stroke="rgb(0 0 0 / 0.25)" />
+        <circle cx="252" cy="170" r="11" fill="none" stroke="#b9b4a8" strokeWidth="2" strokeDasharray="4 3" />
+      </g>
+    </svg>
   );
 }
