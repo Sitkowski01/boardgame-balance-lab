@@ -45,6 +45,8 @@ public sealed class EndToEndTests(ApiFixture api)
         Assert.Equal(end.Scores.ToArray(), match.Scores.ToArray());
         // Ruchy w dzienniku to dokladnie te, ktore widzieli gracze, w tej samej kolejnosci.
         Assert.Equal(ala.Moves.OrderBy(m => m.Number).Select(m => m.Move), match.Moves);
+        // Kto zagral, liczy powtorka z zasad — musi sie zgadzac z tym, co gracze widzieli przy stole.
+        Assert.Equal(ala.Moves.OrderBy(m => m.Number).Select(m => m.Seat), match.Movers);
 
         var frame = await http.GetFromJsonAsync<JsonElement>($"/api/matches/{end.MatchId}/frames/{end.Moves}", ApiFixture.Json);
         Assert.Equal(match.Hashes[^1], frame.GetProperty("hash").GetString());

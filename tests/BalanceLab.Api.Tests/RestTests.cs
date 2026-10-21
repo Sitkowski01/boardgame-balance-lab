@@ -91,9 +91,29 @@ public sealed class RestTests(ApiFixture api)
         Assert.Equal((2, "3", Persistence.MatchStatus.InProgress), (match!.Moves.Length, match.Moves[0], match.Status));
         Assert.Null(match.Seed);
         Assert.Empty(match.Hashes);
+        Assert.Equal([0, 1], match.Movers.ToArray());
         Assert.Equal(JsonValueKind.Null, frame.GetProperty("hash").ValueKind);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("po 3 ruchach", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Journal_with_a_wrong_hash_is_shown_unverified_without_movers()
+    {
+        await using var ala = await api.ConnectAsync();
+        await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
+        await ala.Hub.InvokeAsync("AddBot", 1, "random");
+        await ala.Hub.InvokeAsync("Start");
+        await ala.Hub.InvokeAsync("MakeMove", 0, "3");
+        var room = await ala.RoomAsync(r => r.Moves == 2);
+
+        await ApiFixture.ExecuteAsync(api.ConnectionString,
+            $"ALTER TABLE match_moves DISABLE TRIGGER USER; UPDATE match_moves SET hash_after = hash_after + 1 WHERE match_id = '{room.MatchId}' AND seq = 2; ALTER TABLE match_moves ENABLE TRIGGER USER;");
+        var match = await api.Http().GetFromJsonAsync<MatchReplay>($"/api/matches/{room.MatchId}", ApiFixture.Json);
+
+        // Ruchy niezgodne z zasadami nie maja pewnego autora — strona pokazuje je bez imion.
+        Assert.Equal((false, 2), (match!.Verified, match.Moves.Length));
+        Assert.Empty(match.Movers);
     }
 
     [Fact]

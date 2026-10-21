@@ -12,6 +12,7 @@ namespace BalanceLab.Multiplayer;
 /// </summary>
 /// <param name="Seed">Ziarno partii; null, dopoki partia trwa — z ziarnem kazdy odtworzylby talie i zakryte karty.</param>
 /// <param name="Hashes">Hash stanu po kazdym ruchu; puste, dopoki partia trwa (hash obejmuje ukryte karty).</param>
+/// <param name="Movers">Miejsce gracza, ktory zagral kazdy ruch; puste, gdy dziennik nie zgadza sie z zasadami.</param>
 /// <param name="Verified">Powtorka od rozdania daje dokladnie hashe z dziennika.</param>
 /// <param name="FirstBadMove">Ruch, na ktorym powtorka rozeszla sie z dziennikiem, jesli dotyczy.</param>
 public sealed record MatchReplay(
@@ -24,6 +25,7 @@ public sealed record MatchReplay(
     MatchStatus Status,
     ImmutableArray<string> Moves,
     ImmutableArray<string> Hashes,
+    ImmutableArray<int> Movers,
     ImmutableArray<double> Scores,
     DateTimeOffset StartedAt,
     DateTimeOffset? FinishedAt,
@@ -68,6 +70,25 @@ public sealed class MatchArchive(JournalDb db)
 
     private static string Hex(ulong hash) => hash.ToString("x16", CultureInfo.InvariantCulture);
 
+    /// <summary>
+    /// Kto zagral kazdy ruch: gracz na ruchu tuz przed nim. Dziennik tego nie trzyma — wynika z zasad, wiec
+    /// liczymy to z powtorki (tylko sprawdzonej, inaczej ruchy moglyby byc nielegalne).
+    /// </summary>
+    private static ImmutableArray<int> Movers<TState, TMove>(IGame<TState, TMove> rules, GameSetup setup, ImmutableArray<TMove> moves)
+        where TState : notnull
+        where TMove : notnull
+    {
+        var movers = ImmutableArray.CreateBuilder<int>(moves.Length);
+        var state = rules.Setup(setup);
+        foreach (var move in moves)
+        {
+            movers.Add(rules.CurrentPlayer(state));
+            state = rules.Apply(state, move);
+        }
+
+        return movers.MoveToImmutable();
+    }
+
     private sealed class Loader(JournalDb db, Guid match, CancellationToken cancellationToken) : IGameVisitor<Task<MatchReplay?>>
     {
         public async Task<MatchReplay?> Visit<TState, TMove, TGame>(GameDefinition<TState, TMove, TGame> definition)
@@ -82,7 +103,8 @@ public sealed class MatchArchive(JournalDb db)
             var secret = m.Status == MatchStatus.InProgress;
             return new MatchReplay(
                 m.Id, m.Game, rules.Name, m.Variant, secret ? null : m.Setup.Seed.ToString(CultureInfo.InvariantCulture), m.Players, m.Status,
-                [.. log.Moves.Select(rules.EncodeMove)], secret ? [] : [.. log.Hashes.Select(Hex)], m.Scores, m.StartedAt, m.FinishedAt,
+                [.. log.Moves.Select(rules.EncodeMove)], secret ? [] : [.. log.Hashes.Select(Hex)],
+                check.Ok ? Movers(rules, m.Setup, log.Moves) : [], m.Scores, m.StartedAt, m.FinishedAt,
                 check.Ok, check.FirstBadMove, check.Problem);
         }
     }
