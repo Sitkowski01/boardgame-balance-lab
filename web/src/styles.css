@@ -1,53 +1,148 @@
+/* Wspolne style: kolory jako role (jasny i ciemny motyw), typografia, rama strony, przyciski i pola. */
 :root {
-  color-scheme: light dark;
-  --bg: #f6f4ef;
-  --panel: #ffffff;
-  --text: #1d1b18;
-  --muted: #6b665d;
-  --line: #ddd7cc;
-  --accent: #2f6f5e;
-  --warn: #b5562a;
-  --gem-0: #f4f4f4;
+  color-scheme: light;
+  --bg: #f3efe6;
+  --bg-deep: #e9e3d6;
+  --panel: #fffdf8;
+  --panel-2: #f7f3ea;
+  --text: #1d1b17;
+  --muted: #6c665a;
+  --line: #e0d9ca;
+  --line-strong: #cbc2ae;
+  --accent: #23614f;
+  --accent-strong: #1a4b3d;
+  --accent-soft: #dfece5;
+  --accent-ink: #ffffff;
+  --gold: #e0b041;
+  --warn: #b4532a;
+  --warn-soft: #f7e4d8;
+  --felt: #2c5a4b;
+  --felt-deep: #1f4337;
+  --shadow-1: 0 1px 2px rgb(52 40 16 / 0.06), 0 1px 1px rgb(52 40 16 / 0.04);
+  --shadow-2: 0 10px 30px -12px rgb(52 40 16 / 0.25), 0 2px 6px -2px rgb(52 40 16 / 0.08);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --display: "Fraunces Variable", Georgia, serif;
+  --gem-0: #f5f3ee;
   --gem-1: #2f6fd1;
   --gem-2: #2e9a4f;
   --gem-3: #c9353b;
   --gem-4: #2b2b2b;
   --gem-5: #d9a520;
-  font-family: system-ui, "Segoe UI", sans-serif;
+  font-family: "Inter Variable", system-ui, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  line-height: 1.5;
   background: var(--bg);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16181a;
-    --panel: #212427;
-    --text: #ece9e3;
-    --muted: #a39d92;
-    --line: #3a3e42;
-    --accent: #5fbf9f;
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --bg: #111412;
+    --bg-deep: #0c0e0d;
+    --panel: #1a1e1c;
+    --panel-2: #212623;
+    --text: #ece8df;
+    --muted: #a09a8d;
+    --line: #2c322f;
+    --line-strong: #3d4541;
+    --accent: #5cc29d;
+    --accent-strong: #7dd3b3;
+    --accent-soft: #1c3429;
+    --accent-ink: #0b1a14;
+    --warn: #e88a5e;
+    --warn-soft: #3a2419;
+    --felt: #1f4136;
+    --felt-deep: #162f27;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 14px 34px -14px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+    --gem-4: #3a3a3a;
   }
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111412;
+  --bg-deep: #0c0e0d;
+  --panel: #1a1e1c;
+  --panel-2: #212623;
+  --text: #ece8df;
+  --muted: #a09a8d;
+  --line: #2c322f;
+  --line-strong: #3d4541;
+  --accent: #5cc29d;
+  --accent-strong: #7dd3b3;
+  --accent-soft: #1c3429;
+  --accent-ink: #0b1a14;
+  --warn: #e88a5e;
+  --warn-soft: #3a2419;
+  --felt: #1f4136;
+  --felt-deep: #162f27;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 14px 34px -14px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+  --gem-4: #3a3a3a;
+}
 
+* {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
   background: var(--bg);
+  min-height: 100vh;
+}
+#root {
+  min-height: 100vh;
+}
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 main {
-  max-width: 1100px;
+  width: 100%;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 28px 24px 48px;
+  flex: 1;
+}
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 h1 {
   margin: 0 0 8px;
-  font-size: 1.6rem;
+  font-size: clamp(1.7rem, 1.2rem + 1.6vw, 2.3rem);
+  font-weight: 650;
 }
 h2 {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 28px 0 12px;
+}
+h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
 }
 a {
   color: var(--accent);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
 }
+a:hover {
+  color: var(--accent-strong);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 button,
 select,
 input {
