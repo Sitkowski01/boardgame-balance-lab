@@ -81,7 +81,7 @@ describe("choosing tiles and a line", () => {
 describe("describeMove", () => {
   it("says what was taken, from where and where it went, counting from 1", () => {
     expect(describeMove("f2:C:3")).toBe("bierze karmin z warsztatu 3 na rząd 4");
-    expect(describeMove("c:I:floor")).toBe("bierze kość ze środka na podłogę");
+    expect(describeMove("c:I:floor")).toBe("bierze perłę ze środka na podłogę");
     expect(() => describeMove("dziwny")).toThrow();
   });
 });

@@ -1,4 +1,4 @@
-import { Letters, tileName } from "./model";
+import { Letters, tileObject } from "./model";
 
 /** Zrodlo kafelkow: numer warsztatu albo srodek stolu. */
 export type Source = number | "center";
@@ -66,5 +66,5 @@ const sourceName = (source: Source): string => (source === "center" ? "ze środk
 export function describeMove(text: string): string {
   const move = parseMove(text);
   const target = move.line === "floor" ? "na podłogę" : `na rząd ${String(move.line + 1)}`;
-  return `bierze ${tileName(move.color)} ${sourceName(move.source)} ${target}`;
+  return `bierze ${tileObject(move.color)} ${sourceName(move.source)} ${target}`;
 }

@@ -53,14 +53,14 @@ describe("MozaikaBoard", () => {
     expect(cells).toHaveLength(25);
     expect(cells.filter((c) => c.getAttribute("aria-selected") === "true").map((c) => cells.indexOf(c))).toEqual([0, 6]);
     expect(within(cells[1] ?? document.body).getByRole("img")).toHaveAccessibleName("ochra");
-    expect(within(cells[5] ?? document.body).getByRole("img")).toHaveAccessibleName("kość");
+    expect(within(cells[5] ?? document.body).getByRole("img")).toHaveAccessibleName("perła");
     const lines = within(ala()).getAllByRole("listitem");
     expect(lines.map((l) => l.getAttribute("aria-label"))).toEqual([
       "Rząd 1: pusty",
       "Rząd 2: karmin 1/2",
       "Rząd 3: pusty",
       "Rząd 4: pusty",
-      "Rząd 5: kość 5/5",
+      "Rząd 5: perła 5/5",
     ]);
     expect(within(lines[4] ?? document.body).getAllByRole("img")).toHaveLength(5);
   });

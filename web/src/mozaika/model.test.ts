@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mozaika, mozaikaPlayer, mozaikaRules } from "../test/boards";
-import { floorCount, floorPenalty, mozaikaSheet, mozaikaView, tileName, total } from "./model";
+import { floorCount, floorPenalty, mozaikaSheet, mozaikaView, tileName, tileObject, total } from "./model";
 
 describe("Mozaika model", () => {
   it("accepts the view and the rules the server sends", () => {
@@ -20,7 +20,8 @@ describe("Mozaika model", () => {
   });
 
   it("names colors and counts tiles", () => {
-    expect([0, 1, 2, 3, 4, 7].map(tileName)).toEqual(["turkus", "ochra", "karmin", "grafit", "kość", "?"]);
+    expect([0, 1, 2, 3, 4, 7].map(tileName)).toEqual(["turkus", "ochra", "karmin", "grafit", "perła", "?"]);
+    expect([0, 1, 4, 7].map(tileObject)).toEqual(["turkus", "ochrę", "perłę", "?"]);
     expect(total([1, 2, 0, 3, 0])).toBe(6);
   });
 

@@ -3,11 +3,18 @@ import { z } from "zod";
 /** Kolory w kolejnosci serwera (MozaikaView): T O C G I. */
 export const Letters = "TOCGI";
 export const WallSize = 5;
-export const TileNames = ["turkus", "ochra", "karmin", "grafit", "kość"] as const;
+export const TileNames = ["turkus", "ochra", "karmin", "grafit", "perła"] as const;
+/** Te same kolory w bierniku, do zdan typu "bierze ochrę". */
+const TileObjects = ["turkus", "ochrę", "karmin", "grafit", "perłę"] as const;
 
 /** Nazwa koloru; numer spoza 0-4 to "?" (nie powinien przyjsc z serwera, ale napis zostaje czytelny). */
 export function tileName(tile: number): string {
   return TileNames[tile] ?? "?";
+}
+
+/** Nazwa koloru jako dopelnienie ("bierze perłę"); numer spoza 0-4 to "?". */
+export function tileObject(tile: number): string {
+  return TileObjects[tile] ?? "?";
 }
 
 const counts = z.array(z.number().int().nonnegative()).length(5);
