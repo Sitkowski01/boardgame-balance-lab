@@ -29,7 +29,7 @@ describe("LobbyPage", () => {
       s.watchLobby.mockResolvedValue([room({ id: "a", seats: [seat(0, { name: "Ala" }), seat(1, { kind: "Empty", name: null })] })]),
     );
 
-    const row = await screen.findByRole("listitem", { name: "Pokój ConnectFour" });
+    const row = await screen.findByRole("listitem", { name: "Pokój Czwórki" });
     expect(row).toHaveTextContent("Ala · 1/2");
     expect(within(row).getByRole("link", { name: "Dołącz" })).toHaveAttribute("href", "/rooms/a");
 
@@ -38,9 +38,9 @@ describe("LobbyPage", () => {
       last(links).emit.lobby(room({ id: "b", gameName: "Klejnoty", variant: "win=9", status: "Finished", matchId }));
     });
 
-    expect(within(screen.getByRole("listitem", { name: "Pokój ConnectFour" })).getByRole("link", { name: "Oglądaj" })).toBeInTheDocument();
+    expect(within(screen.getByRole("listitem", { name: "Pokój Czwórki" })).getByRole("link", { name: "Oglądaj" })).toBeInTheDocument();
     const done = screen.getByRole("listitem", { name: "Pokój Klejnoty" });
-    expect(done).toHaveTextContent("(win=9)");
+    expect(done).toHaveTextContent("wariant: win=9");
     expect(within(done).getByRole("link", { name: "Powtórka" })).toHaveAttribute("href", `/matches/${matchId}`);
     expect(within(done).queryByRole("link", { name: "Oglądaj" })).not.toBeInTheDocument();
   });
@@ -64,7 +64,7 @@ describe("LobbyPage", () => {
     expect(within(form).getByRole("button", { name: "Załóż pokój" })).toBeDisabled();
     expect(within(form).queryByLabelText("Wariant zasad")).not.toBeInTheDocument();
     await user.type(within(form).getByLabelText("Twoje imię"), "Ala");
-    await user.selectOptions(within(form).getByLabelText("Gra"), "klejnoty");
+    await user.click(within(form).getByRole("radio", { name: "Klejnoty" }));
     expect(
       within(form)
         .getAllByRole("option", { name: /^[0-9]$/u })
@@ -93,10 +93,10 @@ describe("LobbyPage", () => {
       expect(last(links).server.createRoom).toHaveBeenCalledWith({ game: "connectfour", seats: 2, variant: null, name: "Ala" });
     });
 
-    await user.selectOptions(within(form).getByLabelText("Gra"), "klejnoty");
+    await user.click(within(form).getByRole("radio", { name: "Klejnoty" }));
     await user.type(within(form).getByLabelText("Wariant zasad"), "   ");
     await user.selectOptions(within(form).getByLabelText("Miejsca"), "4");
-    await user.selectOptions(within(form).getByLabelText("Gra"), "connectfour");
+    await user.click(within(form).getByRole("radio", { name: "Czwórki" }));
     await user.click(within(form).getByRole("button", { name: "Załóż pokój" }));
     await waitFor(() => {
       expect(last(links).server.createRoom).toHaveBeenLastCalledWith({ game: "connectfour", seats: 2, variant: null, name: "Ala" });

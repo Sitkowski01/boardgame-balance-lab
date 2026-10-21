@@ -5,7 +5,7 @@ export async function createRoom(page: Page, options: { name: string; game: stri
   await page.goto("/");
   const form = page.getByRole("form", { name: "Nowy pokój" });
   await form.getByLabel("Twoje imię").fill(options.name);
-  await form.getByLabel("Gra").selectOption({ label: options.game });
+  await form.getByRole("radio", { name: options.game }).check();
   if (options.seats !== undefined) {
     await form.getByLabel("Miejsca").selectOption(String(options.seats));
   }

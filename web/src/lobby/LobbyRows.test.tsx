@@ -55,9 +55,9 @@ describe("room rows", () => {
   it("list the players with the status and no variant when there is none", async () => {
     await lobby([room({ id: "a", seats: [seat(0, { name: "Ala" }), seat(1, { name: "Ola" }), seat(2, { kind: "Empty", name: null })] })]);
 
-    expect(row("Pokój ConnectFour")).toHaveTextContent("Ala, Ola · 2/3");
-    expect(row("Pokój ConnectFour")).not.toHaveTextContent("(");
-    expect(within(row("Pokój ConnectFour")).getByText("czeka na graczy")).toHaveClass("status", "Waiting");
+    expect(row("Pokój Czwórki")).toHaveTextContent("Ala, Ola · 2/3");
+    expect(row("Pokój Czwórki")).not.toHaveTextContent("(");
+    expect(within(row("Pokój Czwórki")).getByText("czeka na graczy")).toHaveClass("status", "Waiting");
   });
 
   it("go to the replay without reloading the page", async () => {
@@ -79,7 +79,7 @@ describe("new room form", () => {
     const { links, user } = await lobby();
     const form = screen.getByRole("form", { name: "Nowy pokój" });
     await user.type(within(form).getByLabelText("Twoje imię"), " Ala ");
-    await user.selectOptions(within(form).getByLabelText("Gra"), "klejnoty");
+    await user.click(within(form).getByRole("radio", { name: "Klejnoty" }));
     await user.selectOptions(within(form).getByLabelText("Miejsca"), "4");
     await user.type(within(form).getByLabelText("Wariant zasad"), "  ");
 
@@ -95,7 +95,7 @@ describe("new room form", () => {
     const { links, user } = await lobby();
     const form = screen.getByRole("form", { name: "Nowy pokój" });
     await user.type(within(form).getByLabelText("Twoje imię"), "Ala");
-    await user.selectOptions(within(form).getByLabelText("Gra"), "klejnoty");
+    await user.click(within(form).getByRole("radio", { name: "Klejnoty" }));
     await user.selectOptions(within(form).getByLabelText("Miejsca"), "3");
     await user.selectOptions(within(form).getByLabelText("Miejsca"), "2");
     await user.click(within(form).getByRole("button", { name: "Załóż pokój" }));

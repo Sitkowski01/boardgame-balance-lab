@@ -1,8 +1,10 @@
 import { useState, type SyntheticEvent } from "react";
 import type { GameInfo } from "../api/schemas";
+import { gameBlurbs, gameTitle } from "../names";
 import { loadName, saveName } from "../table/tickets";
+import { GameArt } from "./GameArt";
 
-/** Nowy pokoj: gra, liczba miejsc z jej zakresu, wariant zasad (jesli gra je ma) i imie gospodarza. */
+/** Nowy pokoj: gra (karty do wyboru), liczba miejsc z jej zakresu, wariant zasad (jesli gra je ma) i imie gospodarza. */
 export function CreateRoom({
   games,
   onCreate,
@@ -27,62 +29,78 @@ export function CreateRoom({
   };
 
   return (
-    <form className="create" aria-label="Nowy pokój" onSubmit={submit}>
-      <label>
-        Twoje imię
-        <input
-          value={name}
-          maxLength={24}
-          onChange={(e) => {
-            setName(e.target.value);
-          }}
-        />
-      </label>
-      <label>
-        Gra
-        <select
-          value={game.key}
-          onChange={(e) => {
-            setKey(e.target.value);
-          }}
-        >
-          {games.map((g) => (
-            <option key={g.key} value={g.key}>
-              {g.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Miejsca
-        <select
-          value={count}
-          onChange={(e) => {
-            setSeats(Number(e.target.value));
-          }}
-        >
-          {Array.from({ length: game.maxPlayers - game.minPlayers + 1 }, (_, i) => game.minPlayers + i).map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </label>
-      {game.hasVariants && (
+    <form className="create panel" aria-label="Nowy pokój" onSubmit={submit}>
+      <fieldset className="game-choice">
+        <legend>Gra</legend>
+        {games.map((g) => (
+          <label key={g.key} className={g.key === game.key ? "game-card chosen" : "game-card"}>
+            <input
+              type="radio"
+              name="game"
+              value={g.key}
+              aria-label={gameTitle(g.name)}
+              checked={g.key === game.key}
+              onChange={() => {
+                setKey(g.key);
+              }}
+            />
+            <GameArt game={g.key} />
+            <span className="game-card-name">{gameTitle(g.name)}</span>
+            <span className="game-card-players">{players(g)}</span>
+            <span className="game-card-blurb">{gameBlurbs[g.key] ?? ""}</span>
+          </label>
+        ))}
+      </fieldset>
+      <div className="create-fields">
         <label>
-          Wariant zasad
+          Twoje imię
           <input
-            value={variant}
-            placeholder="np. card17.points=2; win=13"
+            value={name}
+            maxLength={24}
+            placeholder="np. Ala"
             onChange={(e) => {
-              setVariant(e.target.value);
+              setName(e.target.value);
             }}
           />
         </label>
-      )}
-      <button type="submit" className="primary" disabled={name.trim() === ""}>
-        Załóż pokój
-      </button>
+        <label>
+          Miejsca
+          <select
+            value={count}
+            onChange={(e) => {
+              setSeats(Number(e.target.value));
+            }}
+          >
+            {Array.from({ length: game.maxPlayers - game.minPlayers + 1 }, (_, i) => game.minPlayers + i).map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        {game.hasVariants && (
+          <label className="wide">
+            Wariant zasad
+            <input
+              value={variant}
+              placeholder={game.key === "klejnoty" ? "np. card17.points=2; win=13" : "puste = zasady podstawowe"}
+              onChange={(e) => {
+                setVariant(e.target.value);
+              }}
+            />
+          </label>
+        )}
+        <button type="submit" className="primary" disabled={name.trim() === ""}>
+          Załóż pokój
+        </button>
+      </div>
+      <p className="hint">Przy stole posadzisz boty na wolnych miejscach — możesz zagrać sam albo wysłać link znajomym.</p>
     </form>
   );
+}
+
+function players(game: GameInfo): string {
+  return game.minPlayers === game.maxPlayers
+    ? `${String(game.minPlayers)} graczy`
+    : `${String(game.minPlayers)}–${String(game.maxPlayers)} graczy`;
 }
