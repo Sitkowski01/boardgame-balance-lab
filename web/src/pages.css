@@ -281,34 +281,139 @@
   }
 }
 
+/* Stol: naglowek, poczekalnia, plansza z panelem bocznym (miejsca, ruchy) i wynik. */
 .table-head {
   display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.table-head .game-art {
+  width: 72px;
+  flex: none;
+}
+.table-head h1 {
+  margin: 0;
+}
+.table-meta {
+  display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px;
+  align-items: center;
+  gap: 4px 10px;
+  margin-top: 4px;
+}
+.table-meta .badge {
+  margin-left: 0;
 }
 .clock {
+  margin-left: auto;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-}
-.seats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 0;
-  list-style: none;
-}
-.seats li {
-  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 6px 14px;
+  border-radius: 999px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 8px;
+}
+.waiting {
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+.waiting-head {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: start;
+  flex-wrap: wrap;
+}
+.waiting h2 {
+  margin: 0 0 4px;
+}
+.waiting-head p {
+  margin: 0;
+  max-width: 62ch;
+}
+.copy-link {
   display: flex;
   gap: 8px;
-  align-items: center;
+  flex-wrap: wrap;
 }
-.seats li.to-move {
-  border-color: var(--accent);
+.waiting .start {
+  justify-self: start;
+  font-size: 1.05rem;
+  padding: 11px 26px;
+}
+.seats {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.waiting .seats {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.seat {
+  --seat: var(--accent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.seat-1 {
+  --seat: #c98a1c;
+}
+.seat-2 {
+  --seat: #6c5bc4;
+}
+.seat-3 {
+  --seat: #c2476e;
+}
+.seat.empty {
+  border-style: dashed;
+  background: transparent;
+}
+.seat.to-move {
+  border-color: var(--seat);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--seat) 22%, transparent);
+}
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--seat);
+  color: #fff;
+  font-weight: 700;
+}
+.seat.empty .avatar {
+  background: transparent;
+  color: var(--muted);
+  border: 1.5px dashed var(--line-strong);
+}
+.seat-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  min-width: 0;
+}
+.bot-picker {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+.bot-picker select {
+  flex: 1;
+  min-width: 0;
 }
 .moves ol {
   padding-left: 24px;
