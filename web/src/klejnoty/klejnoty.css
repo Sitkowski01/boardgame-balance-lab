@@ -121,28 +121,35 @@
   fill: rgb(0 0 0 / 0.14);
 }
 
-.klejnoty {
-  display: grid;
-  gap: 12px;
-  margin-top: 12px;
-}
-.patrons,
-.bank,
-.players {
+/* Patroni. */
+.patrons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
+  gap: 10px;
 }
 .patron {
-  display: flex;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 8px;
   align-items: center;
-  padding: 6px;
-  background: var(--panel);
-  border: 1px dashed var(--line);
-  border-radius: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #f6ead0, #e7d3a6);
+  color: #3a2c10;
+  border: 1px solid #cdb37a;
+  box-shadow: var(--shadow-1);
 }
+.patron-crown {
+  grid-row: span 2;
+  font-size: 1.5rem;
+  color: #a2771f;
+}
+.patron strong {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .market {
   display: grid;
   gap: 8px;
