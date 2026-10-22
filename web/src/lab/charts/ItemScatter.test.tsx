@@ -193,3 +193,93 @@ describe("ItemScatter", () => {
     expect(within(rows[0] as HTMLElement).getByText("▲ za mocna")).toHaveClass("tag strong");
   });
 });
+
+describe("ItemScatter details", () => {
+  /** Grupa 40%: #a +8 pp (najdalej, os do +10 pp co 2 pp) i #b +5 pp. */
+  const near = (): ReturnType<typeof tournament> =>
+    tournament({
+      items: [item({ id: 0, name: "#a", ownerWins: p(48, 100) }), item({ id: 1, name: "#b", ownerWins: p(45, 100) })],
+      itemGroups: [{ group: "poziom 1", ownerWins: p(40, 100) }],
+    });
+
+  it("scales the vertical axis to its reach, not to one", () => {
+    render(<ItemScatter report={near()} />);
+
+    // Os od -10 do +10 pp na 344 px: +5 pp lezy w jednej czwartej od gory.
+    const hit = dot("#b").querySelector("circle.hit");
+    expect(Number(hit?.getAttribute("cy"))).toBeCloseTo(12 + 0.25 * 344, 6);
+  });
+
+  it("draws only the zero line as the axis, every other level as grid", () => {
+    const { container } = render(<ItemScatter report={near()} />);
+
+    const levels = [...container.querySelectorAll("line")].filter((l) => l.getAttribute("x1") === "64" && l.getAttribute("x2") === "944");
+    expect(levels).toHaveLength(11);
+    expect(levels.map((l) => l.getAttribute("class"))).toEqual([
+      ...Array<string>(5).fill("grid"),
+      "axis",
+      ...Array<string>(5).fill("grid"),
+    ]);
+    expect([...container.querySelectorAll("text.tick")].slice(5).map((t) => t.textContent)).toEqual([
+      "−10",
+      "−8",
+      "−6",
+      "−4",
+      "−2",
+      "0",
+      "+2",
+      "+4",
+      "+6",
+      "+8",
+      "+10",
+    ]);
+  });
+
+  it("lists strong before weak before dead, whatever the edge", () => {
+    const report = tournament({
+      items: [
+        item({ id: 0, name: "#dead", taken: p(2, 100), ownerWins: p(10, 10), verdict: "Dead" }),
+        item({ id: 1, name: "#weak", ownerWins: p(1, 50), verdict: "Weak" }),
+        item({ id: 2, name: "#strong", ownerWins: p(25, 50), verdict: "Strong" }),
+      ],
+    });
+    render(<ItemScatter report={report} />);
+
+    const rows = within(screen.getByRole("table", { name: "Odstające: karty" }))
+      .getAllByRole("row")
+      .slice(1);
+    expect(rows.map((r) => r.firstChild?.textContent)).toEqual(["#strong", "#weak", "#dead"]);
+  });
+
+  it("points the triangle up for too strong and down for too weak", () => {
+    render(<ItemScatter report={tournament()} />);
+
+    const apexAndBase = (name: string): number[] => {
+      const [, apex, , base] = numbers(dot(name).querySelector("path.mark")?.getAttribute("d"));
+      return [apex ?? NaN, base ?? NaN];
+    };
+    const [strongApex, strongBase] = apexAndBase("#0 mocna");
+    const [weakApex, weakBase] = apexAndBase("#2 slaba");
+    expect(strongApex).toBeLessThan(strongBase ?? NaN);
+    expect(weakApex).toBeGreaterThan(weakBase ?? NaN);
+  });
+
+  it("can be read from the keyboard: every point takes the focus and describes itself", () => {
+    render(<ItemScatter report={tournament()} />);
+    const readout = (): string | null => document.querySelector(".readout")?.textContent ?? null;
+
+    expect(dot("#2 slaba")).toHaveAttribute("tabindex", "0");
+    fireEvent.focus(dot("#2 slaba"));
+    expect(readout()).toMatch(/^#2 slaba: w 50,0% partii/u);
+    expect(dot("#2 slaba").getAttribute("class")).toBe("dot weak focused");
+
+    fireEvent.blur(dot("#2 slaba"));
+    expect(readout()).toBe("Wskaż punkt, żeby zobaczyć szczegóły.");
+
+    // Fokus odchodzi, gdy wskaznik pokazuje juz inny punkt: opis tamtego zostaje.
+    fireEvent.focus(dot("#2 slaba"));
+    fireEvent.pointerEnter(dot("#0 mocna"));
+    fireEvent.blur(dot("#2 slaba"));
+    expect(readout()).toMatch(/^#0 mocna: /u);
+  });
+});

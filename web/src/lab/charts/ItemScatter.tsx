@@ -78,8 +78,16 @@ export function ItemScatter({ report }: { report: TournamentReport }) {
               className={`dot ${item.verdict.toLowerCase()}${focus?.id === item.id ? " focused" : ""}`}
               role="img"
               aria-label={describe(item)}
+              tabIndex={0}
               onPointerEnter={() => {
                 setFocus(item);
+              }}
+              onFocus={() => {
+                setFocus(item);
+              }}
+              onBlur={() => {
+                // Opis znika tylko, jesli fokus wyszedl z tego punktu, a nie gdy wskaznik pokazal juz inny.
+                setFocus((shown) => (shown?.id === item.id ? null : shown));
               }}
             >
               <circle className="hit" cx={x(item.taken.rate)} cy={y(edge(report, item))} r={12} />
@@ -166,6 +174,7 @@ const capitalize = (text: string): string => text.charAt(0).toUpperCase() + text
 
 /** Trojkat wierzcholkiem w gore (za mocna) albo w dol (za slaba), wpisany w kolo o promieniu 6. */
 function triangle(cx: number, cy: number, up: boolean): string {
-  const s = up ? -1 : 1;
-  return `M${String(cx)} ${String(cy + 6 * s)}L${String(cx + 5.6)} ${String(cy - 3.6 * s)}L${String(cx - 5.6)} ${String(cy - 3.6 * s)}Z`;
+  const apex = up ? cy - 6 : cy + 6;
+  const base = up ? cy + 3.6 : cy - 3.6;
+  return `M${String(cx)} ${String(apex)}L${String(cx + 5.6)} ${String(base)}L${String(cx - 5.6)} ${String(base)}Z`;
 }
