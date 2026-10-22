@@ -1,11 +1,11 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SeatTicket } from "../api/schemas";
 import { fakeConnect, last, memoryTickets, type FakeLink } from "../test/fakeServer";
 import { matchId, room, roomId } from "../test/fixtures";
 import { TablePage } from "./TablePage";
-import { isMissingRoom } from "./useTable";
+import { isMissingRoom, useTable } from "./useTable";
 
 function page(options: { room?: string; tickets?: ReturnType<typeof memoryTickets>; setup?: (server: FakeLink["server"]) => void } = {}) {
   const tickets = options.tickets ?? memoryTickets();
@@ -115,5 +115,117 @@ describe("a table that no longer exists", () => {
     expect(isMissingRoom(missing())).toBe(true);
     expect(isMissingRoom(new Error("HubException: Stol jest pelny."))).toBe(false);
     expect(isMissingRoom(new Error("Nie ma pokoju"))).toBe(false);
+  });
+});
+
+describe("sitting down when watching fails too", () => {
+  it("keeps the join error and shows no connection instead of endless connecting", async () => {
+    let calls = 0;
+    const { links, user } = page({
+      setup: (s) => {
+        calls += 1;
+        s.joinRoom.mockRejectedValue(new Error("HubException: Stol jest pelny."));
+        // Trzecie polaczenie (powrot do ogladania) tez zawodzi.
+        if (calls === 3) s.watch.mockRejectedValue(new Error("WebSocket closed"));
+      },
+    });
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room());
+    });
+
+    await user.type(screen.getByLabelText("Twoje imię"), "Ola");
+    await user.click(screen.getByRole("button", { name: "Usiądź przy stole" }));
+
+    expect(await screen.findByText("Brak połączenia z serwerem. Odśwież stronę.")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Stol jest pelny.");
+    expect(screen.queryByText("Łączenie…")).not.toBeInTheDocument();
+  });
+
+  it("shows the gone page when the room disappears between the join and watching again", async () => {
+    let calls = 0;
+    const { links, user } = page({
+      setup: (s) => {
+        calls += 1;
+        s.joinRoom.mockRejectedValue(new Error("HubException: Stol jest pelny."));
+        if (calls === 3) s.watch.mockRejectedValue(missing());
+      },
+    });
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room());
+    });
+
+    await user.type(screen.getByLabelText("Twoje imię"), "Ola");
+    await user.click(screen.getByRole("button", { name: "Usiądź przy stole" }));
+
+    expect(await screen.findByRole("heading", { name: "Ten stół już nie istnieje" })).toBeInTheDocument();
+  });
+
+  it("locks the join button until the server answers", async () => {
+    let answer: (ticket: SeatTicket) => void = () => undefined;
+    const joining = new Promise<SeatTicket>((resolve) => (answer = resolve));
+    const { links, user } = page({ setup: (s) => s.joinRoom.mockReturnValue(joining) });
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room());
+    });
+
+    await user.type(screen.getByLabelText("Twoje imię"), "Ola");
+    await user.dblClick(screen.getByRole("button", { name: "Usiądź przy stole" }));
+    expect(screen.getByRole("button", { name: "Siadam…" })).toBeDisabled();
+    fireEvent.submit(screen.getByRole("button", { name: "Siadam…" }).closest("form") as HTMLFormElement);
+    await waitFor(() => {
+      expect(links).toHaveLength(2);
+    });
+    act(() => {
+      answer({ room: roomId, seat: 1, token: "guest" });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Siadam…" })).not.toBeInTheDocument();
+    });
+    expect(links).toHaveLength(2);
+    expect(links[1]?.server.joinRoom).toHaveBeenCalledTimes(1);
+  });
+
+  it("unlocks the join button after a refusal", async () => {
+    const { links, user } = page({ setup: (s) => s.joinRoom.mockRejectedValue(new Error("HubException: Stol jest pelny.")) });
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room());
+    });
+
+    await user.type(screen.getByLabelText("Twoje imię"), "Ola");
+    await user.click(screen.getByRole("button", { name: "Usiądź przy stole" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Stol jest pelny.");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Usiądź przy stole" })).toBeEnabled();
+    });
+  });
+
+  it("sits down once even when join is called twice at the same time", async () => {
+    const { connect, links } = fakeConnect();
+    const tickets = memoryTickets();
+    const { result } = renderHook(() => useTable(roomId, connect, tickets));
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+
+    await act(() => Promise.all([result.current.join("Ola"), result.current.join("Ola")]));
+
+    expect(links).toHaveLength(2);
+    expect(links[1]?.server.joinRoom).toHaveBeenCalledTimes(1);
+    await act(() => result.current.join("Ola"));
+    expect(links).toHaveLength(3);
   });
 });

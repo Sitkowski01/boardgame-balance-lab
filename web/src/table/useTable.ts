@@ -44,6 +44,9 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
   const server = useRef<GameServer | null>(null);
   // Kazde nowe polaczenie (i odmontowanie) podbija numer: zdarzenia i wyniki starszego polaczenia sa pomijane.
   const generation = useRef(0);
+  // Siadanie w toku: drugi klik (albo drugi Enter) nie zajmuje drugiego miejsca.
+  const joining = useRef(false);
+
   /** Pokoju nie ma: polaczenie sie zamyka, a jego zdarzenia przestaja dochodzic. */
   const vanish = useCallback((): void => {
     generation.current += 1;
@@ -183,6 +186,11 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
     gone,
     pending,
     join: async (name) => {
+      if (joining.current) {
+        return;
+      }
+
+      joining.current = true;
       setError(null);
       setLink("connecting");
       try {
@@ -198,7 +206,14 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
         }
 
         setError(hubMessage(e));
-        await open(sit).catch(() => undefined);
+        // Po nieudanym siadaniu wraca ogladanie; gdy i ono sie nie uda, zostaje komunikat i "brak polaczenia",
+        // a nie wieczne "Laczenie…".
+        await open(sit).catch((again: unknown) => {
+          setLink("closed");
+          if (isMissingRoom(again)) vanish();
+        });
+      } finally {
+        joining.current = false;
       }
     },
     addBot: (seat, bot) => act((hub) => hub.addBot(seat, bot)),
