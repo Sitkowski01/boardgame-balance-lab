@@ -80,6 +80,12 @@ public sealed partial class ConnectFourGame : IMoveCodec<ConnectFourMove>, IStat
         {
             throw new FormatException("Czworke maja obaj gracze - partia skonczylaby sie wczesniej.");
         }
+
+        // Po wygranej nikt juz nie stawia: czworka X konczy partie jego ruchem (o jeden zeton wiecej), czworka O — ruchem O.
+        if ((HasFour(first) && difference != 1) || (HasFour(second) && difference != 0))
+        {
+            throw new FormatException("Po czworce ktos jeszcze postawil zeton - partia skonczylaby sie wczesniej.");
+        }
     }
 
     private static Snapshot Deserialize(string text)

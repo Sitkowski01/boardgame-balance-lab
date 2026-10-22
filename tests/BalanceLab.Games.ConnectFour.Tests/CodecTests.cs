@@ -120,6 +120,26 @@ public sealed class CodecTests
         Assert.Contains("Czworke maja obaj gracze", Assert.Throws<FormatException>(() => Game.DecodeState(both)).Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("O......", "XXXXOOO", false)] // X wygral, a O postawil jeszcze raz
+    [InlineData("XX.....", "OOOOXXX", false)] // O wygral, a X dolozyl
+    [InlineData(".......", "XXXXOOO", true)]
+    [InlineData("X......", "OOOOXXX", true)]
+    public void Nobody_moves_after_a_four(string second, string bottom, bool reachable)
+    {
+        var text = $$"""{"rows":[".......",".......",".......",".......","{{second}}","{{bottom}}"]}""";
+
+        if (reachable)
+        {
+            Assert.NotNull(Game.DecodeState(text).Winner);
+        }
+        else
+        {
+            var ex = Assert.Throws<FormatException>(() => Game.DecodeState(text));
+            Assert.Contains("Po czworce ktos jeszcze postawil", ex.Message, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void Full_column_and_one_extra_x_are_fine()
     {

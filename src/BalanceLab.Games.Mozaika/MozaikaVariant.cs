@@ -42,7 +42,9 @@ public sealed partial record MozaikaVariant
     /// <summary>Kara za <paramref name="count"/> rzeczy na podlodze (kafelki i znacznik); nadmiar ponad pola jest za darmo.</summary>
     public int FloorPenalty(int count) => FloorPenalties.Take(count).Sum();
 
-    public MozaikaVariant WithTilesPerColor(int count)
+    // Zmiany sa wewnetrzne: kopia zachowuje nazwe, a migawki dopasowuje sie po nazwie — wariant z
+    // innymi liczbami pod nazwa "standard" przyjalby cudze migawki. Nazwe nadaje dopiero Parse.
+    internal MozaikaVariant WithTilesPerColor(int count)
     {
         // Mniej niz 5 nie wypelni nawet jednego koloru na scianie; gorna granica trzyma liczniki daleko od 255.
         ArgumentOutOfRangeException.ThrowIfLessThan(count, 5);
@@ -50,7 +52,7 @@ public sealed partial record MozaikaVariant
         return new(Name, count, FloorPenalties, RowBonus, ColumnBonus, ColorBonus);
     }
 
-    public MozaikaVariant WithFloorPenalties(IReadOnlyList<int> penalties)
+    internal MozaikaVariant WithFloorPenalties(IReadOnlyList<int> penalties)
     {
         ArgumentNullException.ThrowIfNull(penalties);
         if (penalties.Count is < 1 or > 10 || penalties.Any(p => p < 0))
@@ -61,7 +63,7 @@ public sealed partial record MozaikaVariant
         return new(Name, TilesPerColor, [.. penalties], RowBonus, ColumnBonus, ColorBonus);
     }
 
-    public MozaikaVariant WithBonuses(int row, int column, int color)
+    internal MozaikaVariant WithBonuses(int row, int column, int color)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(row);
         ArgumentOutOfRangeException.ThrowIfNegative(column);
@@ -69,7 +71,7 @@ public sealed partial record MozaikaVariant
         return new(Name, TilesPerColor, FloorPenalties, row, column, color);
     }
 
-    public MozaikaVariant Named(string name)
+    internal MozaikaVariant Named(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return new(name, TilesPerColor, FloorPenalties, RowBonus, ColumnBonus, ColorBonus);

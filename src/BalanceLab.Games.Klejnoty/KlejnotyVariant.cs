@@ -35,7 +35,9 @@ public sealed partial record KlejnotyVariant
     /// <summary>Ile punktow konczy gre (runda jest dogrywana).</summary>
     public int WinningPoints { get; }
 
-    public KlejnotyVariant WithCard(int id, Gems cost, int points)
+    // Zmiany sa wewnetrzne: kopia zachowuje nazwe, a migawki dopasowuje sie po nazwie — wariant z
+    // innymi liczbami pod nazwa "standard" przyjalby cudze migawki. Nazwe nadaje dopiero Parse.
+    internal KlejnotyVariant WithCard(int id, Gems cost, int points)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(id);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(id, AllCards.Length);
@@ -48,7 +50,7 @@ public sealed partial record KlejnotyVariant
         return new(Name, AllCards.SetItem(id, AllCards[id] with { Cost = cost, Points = points }), AllPatrons, WinningPoints);
     }
 
-    public KlejnotyVariant WithPatron(int id, Gems requirement, int points)
+    internal KlejnotyVariant WithPatron(int id, Gems requirement, int points)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(id);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(id, AllPatrons.Length);
@@ -61,13 +63,13 @@ public sealed partial record KlejnotyVariant
         return new(Name, AllCards, AllPatrons.SetItem(id, AllPatrons[id] with { Requirement = requirement, Points = points }), WinningPoints);
     }
 
-    public KlejnotyVariant WithWinningPoints(int points)
+    internal KlejnotyVariant WithWinningPoints(int points)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(points, 1);
         return new(Name, AllCards, AllPatrons, points);
     }
 
-    public KlejnotyVariant Named(string name)
+    internal KlejnotyVariant Named(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         return new(name, AllCards, AllPatrons, WinningPoints);
