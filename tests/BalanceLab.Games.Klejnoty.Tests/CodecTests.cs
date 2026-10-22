@@ -76,14 +76,16 @@ public sealed class CodecTests
     [Fact]
     public void Snapshot_keeps_hidden_reservations_points_and_end_flags()
     {
-        var state = Start(3, 5).Play(KlejnotyMove.ReserveFromDeck(3)).WithPlayer(1, p => p with { Points = 14, Patrons = [4] })
-            with { Passes = 2, FinalRound = true, Over = true };
+        var start = Start(3, 5).Play(KlejnotyMove.ReserveFromDeck(3));
+        var patron = start.Patrons[0];
+        var state = start.WithPlayer(1, p => p with { Points = 14, Patrons = [patron] })
+            with { Patrons = start.Patrons.RemoveAt(0), Passes = 2, FinalRound = true, Over = true };
 
         var decoded = Game.DecodeState(Game.EncodeState(state));
 
         Assert.Equal(state.Players[0].Reserved.ToArray(), decoded.Players[0].Reserved.ToArray());
         Assert.True(decoded.Players[0].Reserved[0].Hidden);
-        Assert.Equal((14, 4), (decoded.Players[1].Points, decoded.Players[1].Patrons.Single()));
+        Assert.Equal((14, patron), (decoded.Players[1].Points, decoded.Players[1].Patrons.Single()));
         Assert.Equal((1, 2, true, true), (decoded.ToMove, decoded.Passes, decoded.FinalRound, decoded.Over));
         Assert.Equal(state.Players[0].Tokens, decoded.Players[0].Tokens);
     }
@@ -156,6 +158,46 @@ public sealed class CodecTests
             case "decks": json["decks"]!.AsArray()[2] = null; break;
             case "toMove": json["toMove"] = 2; break;
             default: json["players"]!.AsArray().RemoveAt(1); json["toMove"] = 0; break;
+        }
+
+        var ex = Assert.Throws<FormatException>(() => Game.DecodeState(json.ToJsonString()));
+
+        Assert.Contains(message, ex.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("shortMarket", "rynek ma 11 miejsc i 3 talie")]
+    [InlineData("twoDecks", "rynek ma 12 miejsc i 2 talie")]
+    [InlineData("foreignCard", "karta 999 spoza poziomu 1")]
+    [InlineData("wrongTier", "spoza poziomu 1")]
+    [InlineData("deckTier", "w talii jest karta z innego poziomu")]
+    [InlineData("twice", "kart jest 90 (z powtorkami")]
+    [InlineData("lost", "kart jest 89")]
+    [InlineData("extraPatron", "patronow jest 4")]
+    [InlineData("samePatron", "patronow jest 3 (z powtorkami")]
+    [InlineData("reserved", "wiecej niz 3 rezerwacje")]
+    [InlineData("tokens", "zetonow koloru W jest 5")]
+    [InlineData("gold", "zetonow koloru Z jest 6")]
+    public void Snapshot_that_no_game_can_reach_is_a_format_error(string damage, string message)
+    {
+        var json = JsonNode.Parse(Game.EncodeState(Start(2, 1)))!;
+        var market = json["market"]!.AsArray();
+        var decks = json["decks"]!.AsArray();
+        var me = json["players"]![0]!;
+        switch (damage)
+        {
+            case "shortMarket": market.RemoveAt(11); break;
+            case "twoDecks": decks.RemoveAt(2); break;
+            case "foreignCard": market[0] = 999; break;
+            case "wrongTier": market[0] = (int)market[11]!; break;
+            case "deckTier": (decks[0]![0], decks[2]![0]) = ((int)decks[2]![0]!, (int)decks[0]![0]!); break;
+            case "twice": decks[0]![0] = (int)market[0]!; break;
+            case "lost": market[0] = -1; break;
+            case "extraPatron": me["patrons"] = new JsonArray(Enumerable.Range(0, 10).First(p => !json["patrons"]!.AsArray().Any(t => (int)t! == p))); break;
+            case "samePatron": me["patrons"] = new JsonArray((int)json["patrons"]![0]!); json["patrons"]!.AsArray().RemoveAt(1); break;
+            case "reserved": me["reserved"] = new JsonArray([.. decks[0]!.AsArray().Take(4).Select(c => new JsonObject { ["card"] = (int)c!, ["hidden"] = true })]); decks[0]!.AsArray().RemoveRange(0, 4); break;
+            case "tokens": me["tokens"]![0] = 1; break;
+            default: me["tokens"]![5] = 1; break;
         }
 
         var ex = Assert.Throws<FormatException>(() => Game.DecodeState(json.ToJsonString()));

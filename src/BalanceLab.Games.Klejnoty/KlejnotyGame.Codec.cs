@@ -92,9 +92,10 @@ public sealed partial class KlejnotyGame : IMoveCodec<KlejnotyMove>, IStateCodec
             throw new FormatException($"Migawka ma {s.Players.Length} graczy i gracza na ruchu nr {s.ToMove} - takiej partii nie ma.");
         }
 
+        KlejnotyState state;
         try
         {
-            return new KlejnotyState(
+            state = new KlejnotyState(
                 [.. s.Players.Select(p => new PlayerBoard(
                     FromCounts(p.Tokens), FromCounts(p.Bonuses), p.Points, [.. p.Bought],
                     [.. p.Reserved.Select(r => new Reservation(r.Card, r.Hidden))], [.. p.Patrons]))],
@@ -105,6 +106,71 @@ public sealed partial class KlejnotyGame : IMoveCodec<KlejnotyMove>, IStateCodec
         {
             throw new FormatException($"Bledna migawka: {ex.Message}", ex);
         }
+
+        return Problem(state) is { } problem ? throw new FormatException($"Bledna migawka: {problem}.") : state;
+    }
+
+    /// <summary>
+    /// Co jest nie tak ze stanem, do ktorego zadna partia nie dojdzie (null = nic). Hash migawki nie
+    /// zaglada do kart, wiec bez tego zly numer karty wywrocilby dopiero pierwszy ruch po wczytaniu.
+    /// </summary>
+    private static string? Problem(KlejnotyState s)
+    {
+        if (s.Market.Length != Cards.Tiers * KlejnotyState.SlotsPerTier || s.Decks.Length != Cards.Tiers)
+        {
+            return $"rynek ma {s.Market.Length} miejsc i {s.Decks.Length} talie";
+        }
+
+        var cards = s.Variant.AllCards;
+        bool OfTier(int id, int tier) => id >= 0 && id < cards.Length && cards[id].Tier == tier;
+        for (var slot = 0; slot < s.Market.Length; slot++)
+        {
+            var tier = (slot / KlejnotyState.SlotsPerTier) + 1;
+            if (s.Market[slot] != -1 && !OfTier(s.Market[slot], tier))
+            {
+                return $"na miejscu {slot} rynku lezy karta {s.Market[slot]} spoza poziomu {tier}";
+            }
+        }
+
+        if (Enumerable.Range(0, Cards.Tiers).Any(t => s.Decks[t].Any(id => !OfTier(id, t + 1))))
+        {
+            return "w talii jest karta z innego poziomu albo spoza katalogu";
+        }
+
+        // Karty nie powstaja ani nie znikaja: kazda jest dokladnie w jednym miejscu.
+        int[] placed =
+        [
+            .. s.Market.Where(id => id >= 0), .. s.Decks.SelectMany(d => d),
+            .. s.Players.SelectMany(p => p.Bought.Concat(p.Reserved.Select(r => r.Card))),
+        ];
+        if (placed.Length != cards.Length || placed.Any(id => id < 0 || id >= cards.Length) || placed.Distinct().Count() != cards.Length)
+        {
+            return $"kart jest {placed.Length} (z powtorkami albo spoza katalogu), a talia ma {cards.Length}";
+        }
+
+        int[] patrons = [.. s.Patrons, .. s.Players.SelectMany(p => p.Patrons)];
+        if (patrons.Length != s.Players.Length + 1 || patrons.Any(id => id < 0 || id >= s.Variant.AllPatrons.Length) || patrons.Distinct().Count() != patrons.Length)
+        {
+            return $"patronow jest {patrons.Length} (z powtorkami albo spoza katalogu), a powinno byc {s.Players.Length + 1}";
+        }
+
+        if (s.Players.Any(p => p.Reserved.Length > KlejnotyState.MaxReserved))
+        {
+            return $"gracz ma wiecej niz {KlejnotyState.MaxReserved} rezerwacje";
+        }
+
+        // Zetony tez: bank i gracze razem maja tyle, ile dostal stol na poczatku.
+        var perColor = KlejnotyRules.TokensPerColor(s.Players.Length);
+        for (var gem = Gem.White; gem <= Gem.Gold; gem++)
+        {
+            var count = s.Bank[gem] + s.Players.Sum(p => p.Tokens[gem]);
+            if (count != (gem == Gem.Gold ? KlejnotyRules.GoldTokens : perColor))
+            {
+                return $"zetonow koloru {Letters[(int)gem]} jest {count}";
+            }
+        }
+
+        return null;
     }
 
     private static string GemLetters(Gems gems)
