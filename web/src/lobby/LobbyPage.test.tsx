@@ -1,7 +1,7 @@
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { GameInfo } from "../api/schemas";
+import type { GameInfo, SeatTicket } from "../api/schemas";
 import { fakeConnect, last, memoryTickets, type FakeLink } from "../test/fakeServer";
 import { matchId, room, roomId, seat } from "../test/fixtures";
 import { LobbyPage } from "./LobbyPage";
@@ -197,5 +197,111 @@ describe("LobbyPage", () => {
       expect(last(links).server.close).toHaveBeenCalled();
     });
     expect(last(links).server.watchLobby).not.toHaveBeenCalled();
+  });
+});
+
+describe("LobbyPage after the connection breaks", () => {
+  it("fetches the whole list again after a reconnect, because the new connection is not in the lobby group", async () => {
+    const { links } = page((s) =>
+      s.watchLobby
+        .mockResolvedValueOnce([room({ id: "a" }), room({ id: "b", gameName: "Klejnoty" })])
+        .mockResolvedValueOnce([room({ id: "a", version: 2, status: "Playing" })]),
+    );
+    expect(await screen.findByRole("listitem", { name: "Pokój Klejnoty" })).toBeInTheDocument();
+
+    act(() => {
+      last(links).emit.reconnecting();
+    });
+    expect(screen.getByRole("status")).toHaveTextContent("Połączenie zerwane — łączę ponownie, lista pokojów może być nieaktualna…");
+    act(() => {
+      last(links).emit.reconnected();
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("listitem", { name: "Pokój Klejnoty" })).not.toBeInTheDocument();
+    });
+    expect(last(links).server.watchLobby).toHaveBeenCalledTimes(2);
+    expect(within(screen.getByRole("listitem", { name: "Pokój Czwórki" })).getByRole("link", { name: "Oglądaj" })).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(links).toHaveLength(1);
+  });
+
+  it("says that the list stopped updating when the connection is closed for good", async () => {
+    const { links } = page();
+    await waitFor(() => {
+      expect(last(links).server.watchLobby).toHaveBeenCalled();
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+    act(() => {
+      last(links).emit.closed();
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Brak połączenia z serwerem — lista pokojów się nie odświeża. Odśwież stronę.");
+    expect(screen.getByRole("status")).toHaveClass("banner");
+  });
+
+  it("reports a list that cannot be fetched again after a reconnect", async () => {
+    const { links } = page((s) => s.watchLobby.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("HubException: Serwer zajety.")));
+    await waitFor(() => {
+      expect(last(links).server.watchLobby).toHaveBeenCalled();
+    });
+
+    act(() => {
+      last(links).emit.reconnected();
+    });
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/^Serwer zajety\.$/u);
+  });
+
+  it("shows a server message it does not understand instead of failing silently", async () => {
+    const { links } = page();
+    await waitFor(() => {
+      expect(last(links).server.watchLobby).toHaveBeenCalled();
+    });
+
+    act(() => {
+      last(links).emit.invalid("Serwer przysłał wiadomość Lobby, której ta strona nie rozumie. Odśwież stronę.");
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Serwer przysłał wiadomość Lobby");
+  });
+});
+
+describe("LobbyPage while a room is being created", () => {
+  it("locks the button until the server answers, so a double click makes one room", async () => {
+    let answer: (ticket: SeatTicket) => void = () => undefined;
+    const creating = new Promise<SeatTicket>((resolve) => (answer = resolve));
+    const { links, navigate, user } = page((s) => s.createRoom.mockReturnValue(creating));
+    const form = await screen.findByRole("form", { name: "Nowy pokój" });
+    await user.type(within(form).getByLabelText("Twoje imię"), "Ala");
+
+    await user.dblClick(within(form).getByRole("button", { name: "Załóż pokój" }));
+    expect(within(form).getByRole("button", { name: "Zakładam…" })).toBeDisabled();
+    // Enter w polu tez wysyla formularz — i on nie zaklada drugiego pokoju.
+    fireEvent.submit(form);
+    await waitFor(() => {
+      expect(links).toHaveLength(2);
+    });
+    act(() => {
+      answer({ room: roomId, seat: 0, token: "host" });
+    });
+
+    await waitFor(() => {
+      expect(navigate).toHaveBeenCalledTimes(1);
+    });
+    expect(links).toHaveLength(2);
+    expect(links[1]?.server.createRoom).toHaveBeenCalledTimes(1);
+    expect(within(form).getByRole("button", { name: "Załóż pokój" })).toBeEnabled();
+  });
+
+  it("unlocks the button after a refusal", async () => {
+    const { user } = page((s) => s.createRoom.mockRejectedValue(new Error("HubException: Zly wariant.")));
+    const form = await screen.findByRole("form", { name: "Nowy pokój" });
+    await user.type(within(form).getByLabelText("Twoje imię"), "Ala");
+    await user.click(within(form).getByRole("button", { name: "Załóż pokój" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Zly wariant.");
+    expect(within(form).getByRole("button", { name: "Załóż pokój" })).toBeEnabled();
   });
 });

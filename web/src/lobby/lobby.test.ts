@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { room, seat } from "../test/fixtures";
-import { freeSeats, sortRooms, statusLabel, upsertRoom } from "./lobby";
+import { freeSeats, refreshRooms, sortRooms, statusLabel, upsertRoom } from "./lobby";
 
 describe("lobby", () => {
   it("adds new rooms, replaces known ones and skips older messages", () => {
@@ -11,6 +11,17 @@ describe("lobby", () => {
     expect(upsertRoom(list, room({ id: "a", version: 1 }))).toEqual([a]);
     expect(upsertRoom(list, room({ id: "a", version: 2, moves: 5 }))[0]?.moves).toBe(5);
     expect(upsertRoom(list, room({ id: "b" })).map((r) => r.id)).toEqual(["a", "b"]);
+  });
+
+  it("refreshes the whole list: drops rooms the server forgot and keeps newer known versions", () => {
+    const known = [room({ id: "a", version: 3, moves: 7 }), room({ id: "b", version: 1 }), room({ id: "gone" })];
+    const fresh = [room({ id: "a", version: 2 }), room({ id: "b", version: 2, moves: 4 }), room({ id: "new" })];
+
+    const list = refreshRooms(known, fresh);
+
+    expect(list.map((r) => r.id)).toEqual(["a", "b", "new"]);
+    expect(list.map((r) => r.moves)).toEqual([7, 4, 0]);
+    expect(refreshRooms(known, [])).toEqual([]);
   });
 
   it("puts open tables first and the newest first within a status", () => {

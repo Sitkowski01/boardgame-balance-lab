@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { hubMessage, type Connect } from "../api/connection";
+import { hubMessage, type Connect, type GameServer } from "../api/connection";
 import { api } from "../api/rest";
 import { Link } from "../Link";
 import { gamesFact } from "../names";
 import type { GameInfo, RoomInfo } from "../api/schemas";
 import type { Tickets } from "../table/tickets";
 import { CreateRoom } from "./CreateRoom";
-import { sortRooms, upsertRoom } from "./lobby";
+import { refreshRooms, sortRooms, upsertRoom } from "./lobby";
 import { RoomRow } from "./RoomRow";
 
 export interface LobbyPageProps {
@@ -19,20 +19,32 @@ export interface LobbyPageProps {
 // Stala funkcja, nie nowa przy kazdym renderze: inaczej efekt z lista gier laczylby sie od nowa bez konca.
 const defaultGames = (): Promise<GameInfo[]> => api.games();
 
+/** Stan polaczenia z lista pokoi: po zerwaniu lista stoi, wiec gracz musi o tym wiedziec. */
+type LobbyLink = "online" | "reconnecting" | "closed";
+
+const linkLabel: Record<LobbyLink, string> = {
+  online: "",
+  reconnecting: "Połączenie zerwane — łączę ponownie, lista pokojów może być nieaktualna…",
+  closed: "Brak połączenia z serwerem — lista pokojów się nie odświeża. Odśwież stronę.",
+};
+
 /**
  * Lobby: pokoje na zywo (WatchLobby) i zakladanie nowego. Pokoj zaklada osobne, krotkie polaczenie:
  * bilet gospodarza trafia do tej karty przegladarki, a stol siada z nim od nowa (jak po odswiezeniu).
+ * Po zerwaniu sieci nowe polaczenie nie jest w grupie lobby, wiec lista jest pobierana i zapisywana od nowa.
  */
 export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames }: LobbyPageProps) {
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [games, setGames] = useState<GameInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [link, setLink] = useState<LobbyLink>("online");
 
   useEffect(() => {
     // Zmiana stanu po odmontowaniu React po prostu pomija; pilnowac trzeba tylko polaczenia, ktore otworzy
     // sie juz po wyjsciu z lobby — inaczej zostaloby otwarte.
     let left = false;
     let close: (() => Promise<void>) | null = null;
+    let server: GameServer | null = null;
     loadGames().then(setGames, (e: unknown) => {
       setError(hubMessage(e));
     });
@@ -43,9 +55,26 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
       lobby: (room) => {
         setRooms((list) => upsertRoom(list, room));
       },
+      invalid: setError,
+      reconnecting: () => {
+        setLink("reconnecting");
+      },
+      reconnected: () => {
+        setLink("online");
+        server
+          ?.watchLobby()
+          .then((list) => {
+            setRooms((known) => refreshRooms(known, list));
+          })
+          .catch(failed);
+      },
+      closed: () => {
+        setLink("closed");
+      },
     })
       .then(async (hub) => {
         close = () => hub.close();
+        server = hub;
         if (left) {
           await hub.close();
           return;
@@ -62,6 +91,7 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
   }, [connect, loadGames]);
 
   const create = async (game: string, seats: number, variant: string | null, name: string): Promise<void> => {
+    // Drugiego pokoju przy podwojnym kliku pilnuje formularz (CreateRoom): do odpowiedzi przycisk jest wylaczony.
     try {
       setError(null);
       const hub = await connect({});
@@ -98,6 +128,11 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
         </div>
         <HeroArt />
       </section>
+      {linkLabel[link] !== "" && (
+        <p role="status" className="banner">
+          {linkLabel[link]}
+        </p>
+      )}
       {error !== null && (
         <p role="alert" className="banner error">
           {error}

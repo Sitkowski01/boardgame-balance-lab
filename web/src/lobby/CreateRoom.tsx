@@ -4,7 +4,10 @@ import { gameBlurbs, gameTitle } from "../names";
 import { loadName, saveName } from "../table/tickets";
 import { GameArt } from "./GameArt";
 
-/** Nowy pokoj: gra (karty do wyboru), liczba miejsc z jej zakresu, wariant zasad (jesli gra je ma) i imie gospodarza. */
+/**
+ * Nowy pokoj: gra (karty do wyboru), liczba miejsc z jej zakresu, wariant zasad (jesli gra je ma) i imie gospodarza.
+ * Do odpowiedzi serwera przycisk jest wylaczony — podwojny klik nie zaklada dwoch pokoi.
+ */
 export function CreateRoom({
   games,
   onCreate,
@@ -16,6 +19,7 @@ export function CreateRoom({
   const [seats, setSeats] = useState(0);
   const [variant, setVariant] = useState("");
   const [name, setName] = useState(loadName);
+  const [busy, setBusy] = useState(false);
   const game = games.find((g) => g.key === key) ?? games[0];
   if (game === undefined) {
     return null;
@@ -24,8 +28,15 @@ export function CreateRoom({
   const count = seats >= game.minPlayers && seats <= game.maxPlayers ? seats : game.minPlayers;
   const submit = (e: SyntheticEvent): void => {
     e.preventDefault();
+    if (busy) {
+      return;
+    }
+
+    setBusy(true);
     saveName(name.trim());
-    void onCreate(game.key, count, game.hasVariants && variant.trim() !== "" ? variant.trim() : null, name.trim());
+    void onCreate(game.key, count, game.hasVariants && variant.trim() !== "" ? variant.trim() : null, name.trim()).finally(() => {
+      setBusy(false);
+    });
   };
 
   return (
@@ -90,8 +101,8 @@ export function CreateRoom({
             />
           </label>
         )}
-        <button type="submit" className="primary" disabled={name.trim() === ""}>
-          Załóż pokój
+        <button type="submit" className="primary" disabled={busy || name.trim() === ""}>
+          {busy ? "Zakładam…" : "Załóż pokój"}
         </button>
       </div>
       <p className="hint">Przy stole posadzisz boty na wolnych miejscach — możesz zagrać sam albo wysłać link znajomym.</p>

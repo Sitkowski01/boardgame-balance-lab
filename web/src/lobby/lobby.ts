@@ -10,6 +10,17 @@ export function upsertRoom(rooms: readonly RoomInfo[], room: RoomInfo): RoomInfo
   return known.version > room.version ? [...rooms] : rooms.map((r) => (r.id === room.id ? room : r));
 }
 
+/**
+ * Lista pobrana od nowa (po zerwaniu polaczenia): pokoje, ktorych serwer juz nie zna, znikaja, a znany pokoj
+ * zostaje w nowszej wersji — zmiana z grupy mogla przyjsc przed odpowiedzia.
+ */
+export function refreshRooms(known: readonly RoomInfo[], fresh: readonly RoomInfo[]): RoomInfo[] {
+  return fresh.reduce(
+    upsertRoom,
+    known.filter((r) => fresh.some((f) => f.id === r.id)),
+  );
+}
+
 const order: Record<RoomStatus, number> = { Waiting: 0, Playing: 1, Finished: 2, Abandoned: 3 };
 
 /** Najpierw stoly, do ktorych mozna usiasc, potem trwajace i skonczone; w grupie najnowsze na gorze. */
