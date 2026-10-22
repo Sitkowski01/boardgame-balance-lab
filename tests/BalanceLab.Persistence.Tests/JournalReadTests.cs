@@ -59,6 +59,8 @@ public sealed class JournalReadTests(PostgresFixture postgres)
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => journal.StateAtAsync(id, 3));
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => journal.StateAtAsync(id, -1));
         Assert.Equal(2, (await journal.StateAtAsync(id, 2)).MovesPlayed);
+        var (match, state) = await journal.FrameAsync(id, 1);
+        Assert.Equal((id, 2, MatchStatus.Abandoned, 1), (match.Id, match.Moves, match.Status, state.MovesPlayed));
     }
 
     [Fact]

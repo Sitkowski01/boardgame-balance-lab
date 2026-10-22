@@ -97,8 +97,7 @@ public sealed class MatchArchive(JournalDb db)
             where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>, IPlayerView<TState, object>
         {
             var journal = Journal(db, definition);
-            var log = await journal.LoadAsync(match, cancellationToken);
-            var check = await journal.VerifyAsync(match, cancellationToken);
+            var (log, check) = await journal.LoadVerifiedAsync(match, cancellationToken);
             var (m, rules) = (log.Match, definition.Rules(log.Match.Variant));
             var secret = m.Status == MatchStatus.InProgress;
             return new MatchReplay(
@@ -117,8 +116,7 @@ public sealed class MatchArchive(JournalDb db)
             where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>, IPlayerView<TState, object>
         {
             var journal = Journal(db, definition);
-            var info = (await journal.LoadAsync(match, cancellationToken)).Match;
-            var state = await journal.StateAtAsync(match, moves, cancellationToken);
+            var (info, state) = await journal.FrameAsync(match, moves, cancellationToken);
             var rules = definition.Rules(info.Variant);
             var hash = info.Status == MatchStatus.InProgress ? null : Hex(rules.Hash(state));
             return new ReplayFrame(match, moves, hash, rules.View(state, null));

@@ -15,16 +15,31 @@ public sealed partial class MatchJournal<TState, TMove>
         await using var db = _db.CreateContext();
         await using var read = await ConsistentReadAsync(db, cancellationToken);
         var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
-        var rules = _rules(row.Variant);
-        var moves = await MovesAsync(db, match, 0, row.Moves, cancellationToken);
-        try
-        {
-            return new MatchLog<TMove>(Info(row), [.. moves.Select(m => Decode(rules, m))], [.. moves.Select(m => unchecked((ulong)m.HashAfter))]);
-        }
-        catch (FormatException ex)
-        {
-            throw new JournalMismatchException($"Dziennik partii {match} ma nieczytelny ruch: {ex.Message}", ex);
-        }
+        return Log(row, await MovesAsync(db, match, 0, row.Moves, cancellationToken));
+    }
+
+    /// <summary>
+    /// <see cref="LoadAsync"/> i <see cref="VerifyAsync"/> w jednym odczycie: przy trwajacej partii osobne odczyty
+    /// moglyby opisac rozna liczbe ruchow (wynik sprawdzenia nie pasowalby do pokazanych ruchow).
+    /// </summary>
+    public async Task<(MatchLog<TMove> Log, JournalVerification Check)> LoadVerifiedAsync(Guid match, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        await using var read = await ConsistentReadAsync(db, cancellationToken);
+        var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
+        var moves = await MovesAsync(db, match, 0, int.MaxValue, cancellationToken);
+        return (Log(row, [.. moves.Where(m => m.Seq <= row.Moves)]), await VerificationAsync(db, row, moves, cancellationToken));
+    }
+
+    /// <summary>Naglowek i stan po <paramref name="moves"/> ruchach w jednym odczycie — bez wczytywania calej partii.</summary>
+    public async Task<(MatchInfo Match, TState State)> FrameAsync(Guid match, int moves, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        await using var read = await ConsistentReadAsync(db, cancellationToken);
+        var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
+        ArgumentOutOfRangeException.ThrowIfNegative(moves);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(moves, row.Moves);
+        return (Info(row), await StateAtAsync(db, row, _rules(row.Variant), moves, cancellationToken));
     }
 
     /// <summary>
@@ -32,15 +47,8 @@ public sealed partial class MatchJournal<TState, TMove>
     /// ruchow powtorzona przez zasady gry, z hashem sprawdzanym po kazdym.
     /// </summary>
     /// <exception cref="JournalMismatchException">Powtorka nie zgadza sie z dziennikiem.</exception>
-    public async Task<TState> StateAtAsync(Guid match, int moves, CancellationToken cancellationToken = default)
-    {
-        await using var db = _db.CreateContext();
-        await using var read = await ConsistentReadAsync(db, cancellationToken);
-        var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
-        ArgumentOutOfRangeException.ThrowIfNegative(moves);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(moves, row.Moves);
-        return await StateAtAsync(db, row, _rules(row.Variant), moves, cancellationToken);
-    }
+    public async Task<TState> StateAtAsync(Guid match, int moves, CancellationToken cancellationToken = default) =>
+        (await FrameAsync(match, moves, cancellationToken)).State;
 
     /// <summary>
     /// Powtarza cala partie od rozdania i porownuje z dziennikiem: hash po kazdym ruchu, kazda migawke
@@ -51,10 +59,27 @@ public sealed partial class MatchJournal<TState, TMove>
         await using var db = _db.CreateContext();
         await using var read = await ConsistentReadAsync(db, cancellationToken);
         var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
-        var moves = await MovesAsync(db, match, 0, int.MaxValue, cancellationToken);
-        var snapshots = await db.Snapshots.AsNoTracking().Where(s => s.MatchId == match).ToDictionaryAsync(s => s.Seq, cancellationToken);
+        return await VerificationAsync(db, row, await MovesAsync(db, match, 0, int.MaxValue, cancellationToken), cancellationToken);
+    }
+
+    private async Task<JournalVerification> VerificationAsync(JournalDbContext db, MatchRow row, List<MoveRow> moves, CancellationToken cancellationToken)
+    {
+        var snapshots = await db.Snapshots.AsNoTracking().Where(s => s.MatchId == row.Id).ToDictionaryAsync(s => s.Seq, cancellationToken);
         var (bad, problem) = Check(row, _rules(row.Variant), moves, snapshots);
         return new JournalVerification(moves.Count, snapshots.Count, bad, problem);
+    }
+
+    private MatchLog<TMove> Log(MatchRow row, List<MoveRow> moves)
+    {
+        var rules = _rules(row.Variant);
+        try
+        {
+            return new MatchLog<TMove>(Info(row), [.. moves.Select(m => Decode(rules, m))], [.. moves.Select(m => unchecked((ulong)m.HashAfter))]);
+        }
+        catch (FormatException ex)
+        {
+            throw new JournalMismatchException($"Dziennik partii {row.Id} ma nieczytelny ruch: {ex.Message}", ex);
+        }
     }
 
     private static async Task<TState> StateAtAsync(JournalDbContext db, MatchRow row, StoredGame<TState, TMove> rules, int moves, CancellationToken cancellationToken)

@@ -38,6 +38,20 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Loading_with_verification_gives_the_moves_and_the_same_verdict_in_one_read()
+    {
+        var (db, journal, id) = await RecordAsync(postgres);
+        await using var _ = db;
+        await db.TamperAsync("match_moves", "UPDATE match_moves SET hash_after = hash_after + 1 WHERE seq = 3");
+
+        var (log, check) = await journal.LoadVerifiedAsync(id);
+
+        Assert.Equal((await journal.LoadAsync(id)).Moves.ToArray(), log.Moves.ToArray());
+        Assert.Equal(await journal.VerifyAsync(id), check);
+        Assert.Equal((int?)3, check.FirstBadMove);
+    }
+
+    [Fact]
     public async Task Different_legal_move_in_place_of_the_recorded_one_breaks_the_hash()
     {
         var (db, journal, id) = await RecordAsync(postgres);
