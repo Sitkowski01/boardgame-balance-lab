@@ -79,6 +79,11 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
         await _queue.DisposeAsync();
         // Petla pokoju juz stoi, wiec zegar mozna zatrzymac bez wyscigu.
         _timer?.Dispose();
+        // Pokoj znika w trakcie partii (nikt nie gral od dawna albo serwer sie zamyka): w dzienniku nie moze wisiec jako trwajaca.
+        if (_status == RoomStatus.Playing)
+        {
+            await AbandonInJournalAsync();
+        }
     }
 
     /// <summary>Limit czasu na jedno wywolanie dziennika, liczony zegarem pokoju.</summary>

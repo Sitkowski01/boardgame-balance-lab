@@ -48,4 +48,52 @@ public sealed class RoomJournalTests
         Assert.Equal((1, 1), (room.Info.Moves, table.MovesOf(room).Count));
         Assert.Contains(table.Logs.Entries, e => e.Message.EndsWith("nie udalo sie zapisac ruchu nr 1", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task Abandoned_game_is_closed_in_the_journal()
+    {
+        await using var table = new Table(new RoomOptions
+        {
+            MaxRecordFailures = 1, BotDelay = TimeSpan.FromSeconds(1), DisconnectGrace = TimeSpan.FromSeconds(1), FillBot = "random", AutopilotBot = "random",
+        });
+        var (room, host) = await table.CreateAsync();
+        await room.StartAsync(host.Token);
+        await room.MoveAsync(host.Token, 0, "3");
+        table.Recorders.Failures = 1;
+
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+
+        var match = (await table.Notifier.RoomAsync(room.Id, r => r.Status == RoomStatus.Abandoned)).MatchId!.Value;
+        await table.Notifier.WaitAsync(() => table.Recorders.Abandoned.Contains(match) ? "" : null);
+    }
+
+    [Fact]
+    public async Task Running_game_whose_room_disappears_is_closed_in_the_journal()
+    {
+        await using var table = new Table();
+        var (playing, _, _) = await table.StartedPairAsync();
+        var (waiting, _) = await table.CreateAsync();
+
+        await waiting.DisconnectAsync("c-ala");
+        table.Clock.Advance(table.Options.KeepIdle);
+        await table.Lobby.PruneAsync();
+
+        Assert.Empty(table.Lobby.Rooms);
+        Assert.Equal([playing.Info.MatchId!.Value], table.Recorders.Abandoned);
+    }
+
+    [Fact]
+    public async Task Failed_closing_of_a_vanished_game_is_only_logged()
+    {
+        await using var table = new Table();
+        var (playing, _, _) = await table.StartedPairAsync();
+        table.Recorders.Failures = 1;
+
+        table.Clock.Advance(table.Options.KeepIdle);
+        await table.Lobby.PruneAsync();
+
+        Assert.Empty(table.Recorders.Abandoned);
+        Assert.Contains(table.Logs.Entries, e => e.Message.EndsWith("nie udalo sie zapisac ruchu nr 0", StringComparison.Ordinal));
+        Assert.Equal(RoomStatus.Playing, playing.Info.Status);
+    }
 }

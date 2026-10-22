@@ -73,7 +73,7 @@ internal sealed partial class Room<TState, TMove, TGame>
         }
         catch (RoomException)
         {
-            RetryOrAbandon(seat);
+            await RetryOrAbandonAsync(seat);
         }
     }
 
@@ -91,7 +91,7 @@ internal sealed partial class Room<TState, TMove, TGame>
         catch (RoomException)
         {
             // Pierwszy legalny ruch jest legalny, wiec to blad zapisu.
-            RetryOrAbandon(seat);
+            await RetryOrAbandonAsync(seat);
         }
     }
 
@@ -102,7 +102,7 @@ internal sealed partial class Room<TState, TMove, TGame>
     private bool Current(int number, object plan) => _moves == number && ReferenceEquals(_botPlan, plan);
 
     /// <summary>Zapis sie nie udal (blad jest w logu): ta sama pozycja za chwile, a po kilku porazkach z rzedu koniec partii.</summary>
-    private void RetryOrAbandon(int seat)
+    private async Task RetryOrAbandonAsync(int seat)
     {
         if (++_recordFailures >= _options.MaxRecordFailures)
         {
@@ -111,11 +111,26 @@ internal sealed partial class Room<TState, TMove, TGame>
             _status = RoomStatus.Abandoned;
             LogAbandoned(_logger, Id, _recordFailures);
             PublishAll();
+            await AbandonInJournalAsync();
             return;
         }
 
         CancelBot();
         ScheduleBot(seat, _options.RetryDelay);
+    }
+
+    /// <summary>Proba zamkniecia partii w dzienniku; baza moze lezec (stad porzucenie), wiec blad tylko w logu.</summary>
+    private async Task AbandonInJournalAsync()
+    {
+        try
+        {
+            using var timeout = RecordTimeout();
+            await _recorder.AbandonAsync(_match!.Value, timeout.Token);
+        }
+        catch (Exception ex)
+        {
+            LogRecordFailed(_logger, ex, Id, _moves);
+        }
     }
 
     private void CancelBot()
