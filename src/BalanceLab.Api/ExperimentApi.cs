@@ -20,11 +20,11 @@ internal static class ExperimentApi
     }
 
     /// <summary>Zle zamowienie to 400 z powodem, pelna kolejka to 503 — mozna sprobowac za chwile.</summary>
-    private static Results<Accepted<ExperimentInfo>, ProblemHttpResult> Submit(ExperimentRequest request, ExperimentLab lab)
+    private static Results<Accepted<ExperimentInfo>, ProblemHttpResult> Submit(ExperimentRequest request, ExperimentLab lab, HttpContext http)
     {
         try
         {
-            var info = lab.Submit(request);
+            var info = lab.Submit(request, ClientKey.Of(http));
             return TypedResults.Accepted($"/api/experiments/{info.Id}", info);
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException)
@@ -40,8 +40,17 @@ internal static class ExperimentApi
     private static Results<Ok<ExperimentInfo>, NotFound> Find(Guid id, ExperimentLab lab) =>
         lab.Find(id) is { } info ? TypedResults.Ok(info) : TypedResults.NotFound();
 
-    private static Results<Ok<ExperimentInfo>, NotFound> Cancel(Guid id, ExperimentLab lab) =>
-        lab.Cancel(id) is { } info ? TypedResults.Ok(info) : TypedResults.NotFound();
+    private static Results<Ok<ExperimentInfo>, NotFound, ProblemHttpResult> Cancel(Guid id, ExperimentLab lab, HttpContext http)
+    {
+        try
+        {
+            return lab.Cancel(id, ClientKey.Of(http)) is { } info ? TypedResults.Ok(info) : TypedResults.NotFound();
+        }
+        catch (NotYourExperimentException ex)
+        {
+            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden, title: "Nie twoj eksperyment");
+        }
+    }
 }
 
 /// <summary>Petla laboratorium przez caly czas zycia serwera; przy zatrzymaniu anuluje liczony eksperyment.</summary>

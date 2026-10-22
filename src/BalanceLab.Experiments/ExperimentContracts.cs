@@ -66,6 +66,9 @@ public sealed record ExperimentOptions
     /// <summary>Ile eksperymentow moze czekac w kolejce (razem z liczonym).</summary>
     public int MaxQueued { get; init; } = 4;
 
+    /// <summary>Ile z nich moze zamowic jeden klient: jeden adres nie zajmie laboratorium wszystkim.</summary>
+    public int MaxQueuedPerOwner { get; init; } = 2;
+
     /// <summary>Ile skonczonych eksperymentow pamietamy (starsze znikaja).</summary>
     public int KeepFinished { get; init; } = 20;
 
@@ -92,7 +95,9 @@ public sealed record ExperimentOptions
         ArgumentOutOfRangeException.ThrowIfLessThan(MaxBots, 2, nameof(MaxBots));
         ArgumentOutOfRangeException.ThrowIfLessThan(MaxBotIterations, 1, nameof(MaxBotIterations));
         ArgumentOutOfRangeException.ThrowIfLessThan(MaxQueued, 1, nameof(MaxQueued));
-        ArgumentOutOfRangeException.ThrowIfNegative(KeepFinished, nameof(KeepFinished));
+        ArgumentOutOfRangeException.ThrowIfLessThan(MaxQueuedPerOwner, 1, nameof(MaxQueuedPerOwner));
+        // Zero zapominaloby eksperyment w chwili skonczenia, zanim klient zdazy odebrac wynik.
+        ArgumentOutOfRangeException.ThrowIfLessThan(KeepFinished, 1, nameof(KeepFinished));
         ArgumentOutOfRangeException.ThrowIfLessThan(Threads, 1, nameof(Threads));
         ArgumentOutOfRangeException.ThrowIfLessThan(MaxWork, 1, nameof(MaxWork));
         if (MaxDuration <= TimeSpan.Zero || MaxDuration > TimeSpan.FromDays(1))
@@ -110,3 +115,6 @@ public sealed record ExperimentLimits(int MaxGames, int MaxBots, int MaxBotItera
 
 /// <summary>Kolejka pelna: trzeba poczekac, az ktorys eksperyment sie skonczy.</summary>
 public sealed class LabBusyException(string message) : Exception(message);
+
+/// <summary>Eksperyment zamowil ktos inny — anulowac moze tylko zamawiajacy.</summary>
+public sealed class NotYourExperimentException(string message) : Exception(message);

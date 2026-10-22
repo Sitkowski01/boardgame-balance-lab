@@ -17,7 +17,11 @@ public sealed class ExperimentLab
     private readonly TimeProvider clock;
     private readonly Lock _gate = new();
     private readonly Dictionary<Guid, Job> _jobs = [];
-    private readonly Channel<Job> _queue = Channel.CreateUnbounded<Job>();
+    // Czekajace w kolejnosci; anulowany wypada od razu, wiec zamawianie i anulowanie w kolko niczego nie gromadzi.
+    private readonly LinkedList<Job> _waiting = new();
+
+    /// <summary>Budzik petli: jedno miejsce, wiec kolejne zamowienia przy pelnym nic nie dokladaja.</summary>
+    private readonly Channel<bool> _wake = Channel.CreateBounded<bool>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropWrite });
 
     /// <exception cref="ArgumentOutOfRangeException">Zle limity w konfiguracji.</exception>
     public ExperimentLab(ExperimentOptions options, TimeProvider clock)
@@ -34,10 +38,11 @@ public sealed class ExperimentLab
     /// <exception cref="FormatException">Nieznana gra, bot albo zly wariant.</exception>
     /// <exception cref="ArgumentException">Zamowienie poza limitami.</exception>
     /// <exception cref="LabBusyException">Kolejka pelna.</exception>
-    public ExperimentInfo Submit(ExperimentRequest request) => Enqueue(request, Preparation.Prepare(request, options));
+    /// <param name="owner">Kto zamawia (adres klienta); tylko on moze anulowac. Null — bez wlasciciela i limitu na klienta.</param>
+    public ExperimentInfo Submit(ExperimentRequest request, string? owner = null) => Enqueue(request, Preparation.Prepare(request, options), owner);
 
     /// <summary>Wstawia gotowy eksperyment; testy podstawiaja tu wlasne liczenie (blokujace albo z bledem).</summary>
-    internal ExperimentInfo Enqueue(ExperimentRequest request, PreparedExperiment prepared)
+    internal ExperimentInfo Enqueue(ExperimentRequest request, PreparedExperiment prepared, string? owner = null)
     {
         lock (_gate)
         {
@@ -46,9 +51,15 @@ public sealed class ExperimentLab
                 throw new LabBusyException($"W kolejce jest juz {options.MaxQueued} eksperymentow - sprobuj, gdy ktorys sie skonczy.");
             }
 
-            var job = new Job(Guid.NewGuid(), request, prepared, clock.GetUtcNow());
+            if (owner is not null && _jobs.Values.Count(j => !j.Finished && j.Owner == owner) >= options.MaxQueuedPerOwner)
+            {
+                throw new LabBusyException($"Masz juz {options.MaxQueuedPerOwner} eksperymenty w kolejce - poczekaj na wynik.");
+            }
+
+            var job = new Job(Guid.NewGuid(), request, prepared, clock.GetUtcNow()) { Owner = owner };
             _jobs.Add(job.Id, job);
-            _queue.Writer.TryWrite(job);
+            _waiting.AddLast(job);
+            _wake.Writer.TryWrite(true);
             return job.Info(withResult: false);
         }
     }
@@ -75,7 +86,8 @@ public sealed class ExperimentLab
     }
 
     /// <summary>Anuluje czekajacy albo liczony eksperyment; skonczony zostaje bez zmian. Null, gdy nie ma takiego.</summary>
-    public ExperimentInfo? Cancel(Guid id)
+    /// <exception cref="NotYourExperimentException">Eksperyment ma innego wlasciciela.</exception>
+    public ExperimentInfo? Cancel(Guid id, string? owner = null)
     {
         lock (_gate)
         {
@@ -84,8 +96,14 @@ public sealed class ExperimentLab
                 return null;
             }
 
+            if (job.Owner is not null && job.Owner != owner)
+            {
+                throw new NotYourExperimentException("Ten eksperyment zamowil ktos inny - anulowac moze tylko on.");
+            }
+
             if (job.Status == ExperimentStatus.Queued)
             {
+                _waiting.Remove(job);
                 Finish(job, ExperimentStatus.Cancelled, null, null);
             }
             else if (job.Status == ExperimentStatus.Running)
@@ -101,16 +119,26 @@ public sealed class ExperimentLab
     /// <summary>Petla liczaca eksperymenty po kolei, az do zatrzymania serwera (wtedy anuluje liczony).</summary>
     public async Task RunAsync(CancellationToken stoppingToken)
     {
-        await foreach (var job in _queue.Reader.ReadAllAsync(stoppingToken))
+        while (true)
         {
+            // Zatrzymanie w trakcie liczenia: nastepny czekajacy juz nie startuje.
+            stoppingToken.ThrowIfCancellationRequested();
+            Job? job = null;
             lock (_gate)
             {
-                if (job.Status != ExperimentStatus.Queued)
+                if (_waiting.First is { } first)
                 {
-                    continue; // anulowany, zanim przyszla jego kolej
+                    job = first.Value;
+                    _waiting.RemoveFirst();
+                    job.Status = ExperimentStatus.Running;
                 }
+            }
 
-                job.Status = ExperimentStatus.Running;
+            if (job is null)
+            {
+                // Pusta kolejka: czekamy na zamowienie. Zamowienie z chwili miedzy sprawdzeniem a czekaniem zostawilo budzik.
+                await _wake.Reader.ReadAsync(stoppingToken);
+                continue;
             }
 
             await RunJobAsync(job, stoppingToken);
@@ -167,6 +195,9 @@ public sealed class ExperimentLab
         public PreparedExperiment Prepared => prepared;
 
         public DateTimeOffset Created => created;
+
+        /// <summary>Zamawiajacy; nie trafia do <see cref="ExperimentInfo"/>, bo to adres klienta.</summary>
+        public string? Owner { get; init; }
 
         /// <summary>Kolejnosc wstawienia: dwa eksperymenty z tej samej chwili zegara.</summary>
         public long Order { get; } = Interlocked.Increment(ref _counter);

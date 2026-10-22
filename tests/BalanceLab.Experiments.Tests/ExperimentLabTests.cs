@@ -32,12 +32,12 @@ public sealed class ExperimentLabTests
             progress.Report(3);
             progress.Report(2); // spozniony watek nie cofa postepu
             gate.Started.Set();
-            token.WaitHandle.WaitOne();
+            token.WaitHandle.WaitOne(TimeSpan.FromSeconds(10)); // bez anulowania test pada, a nie wisi
             token.ThrowIfCancellationRequested();
             return "nigdy";
         }));
         using var run = new Runner(lab);
-        gate.Started.Wait();
+        Assert.True(gate.Started.Wait(TimeSpan.FromSeconds(10)));
 
         var running = lab.Find(info.Id)!;
         Assert.Equal((ExperimentStatus.Running, 3, 10), (running.Status, running.Done, running.Total));
@@ -108,6 +108,65 @@ public sealed class ExperimentLabTests
     }
 
     [Fact]
+    public void One_owner_has_a_smaller_share_of_the_queue()
+    {
+        var (lab, _) = Lab(new ExperimentOptions { MaxQueued = 4, MaxQueuedPerOwner = 2, Threads = 1 });
+        var first = lab.Submit(Small, "10.0.0.1");
+        lab.Submit(Small, "10.0.0.1");
+
+        var ex = Assert.Throws<LabBusyException>(() => lab.Submit(Small, "10.0.0.1"));
+
+        Assert.Equal("Masz juz 2 eksperymenty w kolejce - poczekaj na wynik.", ex.Message);
+        lab.Submit(Small, "10.0.0.2");
+        lab.Submit(Small); // bez wlasciciela (np. testy) — tylko limit calej kolejki
+        lab.Cancel(first.Id, "10.0.0.1");
+        Assert.Equal(ExperimentStatus.Queued, lab.Submit(Small, "10.0.0.1").Status);
+    }
+
+    [Fact]
+    public void Only_the_owner_can_cancel_an_experiment()
+    {
+        var (lab, _) = Lab(new ExperimentOptions { Threads = 1 });
+        var owned = lab.Submit(Small, "10.0.0.1");
+        var anonymous = lab.Submit(Small);
+
+        var ex = Assert.Throws<NotYourExperimentException>(() => lab.Cancel(owned.Id, "10.0.0.2"));
+        Assert.Throws<NotYourExperimentException>(() => lab.Cancel(owned.Id));
+
+        Assert.Contains("zamowil ktos inny", ex.Message, StringComparison.Ordinal);
+        Assert.Equal(ExperimentStatus.Queued, lab.Find(owned.Id)!.Status);
+        Assert.Equal(ExperimentStatus.Cancelled, lab.Cancel(owned.Id, "10.0.0.1")!.Status);
+        Assert.Equal(ExperimentStatus.Cancelled, lab.Cancel(anonymous.Id, "10.0.0.2")!.Status);
+    }
+
+    [Fact]
+    public async Task Ordering_and_cancelling_in_a_loop_leaves_nothing_behind_while_one_runs()
+    {
+        var (lab, _) = Lab(new ExperimentOptions { MaxQueued = 2, KeepFinished = 1, Threads = 1 });
+        var release = new ManualResetEventSlim();
+        var running = lab.Enqueue(Small, new PreparedExperiment(1, (_, token) =>
+        {
+            release.Wait(TimeSpan.FromSeconds(10), token);
+            return 1;
+        }));
+        using var runner = new Runner(lab);
+        await WaitAsync(lab, running.Id, ExperimentStatus.Running);
+
+        for (var i = 0; i < 50; i++)
+        {
+            lab.Cancel(lab.Submit(Small).Id);
+        }
+
+        var ran = 0;
+        var last = lab.Enqueue(Small, new PreparedExperiment(1, (_, _) => Interlocked.Increment(ref ran)));
+        release.Set();
+        await WaitAsync(lab, last.Id, ExperimentStatus.Done);
+        Assert.Equal(1, ran); // zadne z anulowanych nie wystartowalo
+        Assert.Single(lab.Recent); // i nic z nich nie zostalo w pamieci
+        release.Dispose();
+    }
+
+    [Fact]
     public void Only_the_newest_finished_experiments_are_remembered()
     {
         var (lab, clock) = Lab(new ExperimentOptions { KeepFinished = 2, Threads = 1 });
@@ -155,7 +214,7 @@ public sealed class ExperimentLabTests
         var (lab, _) = Lab(new ExperimentOptions { Threads = 1, MaxDuration = TimeSpan.FromMilliseconds(50) });
         var info = lab.Enqueue(Small, new PreparedExperiment(1, (_, token) =>
         {
-            token.WaitHandle.WaitOne();
+            token.WaitHandle.WaitOne(TimeSpan.FromSeconds(10)); // bez anulowania test pada, a nie wisi
             token.ThrowIfCancellationRequested();
             return "nigdy";
         }));
@@ -178,14 +237,15 @@ public sealed class ExperimentLabTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxBots = 1 }, clock));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxBotIterations = 0 }, clock));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxQueued = 0 }, clock));
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { KeepFinished = -1 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { KeepFinished = 0 }, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxQueuedPerOwner = 0 }, clock));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxWork = 0 }, clock));
         Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.Zero }, clock));
         var tooLong = Assert.Throws<ArgumentOutOfRangeException>(() => new ExperimentLab(good with { MaxDuration = TimeSpan.FromDays(2) }, clock));
         Assert.Contains("od chwili do doby", tooLong.Message, StringComparison.Ordinal);
         Assert.Throws<ArgumentNullException>(() => new ExperimentLab(null!, clock));
         Assert.Throws<ArgumentNullException>(() => new ExperimentLab(good, null!));
-        Assert.Empty(new ExperimentLab(good with { KeepFinished = 0, MaxDuration = TimeSpan.FromDays(1) }, clock).Recent);
+        Assert.Empty(new ExperimentLab(good with { KeepFinished = 1, MaxQueuedPerOwner = 1, MaxDuration = TimeSpan.FromDays(1) }, clock).Recent);
         // Domyslnie polowa rdzeni, na jednym rdzeniu jeden watek.
         Assert.Equal((1, 1, 4), (ExperimentOptions.DefaultThreads(1), ExperimentOptions.DefaultThreads(3), ExperimentOptions.DefaultThreads(8)));
     }
@@ -198,13 +258,13 @@ public sealed class ExperimentLabTests
         var info = lab.Enqueue(Small, new PreparedExperiment(1, (_, token) =>
         {
             gate.Started.Set();
-            token.WaitHandle.WaitOne();
+            token.WaitHandle.WaitOne(TimeSpan.FromSeconds(10)); // bez anulowania test pada, a nie wisi
             token.ThrowIfCancellationRequested();
             return "nigdy";
         }));
         using var stop = new CancellationTokenSource();
         var loop = lab.RunAsync(stop.Token);
-        gate.Started.Wait();
+        Assert.True(gate.Started.Wait(TimeSpan.FromSeconds(10)));
 
         await stop.CancelAsync();
 

@@ -34,6 +34,7 @@ public sealed class ApiFixture : IAsyncLifetime
             .UseSetting("Rooms:FillBot", "random")
             .UseSetting("Rooms:AutopilotBot", "random")
             .UseSetting("Rooms:MaxRoomsPerOwner", "100000")
+            .UseSetting("Experiments:MaxQueuedPerOwner", "100")
             .UseSetting("RateLimit:HubCallsPerMinute", "100000")
             .UseSetting("RateLimit:PerMinute", "100000"));
         _ = Factory.Server;
