@@ -305,3 +305,55 @@ describe("LobbyPage while a room is being created", () => {
     expect(within(form).getByRole("button", { name: "Załóż pokój" })).toBeEnabled();
   });
 });
+
+describe("LobbyPage details", () => {
+  it("keeps a space before the link to the lab in the lead", async () => {
+    page();
+
+    const lead = (await screen.findByRole("link", { name: "laboratorium" })).closest("p");
+    expect(lead?.textContent).toContain("których balans sprawdza laboratorium. Boty MCTS");
+  });
+
+  it("connects again for another connection and loads the games again for another source", async () => {
+    const first = fakeConnect();
+    const second = fakeConnect();
+    const loadGames = vi.fn(() => Promise.resolve(games));
+    const tickets = memoryTickets();
+    const view = render(<LobbyPage connect={first.connect} tickets={tickets} navigate={vi.fn()} loadGames={loadGames} />);
+    await waitFor(() => {
+      expect(first.links).toHaveLength(1);
+    });
+
+    view.rerender(<LobbyPage connect={second.connect} tickets={tickets} navigate={vi.fn()} loadGames={loadGames} />);
+    await waitFor(() => {
+      expect(second.links).toHaveLength(1);
+    });
+    expect(first.links[0]?.server.close).toHaveBeenCalled();
+
+    const other = vi.fn(() => Promise.resolve(games));
+    view.rerender(<LobbyPage connect={second.connect} tickets={tickets} navigate={vi.fn()} loadGames={other} />);
+    await waitFor(() => {
+      expect(other).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("draws a mosaic of nine tiles in the hero, two of them faded", async () => {
+    const { view } = page();
+    await screen.findByRole("form", { name: "Nowy pokój" });
+
+    const tiles = Array.from(view.container.querySelectorAll("svg.hero-art rect[width='21']")).map((r) =>
+      ["x", "y", "fill", "opacity"].map((a) => r.getAttribute(a)).join(" "),
+    );
+    expect(tiles).toEqual([
+      "212 52 #1f9e94 1",
+      "236 52 #d4952a 1",
+      "260 52 #b3243b 1",
+      "212 76 #4a4c50 0.35",
+      "236 76 #1f9e94 1",
+      "260 76 #d4952a 1",
+      "212 100 #efe6cf 1",
+      "236 100 #4a4c50 0.35",
+      "260 100 #1f9e94 1",
+    ]);
+  });
+});
