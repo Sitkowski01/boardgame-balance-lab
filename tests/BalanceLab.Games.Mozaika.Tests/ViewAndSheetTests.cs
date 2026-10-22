@@ -61,9 +61,9 @@ public sealed class ViewAndSheetTests
         var state = Start().WithPlayer(1, b => b with { Wall = WallOf((0, 0), (2, 4)) });
 
         Assert.Equal(25, Game.ItemCount);
-        Assert.Equal(new ItemNoun("pole sciany", "pola sciany", "za mocne", "za slabe", "martwe"), Game.Noun);
-        Assert.Equal("rzad 1, kolumna 1 (turkus)", Game.ItemName(0));
-        Assert.Equal("rzad 3, kolumna 5 (karmin)", Game.ItemName(14));
+        Assert.Equal(new ItemNoun("pole ściany", "pola ściany", "za mocne", "za słabe", "martwe"), Game.Noun);
+        Assert.Equal("rząd 1, kolumna 1 (turkus)", Game.ItemName(0));
+        Assert.Equal("rząd 3, kolumna 5 (karmin)", Game.ItemName(14));
         Assert.Equal(["turkus", "ochra", "karmin", "grafit", "kosc"], Enumerable.Range(0, 5).Select(Game.ItemGroup).ToArray());
         Assert.Equal("kosc", Game.ItemGroup(5));
         Assert.Equal(5, Enumerable.Range(0, 25).Count(i => Game.ItemGroup(i) == "grafit"));

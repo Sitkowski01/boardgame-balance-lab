@@ -68,7 +68,7 @@ public sealed class RoomSetupTests
         Assert.Equal("Miejsce 1 zajmuje gracz.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 1, "random"))).Message);
         Assert.Equal("Nie ma miejsca 3; stol ma 3 miejsc.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 3, "random"))).Message);
         Assert.Equal("Nie ma miejsca -1; stol ma 3 miejsc.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, -1, "random"))).Message);
-        Assert.Equal("Bot 'mcts:5001': najwyzej 5000 iteracji.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, "mcts:5001"))).Message);
+        Assert.Equal("Bot 'mcts:5001': najwyżej 5000 iteracji.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, "mcts:5001"))).Message);
         Assert.Equal("Opis bota: od 1 do 24 znakow (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, new string('x', 25)))).Message);
         Assert.Equal("Opis bota: od 1 do 24 znakow (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, " "))).Message);
         Assert.Equal("Opis bota: od 1 do 24 znakow (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, null!))).Message);

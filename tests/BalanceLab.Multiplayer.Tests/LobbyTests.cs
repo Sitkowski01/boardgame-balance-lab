@@ -22,11 +22,11 @@ public sealed class LobbyTests
     }
 
     [Theory]
-    [InlineData("szachy", 2, null, "Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty, mozaika.")]
+    [InlineData("szachy", 2, null, "Nieznana gra 'szachy'. Dostępne: connectfour, klejnoty, mozaika.")]
     [InlineData("connectfour", 3, null, "ConnectFour: od 2 do 2 graczy, a podano 3.")]
     [InlineData("klejnoty", 1, null, "Klejnoty: od 2 do 4 graczy, a podano 1.")]
     [InlineData("klejnoty", 5, null, "Klejnoty: od 2 do 4 graczy, a podano 5.")]
-    [InlineData("connectfour", 2, "win=9", "ConnectFour nie ma wariantow zasad.")]
+    [InlineData("connectfour", 2, "win=9", "ConnectFour nie ma wariantów zasad.")]
     [InlineData("klejnoty", 2, "win=x", "win")]
     public async Task Room_that_cannot_be_played_is_not_created(string game, int seats, string? variant, string message)
     {

@@ -33,10 +33,10 @@ public sealed class BalanceCommandsTests : IDisposable
 
         Assert.Equal((0, ""), (code, error));
         Assert.Contains("Mozaika (column=3): 20 partii", output, StringComparison.Ordinal);
-        Assert.Contains("Pola sciany: wlasciciel przecietnego elementu wygrywa (turkus", output, StringComparison.Ordinal);
-        Assert.Contains("Pola sciany: martwe i za mocne", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
+        Assert.Contains("Pola ściany: wlasciciel przecietnego elementu wygrywa (turkus", output, StringComparison.Ordinal);
+        Assert.Contains("Pola ściany: martwe i za mocne", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
         Assert.Contains("<h1>Mozaika (column=3): raport balansu</h1>", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
-        Assert.Contains("rzad 3, kolumna 3 (turkus)", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
+        Assert.Contains("rząd 3, kolumna 3 (turkus)", System.IO.File.ReadAllText(html), StringComparison.Ordinal);
         Assert.Equal(25, Json(json).GetProperty("items").GetArrayLength());
     }
 
@@ -184,7 +184,7 @@ public sealed class BalanceCommandsTests : IDisposable
         var league = Run("league", "--help").Output;
         Assert.Contains("Liga profili strategii: ranking Elo i kto bije kogo.", league, StringComparison.Ordinal);
         Assert.Contains("Liczba partii na kazda pare (parzysta).", league, StringComparison.Ordinal);
-        Assert.Contains("Wariant zasad (tylko gry, ktore je maja). Klejnoty: zmiany po srednikach", league, StringComparison.Ordinal);
+        Assert.Contains("Wariant zasad (tylko gry, które je mają). Klejnoty: zmiany po średnikach", league, StringComparison.Ordinal);
         var compare = Run("compare", "--help").Output;
         Assert.Contains("Co jesli: porownuje wariant zasad z oryginalem (A/B).", compare, StringComparison.Ordinal);
         Assert.Contains("Liczba partii na kazda strone (wielokrotnosc liczby botow).", compare, StringComparison.Ordinal);

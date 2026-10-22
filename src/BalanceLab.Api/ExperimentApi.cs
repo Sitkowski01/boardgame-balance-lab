@@ -29,11 +29,11 @@ internal static class ExperimentApi
         }
         catch (Exception ex) when (ex is FormatException or ArgumentException)
         {
-            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "Zle zamowienie eksperymentu");
+            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status400BadRequest, title: "Złe zamówienie eksperymentu");
         }
         catch (LabBusyException ex)
         {
-            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status503ServiceUnavailable, title: "Laboratorium zajete");
+            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status503ServiceUnavailable, title: "Laboratorium zajęte");
         }
     }
 
@@ -48,7 +48,7 @@ internal static class ExperimentApi
         }
         catch (NotYourExperimentException ex)
         {
-            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden, title: "Nie twoj eksperyment");
+            return TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status403Forbidden, title: "Nie twój eksperyment");
         }
     }
 }

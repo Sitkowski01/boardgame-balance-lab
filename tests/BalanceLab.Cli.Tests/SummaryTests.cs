@@ -108,7 +108,7 @@ public sealed class SummaryTests
             "",
             "Karty: wlasciciel przecietnego elementu wygrywa (poziom 1 40.0%); odstaje 2 z 3",
             "  za mocna   mocna                                    w  50.5% partii, wlasciciel wygrywa 70.0%",
-            "  za slaba   slaba                                    w  50.5% partii, wlasciciel wygrywa 20.0%",
+            "  za słaba   slaba                                    w  50.5% partii, wlasciciel wygrywa 20.0%",
             "Czas");
         Assert.Contains(expected, text, StringComparison.Ordinal);
     }

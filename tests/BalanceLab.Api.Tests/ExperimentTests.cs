@@ -31,7 +31,7 @@ public sealed class ExperimentTests(ApiFixture api)
         Assert.Equal("Mozaika", result.GetProperty("game").GetString());
         Assert.Equal(2, result.GetProperty("seats").GetArrayLength());
         Assert.Equal(25, result.GetProperty("items").GetArrayLength());
-        Assert.Equal("pola sciany", result.GetProperty("itemNoun").GetProperty("plural").GetString());
+        Assert.Equal("pola ściany", result.GetProperty("itemNoun").GetProperty("plural").GetString());
         Assert.Equal("Tournament", done.GetProperty("request").GetProperty("kind").GetString());
 
         var recent = await http.GetFromJsonAsync<JsonElement>("/api/experiments");
@@ -58,7 +58,7 @@ public sealed class ExperimentTests(ApiFixture api)
     [Theory]
     [InlineData("""{"game":"klejnoty","kind":"Tournament","bots":["random","alfa"],"games":10,"seed":"1"}""", "Nieznany bot 'alfa'")]
     [InlineData("""{"game":"klejnoty","kind":"Tournament","bots":["random","random"],"games":5000,"seed":"1"}""", "od 1 do 1000")]
-    [InlineData("""{"game":"klejnoty","kind":"Comparison","bots":["random","random"],"games":10,"seed":"1"}""", "Porownanie potrzebuje wariantu")]
+    [InlineData("""{"game":"klejnoty","kind":"Comparison","bots":["random","random"],"games":10,"seed":"1"}""", "Porównanie potrzebuje wariantu")]
     [InlineData("""{"game":"szachy","kind":"League","bots":["random","random"],"games":10,"seed":"1"}""", "Nieznana gra 'szachy'")]
     public async Task Bad_order_is_a_400_with_the_reason(string body, string reason)
     {
@@ -67,7 +67,7 @@ public sealed class ExperimentTests(ApiFixture api)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Contains(reason, problem.GetProperty("detail").GetString(), StringComparison.Ordinal);
-        Assert.Equal("Zle zamowienie eksperymentu", problem.GetProperty("title").GetString());
+        Assert.Equal("Złe zamówienie eksperymentu", problem.GetProperty("title").GetString());
     }
 
     [Theory]
@@ -105,7 +105,7 @@ public sealed class ExperimentTests(ApiFixture api)
         var busy = await PostAsync(http, Slow);
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, busy.StatusCode);
-        Assert.Equal("Laboratorium zajete", (await busy.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("title").GetString());
+        Assert.Equal("Laboratorium zajęte", (await busy.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("title").GetString());
         await http.DeleteAsync($"/api/experiments/{id}");
         await WaitAsync(http, id, "Cancelled");
         Assert.Equal(HttpStatusCode.Accepted, (await PostAsync(http, """{"game":"connectfour","kind":"Tournament","bots":["random","random"],"games":2,"seed":"1"}""")).StatusCode);
@@ -127,7 +127,7 @@ public sealed class ExperimentTests(ApiFixture api)
         var mozaika = games.EnumerateArray().Single(g => g.GetProperty("key").GetString() == "mozaika");
         var connectFour = games.EnumerateArray().Single(g => g.GetProperty("key").GetString() == "connectfour");
 
-        Assert.StartsWith("zmiany po srednikach: tiles=N", mozaika.GetProperty("variantSyntax").GetString(), StringComparison.Ordinal);
+        Assert.StartsWith("zmiany po średnikach: tiles=N", mozaika.GetProperty("variantSyntax").GetString(), StringComparison.Ordinal);
         Assert.Equal(["kolory", "kolumny", "ostrozny", "wyrownany"], mozaika.GetProperty("profiles").EnumerateArray().Select(p => p.GetString()));
         Assert.Equal(JsonValueKind.Null, connectFour.GetProperty("variantSyntax").ValueKind);
         Assert.Equal(0, connectFour.GetProperty("profiles").GetArrayLength());

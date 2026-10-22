@@ -44,7 +44,7 @@ public sealed partial record KlejnotyVariant
         ArgumentOutOfRangeException.ThrowIfNegative(points);
         if (cost[Gem.Gold] > 0)
         {
-            throw new ArgumentException("Karta nie moze kosztowac zlota - zloto zastepuje brakujace kolory.", nameof(cost));
+            throw new ArgumentException("Karta nie może kosztować złota - złoto zastępuje brakujące kolory.", nameof(cost));
         }
 
         return new(Name, AllCards.SetItem(id, AllCards[id] with { Cost = cost, Points = points }), AllPatrons, WinningPoints);
@@ -57,7 +57,7 @@ public sealed partial record KlejnotyVariant
         ArgumentOutOfRangeException.ThrowIfNegative(points);
         if (requirement[Gem.Gold] > 0 || requirement.Total == 0)
         {
-            throw new ArgumentException("Patron wymaga co najmniej jednego rabatu i zadnego zlota.", nameof(requirement));
+            throw new ArgumentException("Patron wymaga co najmniej jednego rabatu i żadnego złota.", nameof(requirement));
         }
 
         return new(Name, AllCards, AllPatrons.SetItem(id, AllPatrons[id] with { Requirement = requirement, Points = points }), WinningPoints);

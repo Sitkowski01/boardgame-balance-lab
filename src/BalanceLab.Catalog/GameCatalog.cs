@@ -37,5 +37,5 @@ public static class GameCatalog
     public static IGameDefinition Find(string name) =>
         Games.TryGetValue(name, out var definition)
             ? definition
-            : throw new FormatException($"Nieznana gra '{name}'. Dostepne: {string.Join(", ", Names)}.");
+            : throw new FormatException($"Nieznana gra '{name}'. Dostępne: {string.Join(", ", Names)}.");
 }

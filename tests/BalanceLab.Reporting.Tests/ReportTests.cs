@@ -28,7 +28,7 @@ public sealed class ReportTests
 
     [Theory]
     [InlineData(ItemVerdict.Strong, "za mocna", "▲", "hot")]
-    [InlineData(ItemVerdict.Weak, "za slaba", "▼", "cold")]
+    [InlineData(ItemVerdict.Weak, "za słaba", "▼", "cold")]
     [InlineData(ItemVerdict.Dead, "martwa", "○", "cold")]
     public void Verdict_tag_has_a_mark_and_a_word_not_only_a_color(ItemVerdict verdict, string word, string mark, string css)
     {
@@ -38,11 +38,11 @@ public sealed class ReportTests
 
     [Theory]
     [InlineData(ItemVerdict.Strong, "za mocne")]
-    [InlineData(ItemVerdict.Weak, "za slabe")]
+    [InlineData(ItemVerdict.Weak, "za słabe")]
     [InlineData(ItemVerdict.Dead, "martwe")]
     public void Verdict_word_agrees_with_the_item_noun(ItemVerdict verdict, string word)
     {
-        var field = new Engine.ItemNoun("pole sciany", "pola sciany", "za mocne", "za slabe", "martwe");
+        var field = new Engine.ItemNoun("pole ściany", "pola ściany", "za mocne", "za słabe", "martwe");
 
         Assert.EndsWith($" {word}</span>", HtmlReport.Tag(verdict, field), StringComparison.Ordinal);
         Assert.Equal(word, ItemVerdicts.Describe(verdict, field));
@@ -69,11 +69,11 @@ public sealed class ReportTests
     [Fact]
     public void Items_are_named_the_way_the_game_names_them()
     {
-        var html = HtmlReport.Tournament(Tournament(items: true) with { ItemNoun = new("pole sciany", "pola sciany") });
+        var html = HtmlReport.Tournament(Tournament(items: true) with { ItemNoun = new("pole ściany", "pola ściany") });
 
-        Assert.Contains("Pola sciany: martwe i za mocne", html, StringComparison.Ordinal);
-        Assert.Contains("Kazdy punkt to pole sciany:", html, StringComparison.Ordinal);
-        Assert.Contains("<th>Pole sciany</th>", html, StringComparison.Ordinal);
+        Assert.Contains("Pola ściany: martwe i za mocne", html, StringComparison.Ordinal);
+        Assert.Contains("Kazdy punkt to pole ściany:", html, StringComparison.Ordinal);
+        Assert.Contains("<th>Pole ściany</th>", html, StringComparison.Ordinal);
         Assert.DoesNotContain("Karty", html, StringComparison.Ordinal);
         Assert.Equal("", Html.Capitalize(""));
     }

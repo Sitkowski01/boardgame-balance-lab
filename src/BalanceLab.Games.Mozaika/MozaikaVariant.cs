@@ -57,7 +57,7 @@ public sealed partial record MozaikaVariant
         ArgumentNullException.ThrowIfNull(penalties);
         if (penalties.Count is < 1 or > 10 || penalties.Any(p => p < 0))
         {
-            throw new ArgumentException("Podloga ma od 1 do 10 pol, a kazda kara jest liczba nieujemna.", nameof(penalties));
+            throw new ArgumentException("Podłoga ma od 1 do 10 pól, a każda kara jest liczbą nieujemną.", nameof(penalties));
         }
 
         return new(Name, TilesPerColor, [.. penalties], RowBonus, ColumnBonus, ColorBonus);

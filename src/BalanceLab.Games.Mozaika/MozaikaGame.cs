@@ -52,7 +52,7 @@ public sealed partial class MozaikaGame(MozaikaVariant? variant = null) : IGame<
     public string ItemName(int item)
     {
         var (row, column) = Cell(item);
-        return string.Create(CultureInfo.InvariantCulture, $"rzad {row + 1}, kolumna {column + 1} ({ColorName(Wall.ColorAt(row, column))})");
+        return string.Create(CultureInfo.InvariantCulture, $"rząd {row + 1}, kolumna {column + 1} ({ColorName(Wall.ColorAt(row, column))})");
     }
 
     /// <summary>Kolor pola: kazdy kolor ma na scianie piec pol, po jednym w rzedzie i w kolumnie.</summary>
@@ -70,7 +70,7 @@ public sealed partial class MozaikaGame(MozaikaVariant? variant = null) : IGame<
     }
 
     /// <summary>Raport balansu mowi o polach sciany, a nie o kartach.</summary>
-    public ItemNoun Noun { get; } = new("pole sciany", "pola sciany", "za mocne", "za slabe", "martwe");
+    public ItemNoun Noun { get; } = new("pole ściany", "pola ściany", "za mocne", "za słabe", "martwe");
 
     public static string ColorName(Tile tile) => ColorNames[(int)tile];
 

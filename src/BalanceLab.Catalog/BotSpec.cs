@@ -58,7 +58,7 @@ public static class BotSpec
         var evaluator = profile is null
             ? profiles.Default
             : profiles.Named.GetValueOrDefault(profile.ToLowerInvariant())
-                ?? throw new FormatException($"Nieznany profil '{profile}'. Dostepne: {string.Join(", ", profiles.Named.Keys.Order(StringComparer.Ordinal))}.");
+                ?? throw new FormatException($"Nieznany profil '{profile}'. Dostępne: {string.Join(", ", profiles.Named.Keys.Order(StringComparer.Ordinal))}.");
         return new(name, seed => new GreedyBot<TState, TMove>(evaluator, seed));
     }
 
@@ -72,9 +72,9 @@ public static class BotSpec
                 : throw Unknown(spec);
         // Bez liczby bot liczy domyslne 1000 iteracji — tez musi sie zmiescic w limicie.
         return (options.Iterations ?? MctsOptions.DefaultIterations) > max
-            ? throw new FormatException($"Bot '{spec}': najwyzej {max} iteracji{(iterations is null ? $" (bez liczby po dwukropku liczy {MctsOptions.DefaultIterations})" : "")}.")
+            ? throw new FormatException($"Bot '{spec}': najwyżej {max} iteracji{(iterations is null ? $" (bez liczby po dwukropku liczy {MctsOptions.DefaultIterations})" : "")}.")
             : options;
     }
 
-    private static FormatException Unknown(string spec) => new($"Nieznany bot '{spec}'. Dostepne: {Help}.");
+    private static FormatException Unknown(string spec) => new($"Nieznany bot '{spec}'. Dostępne: {Help}.");
 }

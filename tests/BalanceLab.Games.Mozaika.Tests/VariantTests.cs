@@ -34,7 +34,7 @@ public sealed class VariantTests
     [InlineData("tiles=4", "Zmiana 'tiles=4':")]
     [InlineData("tiles=41", "Zmiana 'tiles=41':")]
     [InlineData("floor=", "'' to nie liczba")]
-    [InlineData("floor=1,1,1,1,1,1,1,1,1,1,1", "od 1 do 10 pol")]
+    [InlineData("floor=1,1,1,1,1,1,1,1,1,1,1", "od 1 do 10 pól")]
     public void Bad_change_is_a_format_error_saying_what_is_wrong(string text, string message)
     {
         var ex = Assert.Throws<FormatException>(() => MozaikaVariant.Parse(text));

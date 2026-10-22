@@ -23,17 +23,17 @@ internal sealed class Preparation(ExperimentRequest request, ExperimentOptions o
         ArgumentNullException.ThrowIfNull(options);
         if (string.IsNullOrWhiteSpace(request.Game))
         {
-            throw new ArgumentException("Brak gry w zamowieniu.", nameof(request));
+            throw new ArgumentException("Brak gry w zamówieniu.", nameof(request));
         }
 
         if (request.Bots.IsDefaultOrEmpty || request.Bots.Length > options.MaxBots)
         {
-            throw new ArgumentException($"Eksperyment potrzebuje od 1 do {options.MaxBots} botow.", nameof(request));
+            throw new ArgumentException($"Eksperyment potrzebuje od 1 do {options.MaxBots} botów.", nameof(request));
         }
 
         if (request.Bots.Any(string.IsNullOrWhiteSpace))
         {
-            throw new ArgumentException("Opis bota nie moze byc pusty.", nameof(request));
+            throw new ArgumentException("Opis bota nie może być pusty.", nameof(request));
         }
 
         if (request.Games < 1 || request.Games > options.MaxGames)
@@ -48,18 +48,18 @@ internal sealed class Preparation(ExperimentRequest request, ExperimentOptions o
 
         if (request.Kind == ExperimentKind.Comparison && string.IsNullOrWhiteSpace(request.Variant))
         {
-            throw new ArgumentException("Porownanie potrzebuje wariantu zasad - to on jest \"co jesli\".", nameof(request));
+            throw new ArgumentException("Porównanie potrzebuje wariantu zasad - to on jest \"co jeśli\".", nameof(request));
         }
 
         if (request.Kind == ExperimentKind.League && request.Bots.Length < 2)
         {
-            throw new ArgumentException("Liga potrzebuje co najmniej dwoch botow.", nameof(request));
+            throw new ArgumentException("Liga potrzebuje co najmniej dwóch botów.", nameof(request));
         }
 
         var prepared = GameCatalog.Find(request.Game).Accept(new Preparation(request, options));
         return prepared.Work > options.MaxWork
             ? throw new ArgumentException(
-                $"Eksperyment za duzy dla laboratorium: {prepared.Work} jednostek pracy, najwyzej {options.MaxWork}. Mniej partii, botow albo iteracji MCTS - pelne turnieje liczy CLI.",
+                $"Eksperyment za duży dla laboratorium: {prepared.Work} jednostek pracy, najwyżej {options.MaxWork}. Mniej partii, botów albo iteracji MCTS - pełne turnieje liczy CLI.",
                 nameof(request))
             : prepared;
     }
@@ -117,7 +117,7 @@ internal sealed class Preparation(ExperimentRequest request, ExperimentOptions o
                 Tournament.Validate(definition.Game, bots, spec);
                 return new(2 * spec.Games, (progress, token) => Comparison.Run(definition.Game, played, bots, spec, progress, token), WorkOf(request));
             default:
-                throw new UnreachableException($"Rodzaj {request.Kind} przeszedl sprawdzenie w Prepare.");
+                throw new UnreachableException($"Rodzaj {request.Kind} przeszedł sprawdzenie w Prepare.");
         }
     }
 }

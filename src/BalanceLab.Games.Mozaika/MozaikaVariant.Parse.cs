@@ -5,7 +5,7 @@ namespace BalanceLab.Games.Mozaika;
 public sealed partial record MozaikaVariant
 {
     /// <summary>Skladnia wariantu dla pomocy w CLI.</summary>
-    public const string Syntax = "zmiany po srednikach: tiles=N; floor=N,N,...; row=N; column=N; color=N";
+    public const string Syntax = "zmiany po średnikach: tiles=N; floor=N,N,...; row=N; column=N; color=N";
 
     /// <summary>
     /// Wariant z tekstu, np. <c>"column=5; floor=1,2,2,3"</c>: zmiany nakladane po kolei na
@@ -62,7 +62,7 @@ public sealed partial record MozaikaVariant
             ? n
             : throw new FormatException($"Zmiana '{change}': '{text}' to nie liczba 0-255.");
 
-    private static FormatException Unknown(string change) => new($"Nieznana zmiana '{change}'. Skladnia: {Syntax}.");
+    private static FormatException Unknown(string change) => new($"Nieznana zmiana '{change}'. Składnia: {Syntax}.");
 
     // .NET dopisuje do ArgumentException nazwe parametru w nowej linii; uzytkownikowi wystarczy pierwsza.
     private static string FirstLine(string message) => message.ReplaceLineEndings("\n").Split('\n')[0].Split(" (Parameter")[0];

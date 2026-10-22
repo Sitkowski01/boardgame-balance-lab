@@ -101,7 +101,7 @@ public sealed class ExperimentLabTests
 
         var ex = Assert.Throws<LabBusyException>(() => lab.Submit(Small));
 
-        Assert.Contains("W kolejce jest juz 2 eksperymentow", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("W kolejce jest już 2 eksperymentów", ex.Message, StringComparison.Ordinal);
         lab.Cancel(first.Id);
         Assert.Equal(ExperimentStatus.Queued, lab.Submit(Small).Status);
         Assert.Throws<FormatException>(() => lab.Submit(Small with { Game = "szachy" }));
@@ -116,7 +116,7 @@ public sealed class ExperimentLabTests
 
         var ex = Assert.Throws<LabBusyException>(() => lab.Submit(Small, "10.0.0.1"));
 
-        Assert.Equal("Masz juz 2 eksperymenty w kolejce - poczekaj na wynik.", ex.Message);
+        Assert.Equal("Masz już 2 eksperymenty w kolejce - poczekaj na wynik.", ex.Message);
         lab.Submit(Small, "10.0.0.2");
         lab.Submit(Small); // bez wlasciciela (np. testy) — tylko limit calej kolejki
         lab.Cancel(first.Id, "10.0.0.1");
@@ -133,7 +133,7 @@ public sealed class ExperimentLabTests
         var ex = Assert.Throws<NotYourExperimentException>(() => lab.Cancel(owned.Id, "10.0.0.2"));
         Assert.Throws<NotYourExperimentException>(() => lab.Cancel(owned.Id));
 
-        Assert.Contains("zamowil ktos inny", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("zamówił ktoś inny", ex.Message, StringComparison.Ordinal);
         Assert.Equal(ExperimentStatus.Queued, lab.Find(owned.Id)!.Status);
         Assert.Equal(ExperimentStatus.Cancelled, lab.Cancel(owned.Id, "10.0.0.1")!.Status);
         Assert.Equal(ExperimentStatus.Cancelled, lab.Cancel(anonymous.Id, "10.0.0.2")!.Status);
@@ -222,7 +222,7 @@ public sealed class ExperimentLabTests
 
         var failed = await WaitAsync(lab, info.Id, ExperimentStatus.Failed);
 
-        Assert.Equal("Eksperyment liczyl sie dluzej niz 0 min i zostal przerwany - zamow mniej partii albo slabsze boty.", failed.Error);
+        Assert.Equal("Eksperyment liczył się dłużej niż 0 min i został przerwany - zamów mniej partii albo słabsze boty.", failed.Error);
     }
 
     [Fact]

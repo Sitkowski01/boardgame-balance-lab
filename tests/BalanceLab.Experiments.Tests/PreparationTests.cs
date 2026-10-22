@@ -46,7 +46,7 @@ public sealed class PreparationTests
 
         Assert.Equal(12, prepared.Total);
         Assert.Equal(("Mozaika", "Mozaika (column=0)"), (report.Baseline.Game, report.Variant.Game));
-        Assert.Equal("pola sciany", report.Variant.ItemNoun.Plural);
+        Assert.Equal("pola ściany", report.Variant.ItemNoun.Plural);
     }
 
     [Fact]
@@ -61,26 +61,26 @@ public sealed class PreparationTests
     {
         { new("szachy", ExperimentKind.Tournament, ["random", "random"], 10, 1), "Nieznana gra 'szachy'" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "alfa"], 10, 1), "Nieznany bot 'alfa'" },
-        { new("klejnoty", ExperimentKind.Tournament, ["random", "mcts:500"], 10, 1), "najwyzej 200 iteracji" },
-        { new("klejnoty", ExperimentKind.Tournament, [], 10, 1), "od 1 do 6 botow" },
-        { new("klejnoty", ExperimentKind.Tournament, default, 10, 1), "od 1 do 6 botow" },
-        { new("klejnoty", ExperimentKind.League, [.. Enumerable.Repeat("random", 7)], 10, 1), "od 1 do 6 botow" },
+        { new("klejnoty", ExperimentKind.Tournament, ["random", "mcts:500"], 10, 1), "najwyżej 200 iteracji" },
+        { new("klejnoty", ExperimentKind.Tournament, [], 10, 1), "od 1 do 6 botów" },
+        { new("klejnoty", ExperimentKind.Tournament, default, 10, 1), "od 1 do 6 botów" },
+        { new("klejnoty", ExperimentKind.League, [.. Enumerable.Repeat("random", 7)], 10, 1), "od 1 do 6 botów" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 0, 1), "od 1 do 1000" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 1001, 1), "od 1 do 1000" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 9, 1), "wielokrotnoscia liczby uczestnikow" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "random"], 1, 1), "wielokrotnoscia liczby uczestnikow" },
         { new("klejnoty", ExperimentKind.Comparison, [.. Enumerable.Repeat("random", 5)], 10, 1, "win=10"), "dla 2-4 graczy" },
         { new("klejnoty", ExperimentKind.Tournament, ["random"], 10, 1), "dla 2-4 graczy" },
-        { new("klejnoty", ExperimentKind.League, ["random"], 10, 1), "Liga potrzebuje co najmniej dwoch botow" },
-        { new("klejnoty", ExperimentKind.Comparison, ["random", "random"], 10, 1), "Porownanie potrzebuje wariantu" },
-        { new("klejnoty", ExperimentKind.Comparison, ["random", "random"], 10, 1, " "), "Porownanie potrzebuje wariantu" },
+        { new("klejnoty", ExperimentKind.League, ["random"], 10, 1), "Liga potrzebuje co najmniej dwóch botów" },
+        { new("klejnoty", ExperimentKind.Comparison, ["random", "random"], 10, 1), "Porównanie potrzebuje wariantu" },
+        { new("klejnoty", ExperimentKind.Comparison, ["random", "random"], 10, 1, " "), "Porównanie potrzebuje wariantu" },
         { new("klejnoty", ExperimentKind.Comparison, ["random", "random"], 10, 1, "win=abc"), "'abc' to nie liczba" },
-        { new("connectfour", ExperimentKind.Tournament, ["random", "random"], 10, 1, "win=3"), "nie ma wariantow" },
+        { new("connectfour", ExperimentKind.Tournament, ["random", "random"], 10, 1, "win=3"), "nie ma wariantów" },
         { new("klejnoty", (ExperimentKind)9, ["random", "random"], 10, 1), "Nieznany rodzaj eksperymentu 9" },
         { new("klejnoty", ExperimentKind.Tournament, ["random", "ismcts"], 10, 1), "bez liczby po dwukropku liczy 1000" },
-        { new("klejnoty", ExperimentKind.Tournament, ["random", " "], 10, 1), "Opis bota nie moze byc pusty" },
-        { new(" ", ExperimentKind.Tournament, ["random", "random"], 10, 1), "Brak gry w zamowieniu" },
-        { new("klejnoty", ExperimentKind.League, [.. Enumerable.Repeat("ismcts:200", 6)], 1000, 1), "za duzy dla laboratorium: 6000000 jednostek pracy, najwyzej 400000" },
+        { new("klejnoty", ExperimentKind.Tournament, ["random", " "], 10, 1), "Opis bota nie może być pusty" },
+        { new(" ", ExperimentKind.Tournament, ["random", "random"], 10, 1), "Brak gry w zamówieniu" },
+        { new("klejnoty", ExperimentKind.League, [.. Enumerable.Repeat("ismcts:200", 6)], 1000, 1), "za duży dla laboratorium: 6000000 jednostek pracy, najwyżej 400000" },
     };
 
     [Theory]

@@ -62,6 +62,6 @@ public sealed class VariantParseTests
     public void Numbers_up_to_255_are_accepted_and_errors_show_the_syntax()
     {
         Assert.Equal(255, KlejnotyVariant.Parse("card1.points=255").AllCards[1].Points);
-        Assert.Contains("Skladnia: zmiany po srednikach: win=N;", Assert.Throws<FormatException>(() => KlejnotyVariant.Parse("x=1")).Message, StringComparison.Ordinal);
+        Assert.Contains("Składnia: zmiany po średnikach: win=N;", Assert.Throws<FormatException>(() => KlejnotyVariant.Parse("x=1")).Message, StringComparison.Ordinal);
     }
 }

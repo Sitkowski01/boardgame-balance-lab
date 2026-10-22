@@ -83,7 +83,7 @@ public sealed class GameDefinition<TState, TMove, TGame>(
     public TGame Rules(string? variant) => (variant, variants) switch
     {
         (null, _) => game,
-        (_, null) => throw new FormatException($"{game.Name} nie ma wariantow zasad."),
+        (_, null) => throw new FormatException($"{game.Name} nie ma wariantów zasad."),
         _ => variants(variant),
     };
 

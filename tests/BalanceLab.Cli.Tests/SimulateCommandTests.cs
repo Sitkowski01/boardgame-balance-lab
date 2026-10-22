@@ -94,14 +94,14 @@ public sealed class SimulateCommandTests : IDisposable
     // przeszkadzaja Strykerowi w dopasowaniu testu do mutanta.
     private static readonly (string Message, string[] Args)[] UsageErrors =
     [
-        ("Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty, mozaika.", ["--game", "szachy", "--bots", "random", "random"]),
-        ("Nieznany bot 'alfa'. Dostepne: random | greedy | greedy:PROFIL | mcts | mcts:ITERACJE | ismcts | ismcts:ITERACJE (np. mcts:500, greedy:silnik).", ["--game", "connectfour", "--bots", "random", "alfa"]),
+        ("Nieznana gra 'szachy'. Dostępne: connectfour, klejnoty, mozaika.", ["--game", "szachy", "--bots", "random", "random"]),
+        ("Nieznany bot 'alfa'. Dostępne: random | greedy | greedy:PROFIL | mcts | mcts:ITERACJE | ismcts | ismcts:ITERACJE (np. mcts:500, greedy:silnik).", ["--game", "connectfour", "--bots", "random", "alfa"]),
         ("Nieznany bot 'mcts:0'.", ["--game", "connectfour", "--bots", "random", "mcts:0"]),
         ("Nieznany bot 'mcts:-5'.", ["--game", "connectfour", "--bots", "random", "mcts:-5"]),
         ("Nieznany bot 'mcts:abc'.", ["--game", "connectfour", "--bots", "random", "mcts:abc"]),
         ("Nieznany bot 'random:5'.", ["--game", "connectfour", "--bots", "random", "random:5"]),
-        ("Nieznany profil '5'. Dostepne: patroni, punkty, silnik, wyrownany, zetony.", ["--game", "klejnoty", "--bots", "random", "greedy:5"]),
-        ("ConnectFour nie ma wariantow zasad.", ["--game", "connectfour", "--bots", "random", "random", "--variant", "win=3"]),
+        ("Nieznany profil '5'. Dostępne: patroni, punkty, silnik, wyrownany, zetony.", ["--game", "klejnoty", "--bots", "random", "greedy:5"]),
+        ("ConnectFour nie ma wariantów zasad.", ["--game", "connectfour", "--bots", "random", "random", "--variant", "win=3"]),
         ("Nieznana zmiana 'szybko=1'.", ["--game", "klejnoty", "--bots", "random", "random", "--variant", "szybko=1"]),
         ("Zmiana 'card99.points=1': numer 99 poza zakresem 0-89.", ["--game", "klejnoty", "--bots", "random", "random", "--variant", "card99.points=1"]),
         ("--html: katalog", ["--game", "connectfour", "--bots", "random", "random", "--html", Path.Combine("nie-ma-takiego-katalogu", "r.html")]),

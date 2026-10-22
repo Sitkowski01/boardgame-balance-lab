@@ -6,7 +6,7 @@ public sealed partial record KlejnotyVariant
 {
     /// <summary>Skladnia wariantu dla pomocy w CLI.</summary>
     public const string Syntax =
-        "zmiany po srednikach: win=N; cardID.cost=W,U,G,R,K; cardID.points=N; patronID.need=W,U,G,R,K; patronID.points=N";
+        "zmiany po średnikach: win=N; cardID.cost=W,U,G,R,K; cardID.points=N; patronID.need=W,U,G,R,K; patronID.points=N";
 
     /// <summary>
     /// Wariant z tekstu, np. <c>"card17.points=2; win=13"</c>: zmiany nakladane po kolei na
@@ -103,7 +103,7 @@ public sealed partial record KlejnotyVariant
             ? n
             : throw new FormatException($"Zmiana '{change}': '{text}' to nie liczba 0-255.");
 
-    private static FormatException Unknown(string change) => new($"Nieznana zmiana '{change}'. Skladnia: {Syntax}.");
+    private static FormatException Unknown(string change) => new($"Nieznana zmiana '{change}'. Składnia: {Syntax}.");
 
     // .NET dopisuje do ArgumentException nazwe parametru w nowej linii; uzytkownikowi wystarczy pierwsza.
     private static string FirstLine(string message) => message.ReplaceLineEndings("\n").Split('\n')[0].Split(" (Parameter")[0];

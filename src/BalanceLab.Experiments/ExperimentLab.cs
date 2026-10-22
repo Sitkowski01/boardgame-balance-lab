@@ -48,12 +48,12 @@ public sealed class ExperimentLab
         {
             if (_jobs.Values.Count(j => !j.Finished) >= options.MaxQueued)
             {
-                throw new LabBusyException($"W kolejce jest juz {options.MaxQueued} eksperymentow - sprobuj, gdy ktorys sie skonczy.");
+                throw new LabBusyException($"W kolejce jest już {options.MaxQueued} eksperymentów - spróbuj, gdy któryś się skończy.");
             }
 
             if (owner is not null && _jobs.Values.Count(j => !j.Finished && j.Owner == owner) >= options.MaxQueuedPerOwner)
             {
-                throw new LabBusyException($"Masz juz {options.MaxQueuedPerOwner} eksperymenty w kolejce - poczekaj na wynik.");
+                throw new LabBusyException($"Masz już {options.MaxQueuedPerOwner} eksperymenty w kolejce - poczekaj na wynik.");
             }
 
             var job = new Job(Guid.NewGuid(), request, prepared, clock.GetUtcNow()) { Owner = owner };
@@ -98,7 +98,7 @@ public sealed class ExperimentLab
 
             if (job.Owner is not null && job.Owner != owner)
             {
-                throw new NotYourExperimentException("Ten eksperyment zamowil ktos inny - anulowac moze tylko on.");
+                throw new NotYourExperimentException("Ten eksperyment zamówił ktoś inny - anulować może tylko on.");
             }
 
             if (job.Status == ExperimentStatus.Queued)
@@ -159,7 +159,7 @@ public sealed class ExperimentLab
         catch (OperationCanceledException) when (linked.IsCancellationRequested)
         {
             outcome = timeout.IsCancellationRequested && !job.Cancellation.IsCancellationRequested && !stoppingToken.IsCancellationRequested
-                ? (ExperimentStatus.Failed, null, $"Eksperyment liczyl sie dluzej niz {options.MaxDuration.TotalMinutes:0.#} min i zostal przerwany - zamow mniej partii albo slabsze boty.")
+                ? (ExperimentStatus.Failed, null, $"Eksperyment liczył się dłużej niż {options.MaxDuration.TotalMinutes:0.#} min i został przerwany - zamów mniej partii albo słabsze boty.")
                 : (ExperimentStatus.Cancelled, null, null);
         }
         catch (Exception ex)

@@ -22,7 +22,7 @@ public sealed class CatalogTests
     {
         var ex = Assert.Throws<FormatException>(() => GameCatalog.Find("szachy"));
 
-        Assert.Equal("Nieznana gra 'szachy'. Dostepne: connectfour, klejnoty, mozaika.", ex.Message);
+        Assert.Equal("Nieznana gra 'szachy'. Dostępne: connectfour, klejnoty, mozaika.", ex.Message);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public sealed class CatalogTests
         Assert.Equal(5, Assert.IsType<MozaikaSheet>(mozaika.Sheet("column=5")).ColumnBonus);
         Assert.IsType<GreedyBot<MozaikaState, MozaikaMove>>(mozaika.Bot("greedy:ostrozny", "g").Create(1));
         Assert.IsType<IsmctsBot<MozaikaState, MozaikaMove>>(mozaika.Bot("ismcts:5", "i").Create(1));
-        Assert.Contains("Dostepne: kolory, kolumny, ostrozny, wyrownany", Assert.Throws<FormatException>(() => mozaika.Bot("greedy:silnik", "g")).Message, StringComparison.Ordinal);
+        Assert.Contains("Dostępne: kolory, kolumny, ostrozny, wyrownany", Assert.Throws<FormatException>(() => mozaika.Bot("greedy:silnik", "g")).Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed class CatalogTests
 
         var ex = Assert.Throws<FormatException>(() => connectFour.Rules("win=9"));
 
-        Assert.Equal("ConnectFour nie ma wariantow zasad.", ex.Message);
+        Assert.Equal("ConnectFour nie ma wariantów zasad.", ex.Message);
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public sealed class CatalogTests
 
         Assert.Contains("potrzebuje oceny pozycji", Assert.Throws<FormatException>(() => connectFour.Bot("greedy", "g")).Message, StringComparison.Ordinal);
         Assert.Contains("Nieznany profil 'xyz'", Assert.Throws<FormatException>(() => Klejnoty().Bot("greedy:xyz", "g")).Message, StringComparison.Ordinal);
-        Assert.Equal("Bot 'ismcts:101': najwyzej 100 iteracji.", Assert.Throws<FormatException>(() => Klejnoty().Bot("ismcts:101", "m", 100)).Message);
-        Assert.Equal("Bot 'mcts': najwyzej 999 iteracji (bez liczby po dwukropku liczy 1000).", Assert.Throws<FormatException>(() => Klejnoty().Bot("mcts", "m", 999)).Message);
+        Assert.Equal("Bot 'ismcts:101': najwyżej 100 iteracji.", Assert.Throws<FormatException>(() => Klejnoty().Bot("ismcts:101", "m", 100)).Message);
+        Assert.Equal("Bot 'mcts': najwyżej 999 iteracji (bez liczby po dwukropku liczy 1000).", Assert.Throws<FormatException>(() => Klejnoty().Bot("mcts", "m", 999)).Message);
         Assert.Equal("m", Klejnoty().Bot("ismcts:100", "m", 100).Name);
         Assert.Equal("m", Klejnoty().Bot("mcts", "m", 1000).Name);
         Assert.Contains("Nieznany bot 'mcts:0'", Assert.Throws<FormatException>(() => Klejnoty().Bot("mcts:0", "m")).Message, StringComparison.Ordinal);

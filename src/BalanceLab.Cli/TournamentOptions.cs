@@ -39,7 +39,7 @@ internal sealed class TournamentOptions
     /// <summary>Opcja --variant; osobno, bo w compare jest wymagana, a w pozostalych nie.</summary>
     public static Option<string?> Variant() => new("--variant")
     {
-        Description = "Wariant zasad (tylko gry, ktore je maja). Klejnoty: " + KlejnotyVariant.Syntax + ". Mozaika: " + MozaikaVariant.Syntax + ".",
+        Description = "Wariant zasad (tylko gry, które je mają). Klejnoty: " + KlejnotyVariant.Syntax + ". Mozaika: " + MozaikaVariant.Syntax + ".",
     };
 
     public void AddTo(Command command)
