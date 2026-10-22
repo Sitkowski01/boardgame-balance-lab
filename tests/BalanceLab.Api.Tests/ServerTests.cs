@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using BalanceLab.Multiplayer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,53 @@ public sealed class ServerTests(ApiFixture api)
         }
 
         Assert.Equal([HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.OK, HttpStatusCode.TooManyRequests], codes);
+    }
+
+    [Fact]
+    public async Task Hub_calls_have_their_own_limit_per_client()
+    {
+        await using var limited = api.Factory.WithWebHostBuilder(web => web.UseSetting("RateLimit:HubCallsPerMinute", "2"));
+        await using var browser = await ApiFixture.ConnectAsync(limited);
+
+        await browser.Hub.InvokeAsync<List<RoomInfo>>("WatchLobby");
+        await browser.Hub.InvokeAsync<List<RoomInfo>>("WatchLobby");
+        var ex = await Assert.ThrowsAsync<HubException>(() => browser.Hub.InvokeAsync<List<RoomInfo>>("WatchLobby"));
+
+        Assert.Contains("Za duzo prosb naraz - zwolnij na chwile.", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null, "local")]
+    [InlineData("203.0.113.7", "203.0.113.7")]
+    [InlineData("::ffff:203.0.113.7", "203.0.113.7")]
+    [InlineData("2001:db8:1:2:aaaa:bbbb:cccc:dddd", "2001:db8:1:2::/64")]
+    [InlineData("2001:db8:1:2::1", "2001:db8:1:2::/64")]
+    public void Clients_are_told_apart_by_address_and_ipv6_by_its_network(string? address, string key) =>
+        Assert.Equal(key, ClientKey.Of(address is null ? null : IPAddress.Parse(address)));
+
+    [Fact]
+    public async Task Client_address_comes_from_a_known_proxy_header_and_from_nobody_else()
+    {
+        await using var proxied = api.Factory.WithWebHostBuilder(web => web
+            .UseSetting("ForwardedHeaders:KnownProxies:0", "10.0.0.5")
+            .UseSetting("RateLimit:PerMinute", "1"));
+        async Task<int> Health(string from, string forwardedFor)
+        {
+            var context = await proxied.Server.SendAsync(c =>
+            {
+                c.Request.Method = "GET";
+                c.Request.Path = "/health";
+                c.Connection.RemoteIpAddress = IPAddress.Parse(from);
+                c.Request.Headers["X-Forwarded-For"] = forwardedFor;
+            });
+            return context.Response.StatusCode;
+        }
+
+        // Przez proxy: kazdy klient z naglowka ma wlasny limit. Wprost: naglowek nic nie zmienia, liczy sie polaczenie.
+        int[] viaProxy = [await Health("10.0.0.5", "203.0.113.1"), await Health("10.0.0.5", "203.0.113.2"), await Health("10.0.0.5", "203.0.113.1")];
+        int[] direct = [await Health("10.0.0.9", "203.0.113.3"), await Health("10.0.0.9", "203.0.113.4")];
+        Assert.Equal([200, 200, 429], viaProxy);
+        Assert.Equal([200, 429], direct);
     }
 
     [Fact]

@@ -1,9 +1,11 @@
+using System.Net;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using BalanceLab.Api;
 using BalanceLab.Experiments;
 using BalanceLab.Multiplayer;
 using BalanceLab.Persistence;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.FileProviders;
 
@@ -34,7 +36,15 @@ builder.Services.AddHostedService<ExperimentWorker>();
 
 // Wyliczenia jako tekst ("Playing"), takze w SignalR: klient nie musi znac kolejnosci w C#.
 builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-builder.Services.AddSignalR(o => o.AddFilter<RoomErrorFilter>())
+// Limit wywolan huba na klienta, przed zamiana bledow pokoju: odmowa to zwykly HubException.
+var hubCalls = builder.Configuration.GetValue("RateLimit:HubCallsPerMinute", 300);
+builder.Services.AddSingleton(PartitionedRateLimiter.Create<string, string>(key => RateLimitPartition.GetFixedWindowLimiter(
+    key, _ => new FixedWindowRateLimiterOptions { PermitLimit = hubCalls, Window = TimeSpan.FromMinutes(1) })));
+builder.Services.AddSignalR(o =>
+    {
+        o.AddFilter<HubCallLimiter>();
+        o.AddFilter<RoomErrorFilter>();
+    })
     .AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
 
@@ -44,11 +54,28 @@ builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => RateLimitPartition.GetFixedWindowLimiter(
-        context.Connection.RemoteIpAddress?.ToString() ?? "local",
+        ClientKey.Of(context),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1) }));
 });
 
+// Za odwrotnym proxy (nginx, Caddy) adres klienta jest w X-Forwarded-For; ufamy mu tylko od znanych proxy —
+// inaczej kazdy moglby podac dowolny adres i obejsc limity. Bez konfiguracji: adres polaczenia.
+var proxies = builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [];
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    foreach (var proxy in proxies)
+    {
+        o.KnownProxies.Add(IPAddress.Parse(proxy));
+    }
+});
+
 var app = builder.Build();
+
+if (proxies.Length > 0)
+{
+    app.UseForwardedHeaders();
+}
 
 if (app.Configuration.GetValue("Journal:Migrate", true))
 {
