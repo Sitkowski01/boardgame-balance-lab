@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import type { MovePlayed, RoomInfo, SeatTicket, TableView } from "./schemas";
 
 /** Nowy pokoj: jak CreateRoomArgs na serwerze. */
@@ -20,6 +21,28 @@ export interface GameEvents {
   reconnected: () => void;
   /** Polaczenie zamkniete na dobre. */
   closed: () => void;
+  /** Wiadomosc serwera nie przeszla schematu (np. inna wersja serwera): komunikat dla gracza. */
+  invalid: (problem: string) => void;
+}
+
+/**
+ * Odbior wiadomosci z serwera: dane przechodza przez schemat, a niezgodne trafiaja do `invalid` z komunikatem,
+ * zamiast rzucac wyjatek w srodku klienta SignalR — tam nikt by go nie zobaczyl, a stol stalby bez zmian.
+ */
+export function receive<T>(
+  name: string,
+  schema: z.ZodType<T>,
+  handler: ((value: T) => void) | undefined,
+  invalid: ((problem: string) => void) | undefined,
+): (data: unknown) => void {
+  return (data) => {
+    const parsed = schema.safeParse(data);
+    if (parsed.success) {
+      handler?.(parsed.data);
+    } else {
+      invalid?.(`Serwer przysłał wiadomość ${name}, której ta strona nie rozumie. Odśwież stronę.`);
+    }
+  };
 }
 
 /**

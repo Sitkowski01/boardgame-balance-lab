@@ -17,5 +17,6 @@ export function guarded(current: () => boolean, events: GameEvents): GameEvents 
     reconnecting: only(events.reconnecting),
     reconnected: only(events.reconnected),
     closed: only(events.closed),
+    invalid: only(events.invalid),
   };
 }

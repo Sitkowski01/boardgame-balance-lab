@@ -93,6 +93,9 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
           closed: () => {
             setLink("closed");
           },
+          invalid: (problem) => {
+            setError(problem);
+          },
         }),
       );
       if (!current()) {

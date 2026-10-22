@@ -34,6 +34,7 @@ export function fakeConnect(setup: (server: FakeLink["server"]) => void = () => 
       reconnecting: () => events.reconnecting?.(),
       reconnected: () => events.reconnected?.(),
       closed: () => events.closed?.(),
+      invalid: (problem) => events.invalid?.(problem),
     };
     links.push({ server, emit });
     return Promise.resolve(server);

@@ -1,6 +1,6 @@
 import { HttpTransportType, HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import { z } from "zod";
-import type { Connect, GameEvents, GameServer } from "./connection";
+import { receive, type Connect, type GameEvents, type GameServer } from "./connection";
 import { movePlayed, roomInfo, seatTicket, tableView } from "./schemas";
 
 /**
@@ -14,10 +14,10 @@ export const connectHub: Connect = async (events: Partial<GameEvents>, url = "/h
     .configureLogging(LogLevel.Warning)
     .build();
 
-  hub.on("Room", (data: unknown) => events.room?.(roomInfo.parse(data)));
-  hub.on("View", (data: unknown) => events.view?.(tableView.parse(data)));
-  hub.on("Move", (data: unknown) => events.move?.(movePlayed.parse(data)));
-  hub.on("Lobby", (data: unknown) => events.lobby?.(roomInfo.parse(data)));
+  hub.on("Room", receive("Room", roomInfo, events.room, events.invalid));
+  hub.on("View", receive("View", tableView, events.view, events.invalid));
+  hub.on("Move", receive("Move", movePlayed, events.move, events.invalid));
+  hub.on("Lobby", receive("Lobby", roomInfo, events.lobby, events.invalid));
   hub.onreconnecting(() => events.reconnecting?.());
   hub.onreconnected(() => events.reconnected?.());
   hub.onclose(() => events.closed?.());
