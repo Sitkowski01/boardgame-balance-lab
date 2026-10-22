@@ -30,6 +30,7 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
     private readonly Seat[] _seats;
     private readonly DateTimeOffset _createdAt;
     private readonly RoomQueue _queue;
+    private readonly SemaphoreSlim _searches;
 
     private RoomStatus _status = RoomStatus.Waiting;
     private int _host = -1;
@@ -54,10 +55,11 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
         IRoomNotifier notifier,
         IMatchRecorder<TMove> recorder,
         TimeProvider clock,
-        ILogger logger)
+        ILogger logger,
+        SemaphoreSlim searches)
     {
-        (Id, _definition, _rules, _variant, _seed, _options, _notifier, _recorder, _clock, _logger) =
-            (id, definition, rules, variant, seed, options, notifier, recorder, clock, logger);
+        (Id, _definition, _rules, _variant, _seed, _options, _notifier, _recorder, _clock, _logger, _searches) =
+            (id, definition, rules, variant, seed, options, notifier, recorder, clock, logger, searches);
         // Boty z ustawien sprawdzone od razu: zly opis to blad konfiguracji, a nie partia, ktora stanie w polowie.
         _fill = definition.Bot(options.FillBot, options.FillBot);
         _autopilot = definition.Bot(options.AutopilotBot, options.AutopilotBot);

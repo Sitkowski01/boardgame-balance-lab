@@ -31,13 +31,25 @@ internal sealed partial class Room<TState, TMove, TGame>
         var player = _seats[seat].Bot!.Create(Tournament.SeedFor(_seed, number, seat + 1));
         var view = _rules.Determinize(_state, seat, Match.ViewSeed(_seed, number));
         // Przerwa liczy sie od teraz, a nie od chwili, gdy watek puli zacznie prace (zerowa konczy sie od razu).
-        var wait = Task.Delay(delay, _clock, _queue.Closing);
+        // Token brany tu, w kolejce: po zamknieciu pokoju jego zrodlo jest juz zwolnione.
+        var closing = _queue.Closing;
+        var wait = Task.Delay(delay, _clock, closing);
         _ = Task.Run(async () =>
         {
             try
             {
                 await wait;
-                var move = player.ChooseMove(_rules, view);
+                TMove move;
+                await _searches.WaitAsync(closing);
+                try
+                {
+                    move = player.ChooseMove(_rules, view);
+                }
+                finally
+                {
+                    _searches.Release();
+                }
+
                 _queue.Fire(() => BotMoveAsync(seat, number, plan, move));
             }
             catch (OperationCanceledException)

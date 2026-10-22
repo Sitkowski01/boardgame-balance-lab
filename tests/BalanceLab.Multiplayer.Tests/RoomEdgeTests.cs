@@ -158,6 +158,6 @@ public sealed class RoomEdgeTests
         var recorder = table.Recorders.Create<CountdownState, Take>("odliczanie", _ => new StoredGame<CountdownState, Take>(game, game, game));
         return new Room<CountdownState, Take, CountdownGame>(
             Guid.NewGuid(), new GameDefinition<CountdownState, Take, CountdownGame>("odliczanie", game), game, null, 2, 1,
-            table.Options, table.Notifier, recorder, table.Clock, table.Logs);
+            table.Options, table.Notifier, recorder, table.Clock, table.Logs, new SemaphoreSlim(1));
     }
 }

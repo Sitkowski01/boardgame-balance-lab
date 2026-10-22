@@ -23,6 +23,9 @@ public sealed class Lobby : IAsyncDisposable
     private readonly ILoggerFactory _logs;
     private readonly Func<ulong> _seeds;
 
+    /// <summary>Wspolny dla wszystkich pokoi limit botow liczacych naraz (<see cref="RoomOptions.MaxBotSearches"/>).</summary>
+    private readonly SemaphoreSlim _searches;
+
     /// <param name="seeds">Ziarno nowej partii; domyslnie losowe (testy podaja stale).</param>
     public Lobby(
         IRoomNotifier notifier,
@@ -37,6 +40,7 @@ public sealed class Lobby : IAsyncDisposable
         (_notifier, _recorders, _options, _clock, _logs) =
             (notifier, recorders, options ?? new RoomOptions(), clock ?? TimeProvider.System, logs ?? NullLoggerFactory.Instance);
         _seeds = seeds ?? (() => BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong))));
+        _searches = new SemaphoreSlim(_options.MaxBotSearches, _options.MaxBotSearches);
     }
 
     /// <summary>Pokoje od najstarszego.</summary>
@@ -151,7 +155,7 @@ public sealed class Lobby : IAsyncDisposable
             });
             return new Room<TState, TMove, TGame>(
                 id, definition, rules, request.Variant, request.Seats, seed, lobby._options, lobby._notifier, recorder, lobby._clock,
-                lobby._logs.CreateLogger("BalanceLab.Multiplayer.Room"));
+                lobby._logs.CreateLogger("BalanceLab.Multiplayer.Room"), lobby._searches);
         }
     }
 }

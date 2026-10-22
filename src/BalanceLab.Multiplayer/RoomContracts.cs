@@ -98,6 +98,12 @@ public sealed record RoomOptions
     /// <summary>Najwiecej iteracji MCTS/ISMCTS dla bota z lobby: bot liczy na serwerze.</summary>
     public int MaxBotIterations { get; init; } = 5_000;
 
+    /// <summary>
+    /// Najwiecej botow liczacych naraz na calym serwerze. Liczenie zajmuje watek puli, z ktorej korzysta tez
+    /// Kestrel i SignalR — bez limitu sto pokoi z MCTS zaglodziloby obsluge zadan.
+    /// </summary>
+    public int MaxBotSearches { get; init; } = Math.Max(1, Environment.ProcessorCount - 1);
+
     /// <summary>Tyle czeka pokoj na zapis w dzienniku; wolna baza nie moze zatrzymac kolejki pokoju na dlugo.</summary>
     public TimeSpan RecordTimeout { get; init; } = TimeSpan.FromSeconds(10);
 
