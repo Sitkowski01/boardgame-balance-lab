@@ -147,12 +147,34 @@ public sealed class SimulateCommandTests : IDisposable
     [Fact]
     public void Failure_after_the_simulation_gives_exit_code_1()
     {
-        // Sciezka to istniejacy katalog: walidacja przepuszcza (katalog nadrzedny istnieje), zapis pliku sie nie udaje.
-        var (code, _, error) = Run("simulate", "--game", "connectfour", "--bots", "random", "random", "--games", "2", "--out", _dir.FullName);
+        // Plik tylko do odczytu: walidacja go przepuszcza (sciezka jest dobra), a zapis sie nie udaje.
+        var locked = Path.Combine(_dir.FullName, "zablokowany.json");
+        File.WriteAllText(locked, "");
+        File.SetAttributes(locked, FileAttributes.ReadOnly);
+        try
+        {
+            var (code, _, error) = Run("simulate", "--game", "connectfour", "--bots", "random", "random", "--games", "2", "--out", locked);
 
-        Assert.Equal(Cli.RuntimeError, code);
-        Assert.NotEqual("", error.Trim());
-        Assert.DoesNotContain("   at ", error, StringComparison.Ordinal);
+            Assert.Equal(Cli.RuntimeError, code);
+            Assert.NotEqual("", error.Trim());
+            Assert.DoesNotContain("   at ", error, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.SetAttributes(locked, FileAttributes.Normal);
+        }
+    }
+
+    [Theory]
+    [InlineData("--out")]
+    [InlineData("--html")]
+    [InlineData("--games-out")]
+    public void Existing_directory_in_place_of_an_output_file_is_refused_before_the_run(string option)
+    {
+        var (code, _, error) = Run("simulate", "--game", "connectfour", "--bots", "random", "random", option, _dir.FullName);
+
+        Assert.Equal(2, code);
+        Assert.StartsWith($"{option}: {_dir.FullName} to katalog, a potrzebny jest plik.", error, StringComparison.Ordinal);
     }
 
     [Fact]

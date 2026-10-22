@@ -111,6 +111,11 @@ internal sealed class TournamentOptions
         {
             addError($"{option}: katalog {directory.FullName} nie istnieje.");
         }
+        else if (file is not null && Directory.Exists(file.FullName))
+        {
+            // Inaczej turniej policzylby sie caly i dopiero zapis skonczylby sie "Access denied".
+            addError($"{option}: {file.FullName} to katalog, a potrzebny jest plik.");
+        }
     }
 
     /// <summary>Komunikat bez technicznych dopiskow .NET typu "(Parameter 'spec')" i "Actual value was 0.".</summary>

@@ -123,13 +123,33 @@ public sealed class BalanceCommandsTests : IDisposable
     }
 
     [Fact]
-    public void Writing_the_html_into_a_directory_fails_after_the_league()
+    public void Html_into_a_directory_is_refused_before_the_league()
     {
         var (code, output, error) = Run("league", "--game", "connectfour", "--bots", "random", "random", "--games", "2", "--html", _dir.FullName);
 
-        Assert.Equal(Cli.RuntimeError, code);
-        Assert.Contains("liga", output, StringComparison.Ordinal);
-        Assert.NotEqual("", error.Trim());
+        Assert.Equal(2, code);
+        Assert.DoesNotContain("liga", output, StringComparison.Ordinal);
+        Assert.Contains("to katalog, a potrzebny jest plik", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Failed_write_of_the_html_fails_after_the_league()
+    {
+        var locked = File("zablokowany.html");
+        System.IO.File.WriteAllText(locked, "");
+        System.IO.File.SetAttributes(locked, FileAttributes.ReadOnly);
+        try
+        {
+            var (code, output, error) = Run("league", "--game", "connectfour", "--bots", "random", "random", "--games", "2", "--html", locked);
+
+            Assert.Equal(Cli.RuntimeError, code);
+            Assert.Contains("liga", output, StringComparison.Ordinal);
+            Assert.NotEqual("", error.Trim());
+        }
+        finally
+        {
+            System.IO.File.SetAttributes(locked, FileAttributes.Normal);
+        }
     }
 
     private string File(string name) => Path.Combine(_dir.FullName, name);
