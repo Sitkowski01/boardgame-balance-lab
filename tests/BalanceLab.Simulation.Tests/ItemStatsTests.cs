@@ -41,6 +41,36 @@ public sealed class ItemStatsTests
     }
 
     [Fact]
+    public void Item_is_judged_against_the_rest_of_its_group()
+    {
+        // Miecz: 600/1000 (dolna granica ~56,9%), tarcza: 500/1000. Cala grupa ma 55% i prog 58% — miecz
+        // podnosilby wlasna poprzeczke. Reszta grupy (sama tarcza) ma 50%, wiec miecz jest mocny.
+        GameRecord[] games =
+        [
+            .. Enumerable.Repeat(Game([1.0, 0.0], [0, 1], []), 300),
+            .. Enumerable.Repeat(Game([0.0, 1.0], [0, 1], []), 200),
+            .. Enumerable.Repeat(Game([1.0, 0.0], [0], [1]), 300),
+            .. Enumerable.Repeat(Game([0.0, 1.0], [0], [1]), 200),
+        ];
+        ItemInfo[] names = [new("miecz", "bron"), new("tarcza", "bron")];
+
+        var report = Statistics.Summarize("x", new TournamentSpec(1_000, 1), ["a", "b"], games, names);
+
+        Assert.Equal(Proportion.Of(1_100, 2_000), report.ItemGroups[0].OwnerWins);
+        Assert.Equal([ItemVerdict.Strong, ItemVerdict.Weak], report.Items.Select(i => i.Verdict));
+    }
+
+    [Fact]
+    public void Lone_item_of_a_group_is_never_out_of_line()
+    {
+        GameRecord[] games = [.. Enumerable.Repeat(Game([1.0, 0.0], [0], []), 50)];
+
+        var report = Statistics.Summarize("x", new TournamentSpec(50, 1), ["a", "b"], games, [new("miecz", "bron")]);
+
+        Assert.Equal(ItemVerdict.None, report.Items[0].Verdict);
+    }
+
+    [Fact]
     public void Without_item_names_there_are_no_item_stats()
     {
         var report = Statistics.Summarize("x", new TournamentSpec(1, 1), ["a", "b"], [Game([1.0, 0.0], [0], [])]);

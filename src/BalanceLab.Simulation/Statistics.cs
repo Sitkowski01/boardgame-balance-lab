@@ -66,13 +66,22 @@ internal static class Statistics
 
         var stats = items.Select((info, item) =>
             new ItemStats(item, info.Name, info.Group, Proportion.Of(games[item], completed.Length), Proportion.Of(ownerWins[item], owned[item])));
-        // Grupa w kolejnosci pierwszego wystapienia; jej odsetek liczony po wszystkich posiadaniach jej elementow,
-        // lacznie z ocenianym — mocna karta lekko podnosi wlasna poprzeczke (przy ~30 kartach w grupie niewiele).
+        // Grupa w kolejnosci pierwszego wystapienia; jej odsetek liczony po wszystkich posiadaniach jej elementow.
         var groups = Enumerable.Range(0, items.Count).GroupBy(item => items[item].Group).Select(group =>
             new GroupStats(group.Key, Proportion.Of(group.Sum(item => ownerWins[item]), group.Sum(item => owned[item]))));
         GroupStats[] all = [.. groups];
-        return ([.. stats.Select(s => s with { Verdict = ItemVerdicts.Of(s, all.First(g => g.Group == s.Group).OwnerWins) })], [.. all]);
+        return ([.. stats.Select(s => s with { Verdict = ItemVerdicts.Of(s, Rest(all.First(g => g.Group == s.Group).OwnerWins, s.OwnerWins)) })], [.. all]);
     }
+
+    /// <summary>
+    /// Poprzeczka elementu to jego grupa bez niego samego: w Mozaice grupa ma 5 pol, wiec pole liczone
+    /// do wlasnej sredniej podnosiloby ja o 1/5 swojej przewagi i chowalo mocne pola.
+    /// </summary>
+    private static Proportion Rest(Proportion group, Proportion item) =>
+        group.Trials > item.Trials
+            ? Proportion.Of(group.Successes - item.Successes, group.Trials - item.Trials)
+            : group; // jedyny element grupy: nie ma z czym porownac, a z soba samym nie odstaje
+
 
     private static LengthStats? Lengths(GameRecord[] completed)
     {
