@@ -65,6 +65,54 @@ public sealed class JournalWriteTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Journal_tells_whether_exactly_this_move_was_written_last()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        var id = await journal.StartAsync(new GameSetup(2, 1), ["a", "b"]);
+        await journal.AppendAsync(id, 0, new ConnectFourMove(3));
+        await journal.AppendAsync(id, 1, new ConnectFourMove(4));
+
+        Assert.True(await journal.ContainsAsync(id, 1, new ConnectFourMove(4)));
+        Assert.False(await journal.ContainsAsync(id, 1, new ConnectFourMove(5))); // inny ruch na tym miejscu
+        Assert.False(await journal.ContainsAsync(id, 1, new ConnectFourMove(3))); // jest w partii, ale wczesniej
+        Assert.False(await journal.ContainsAsync(id, 0, new ConnectFourMove(3))); // nie ostatni
+        Assert.False(await journal.ContainsAsync(id, 2, new ConnectFourMove(4))); // jeszcze go nie ma
+    }
+
+    [Fact]
+    public async Task Abandoning_closes_a_running_match_once_and_keeps_its_moves()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        var id = await journal.StartAsync(new GameSetup(2, 1), ["a", "b"]);
+        await journal.AppendAsync(id, 0, new ConnectFourMove(3));
+
+        await journal.AbandonAsync(id);
+        await journal.AbandonAsync(id); // drugi raz nic nie zmienia (zamknietego naglowka nie wolno ruszac)
+
+        var log = await journal.LoadAsync(id);
+        Assert.Equal((MatchStatus.Abandoned, 1), (log.Match.Status, log.Match.Moves));
+        Assert.Equal(log.Hashes[^1], log.Match.FinalHash);
+        Assert.Empty(log.Match.Scores);
+        Assert.True((await journal.VerifyAsync(id)).Ok);
+        await Assert.ThrowsAsync<JournalConflictException>(() => journal.AppendAsync(id, 1, new ConnectFourMove(3)));
+    }
+
+    [Fact]
+    public async Task Abandoning_a_finished_match_changes_nothing()
+    {
+        await using var db = await postgres.CreateDatabaseAsync();
+        var journal = db.ConnectFourJournal();
+        ConnectFourMove[] win = [new(0), new(1), new(0), new(1), new(0), new(1), new(0)];
+        var id = await journal.RecordAsync(new GameSetup(2, 1), ["a", "b"], win);
+
+        await journal.AbandonAsync(id);
+
+        Assert.Equal(MatchStatus.Finished, (await journal.LoadAsync(id)).Match.Status);
+    }
+
+    [Fact]
     public async Task Append_with_a_stale_move_count_is_a_conflict_and_writes_nothing()
     {
         await using var db = await postgres.CreateDatabaseAsync();

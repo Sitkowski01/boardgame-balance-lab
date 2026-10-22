@@ -99,6 +99,37 @@ public sealed partial class MatchJournal<TState, TMove>
         return new AppendResult(row.Moves, rules.Game.Hash(state), row.Status == MatchStatus.Finished);
     }
 
+    /// <summary>
+    /// Czy ruch nr <paramref name="expectedMoves"/> + 1 jest w dzienniku i to wlasnie <paramref name="move"/>. Gdy
+    /// zapis zglosil blad (np. zerwane polaczenie po zatwierdzeniu), tak sie sprawdza, czy ruch jednak wszedl.
+    /// </summary>
+    public async Task<bool> ContainsAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        var row = await FindAsync(db.Matches.AsNoTracking(), match, cancellationToken);
+        var encoded = _rules(row.Variant).Moves.EncodeMove(move);
+        return row.Moves == expectedMoves + 1
+            && await db.Moves.AnyAsync(m => m.MatchId == match && m.Seq == row.Moves && m.Move == encoded, cancellationToken);
+    }
+
+    /// <summary>
+    /// Zamyka trwajaca partie jako <see cref="MatchStatus.Abandoned"/> (pokoj ja porzucil albo zniknal). Partia juz
+    /// zamknieta zostaje bez zmian, wiec mozna wolac wiele razy.
+    /// </summary>
+    public async Task AbandonAsync(Guid match, CancellationToken cancellationToken = default)
+    {
+        await using var db = _db.CreateContext();
+        var row = await FindAsync(db.Matches, match, cancellationToken);
+        if (row.Status != MatchStatus.InProgress)
+        {
+            return;
+        }
+
+        var rules = _rules(row.Variant);
+        Close(row, rules, await StateAtAsync(db, row, rules, row.Moves, cancellationToken), abandoned: true);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     private (MatchRow Row, StoredGame<TState, TMove> Rules, TState Start) NewMatch(GameSetup setup, IReadOnlyList<string> players, string? variant)
     {
         ArgumentNullException.ThrowIfNull(players);
