@@ -115,6 +115,9 @@ public sealed record RoomOptions
 
     public int MaxRooms { get; init; } = 100;
 
+    /// <summary>Najwiecej niezakonczonych pokoi zalozonych z jednego adresu: jeden klient nie zajmie calego lobby.</summary>
+    public int MaxRoomsPerOwner { get; init; } = 3;
+
     /// <summary>Tyle skonczony pokoj zostaje w lobby (wyniki, rewanz), zanim zniknie.</summary>
     public TimeSpan KeepFinished { get; init; } = TimeSpan.FromMinutes(10);
 

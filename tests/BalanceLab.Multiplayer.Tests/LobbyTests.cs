@@ -90,6 +90,43 @@ public sealed class LobbyTests
     }
 
     [Fact]
+    public async Task One_owner_cannot_hold_more_than_a_few_open_rooms()
+    {
+        await using var table = new Table(new RoomOptions { MaxRoomsPerOwner = 2, BotDelay = TimeSpan.Zero, DisconnectGrace = TimeSpan.Zero, FillBot = "random", AutopilotBot = "random" });
+        var request = new RoomRequest("connectfour", 2);
+        var first = await table.Lobby.CreateAsync(request, "Ala", "c1", "10.0.0.1");
+        await table.Lobby.CreateAsync(request, "Ala", "c2", "10.0.0.1");
+
+        var ex = await Assert.ThrowsAsync<RoomException>(() => table.Lobby.CreateAsync(request, "Ala", "c3", "10.0.0.1"));
+
+        Assert.Equal("Masz juz 2 otwarte pokoje - dokoncz albo zamknij ktorys.", ex.Message);
+        await table.Lobby.CreateAsync(request, "Ola", "c4", "10.0.0.2");
+        await table.Lobby.CreateAsync(request, "Ola", "c5"); // bez adresu (np. testy, narzedzia) — bez limitu
+        Assert.Equal(4, table.Lobby.Rooms.Count);
+
+        // Skonczona partia nie zajmuje miejsca: gospodarz wychodzi, za niego gra bot, a pokoj czeka na rewanz.
+        var room = table.Lobby.Find(first.Room);
+        await room.StartAsync(first.Token);
+        await room.DisconnectAsync("c1");
+        await table.Notifier.RoomAsync(room.Id, r => r.Status == RoomStatus.Finished);
+        await table.Lobby.CreateAsync(request, "Ala", "c6", "10.0.0.1");
+    }
+
+    [Fact]
+    public async Task Pruning_from_a_request_removes_stale_rooms_at_once_and_closes_them_in_the_background()
+    {
+        await using var table = new Table();
+        var (room, _) = await table.CreateAsync();
+        await room.DisconnectAsync("c-ala");
+        table.Clock.Advance(table.Options.KeepIdle);
+
+        table.Lobby.Prune();
+
+        Assert.Empty(table.Lobby.Rooms);
+        await table.Notifier.WaitAsync(() => Closed(room) ? "" : null);
+    }
+
+    [Fact]
     public async Task Rooms_are_listed_oldest_first()
     {
         await using var table = new Table();
@@ -233,4 +270,7 @@ public sealed class LobbyTests
         await using var table = new Table();
         await Assert.ThrowsAsync<ArgumentNullException>(() => table.Lobby.CreateAsync(null!, "Ala", "c"));
     }
+
+    /// <summary>Zamkniety pokoj od razu odrzuca kazda prosbe (podglad niczego nie zmienia).</summary>
+    private static bool Closed(IRoom room) => room.SpectateAsync() is { IsFaulted: true } spectate && spectate.Exception!.InnerException is RoomException;
 }

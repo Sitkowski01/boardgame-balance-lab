@@ -45,6 +45,19 @@ public sealed class ServerTests(ApiFixture api)
         Assert.Contains("Za duzo prosb naraz - zwolnij na chwile.", ex.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task One_client_cannot_fill_the_lobby_with_rooms()
+    {
+        await using var limited = api.Factory.WithWebHostBuilder(web => web.UseSetting("Rooms:MaxRoomsPerOwner", "1"));
+        await using var ala = await ApiFixture.ConnectAsync(limited);
+        await using var again = await ApiFixture.ConnectAsync(limited);
+        await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
+
+        var ex = await Assert.ThrowsAsync<HubException>(() => again.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala")));
+
+        Assert.Contains("Masz juz 1 otwarte pokoje", ex.Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(null, "local")]
     [InlineData("203.0.113.7", "203.0.113.7")]

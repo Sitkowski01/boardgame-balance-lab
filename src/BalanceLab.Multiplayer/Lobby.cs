@@ -10,11 +10,13 @@ namespace BalanceLab.Multiplayer;
 
 /// <summary>
 /// Wszystkie pokoje serwera. Pokoje zyja w pamieci (partie sa w dzienniku); skonczone i opuszczone
-/// znikaja same przy kolejnym zakladaniu albo przegladaniu lobby.
+/// znikaja z listy przy kolejnym zakladaniu albo przegladaniu lobby, a zamykaja sie w tle.
 /// </summary>
 public sealed class Lobby : IAsyncDisposable
 {
     private readonly ConcurrentDictionary<Guid, IRoom> _rooms = new();
+    private readonly ConcurrentDictionary<Guid, string> _owners = new();
+    private readonly ConcurrentDictionary<Guid, Task> _closing = new();
     private readonly SemaphoreSlim _creating = new(1, 1);
     private readonly IRoomNotifier _notifier;
     private readonly IMatchRecorderFactory _recorders;
@@ -47,7 +49,8 @@ public sealed class Lobby : IAsyncDisposable
     public IReadOnlyList<RoomInfo> Rooms => [.. _rooms.Values.Select(r => r.Info).OrderBy(r => r.CreatedAt).ThenBy(r => r.Id)];
 
     /// <summary>Zaklada pokoj i sadza zakladajacego na pierwszym miejscu jako gospodarza.</summary>
-    public async Task<SeatTicket> CreateAsync(RoomRequest request, string name, string connection)
+    /// <param name="owner">Skad przyszla prosba (adres klienta) — do limitu <see cref="RoomOptions.MaxRoomsPerOwner"/>; null bez limitu.</param>
+    public async Task<SeatTicket> CreateAsync(RoomRequest request, string name, string connection, string? owner = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         // Zla nazwa wychodzi przed zalozeniem pokoju, ktory inaczej zostalby pusty.
@@ -67,14 +70,23 @@ public sealed class Lobby : IAsyncDisposable
         await _creating.WaitAsync();
         try
         {
-            await PruneAsync();
+            Prune();
             if (_rooms.Count >= _options.MaxRooms)
             {
                 throw new RoomException($"Serwer ma juz {_options.MaxRooms} pokoi - sprobuj pozniej.");
             }
 
+            if (owner is not null && OpenRoomsOf(owner) >= _options.MaxRoomsPerOwner)
+            {
+                throw new RoomException($"Masz juz {_options.MaxRoomsPerOwner} otwarte pokoje - dokoncz albo zamknij ktorys.");
+            }
+
             room = definition.Accept(new Builder(this, request, Guid.CreateVersion7(_clock.GetUtcNow()), _seeds()));
             _rooms[room.Id] = room;
+            if (owner is not null)
+            {
+                _owners[room.Id] = owner;
+            }
         }
         finally
         {
@@ -95,6 +107,33 @@ public sealed class Lobby : IAsyncDisposable
     /// </summary>
     public async Task PruneAsync()
     {
+        foreach (var room in RemoveStale())
+        {
+            await room.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Jak <see cref="PruneAsync"/>, ale bez czekania na zamkniecie pokoi (konczy ich kolejke i zapisy w dzienniku):
+    /// zakladanie pokoju i lista lobby nie moga stac za najwolniejszym zamykanym pokojem.
+    /// </summary>
+    public void Prune()
+    {
+        foreach (var room in RemoveStale())
+        {
+            var closing = room.DisposeAsync().AsTask();
+            _closing[room.Id] = closing;
+            // Dopisana po dodaniu, wiec usuwa wpis nawet wtedy, gdy pokoj zamknal sie od razu.
+            _ = closing.ContinueWith(_ => _closing.TryRemove(room.Id, out var _), TaskScheduler.Default);
+        }
+    }
+
+    private int OpenRoomsOf(string owner) =>
+        _rooms.Values.Count(r => _owners.TryGetValue(r.Id, out var o) && o == owner && r.Info.Status is RoomStatus.Waiting or RoomStatus.Playing);
+
+    private List<IRoom> RemoveStale()
+    {
+        var removed = new List<IRoom>();
         var now = _clock.GetUtcNow();
         foreach (var room in _rooms.Values)
         {
@@ -108,9 +147,12 @@ public sealed class Lobby : IAsyncDisposable
             };
             if (stale && _rooms.TryRemove(room.Id, out _))
             {
-                await room.DisposeAsync();
+                _owners.TryRemove(room.Id, out var _);
+                removed.Add(room);
             }
         }
+
+        return removed;
     }
 
     public async ValueTask DisposeAsync()
@@ -123,6 +165,8 @@ public sealed class Lobby : IAsyncDisposable
                 await room.DisposeAsync();
             }
         }
+
+        await Task.WhenAll(_closing.Values);
     }
 
     /// <summary>Tworzy pokoj z pelnymi typami gry wybranej z katalogu.</summary>

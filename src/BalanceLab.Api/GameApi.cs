@@ -18,7 +18,7 @@ internal static class GameApi
         var api = app.MapGroup("/api");
         api.MapGet("/games", Games);
         api.MapGet("/games/{key}/rules", Rules);
-        api.MapGet("/rooms", RoomsAsync);
+        api.MapGet("/rooms", Rooms);
         api.MapGet("/rooms/{id:guid}", Room);
         api.MapGet("/matches/{id:guid}", MatchAsync);
         api.MapGet("/matches/{id:guid}/frames/{moves:int}", FrameAsync);
@@ -46,9 +46,9 @@ internal static class GameApi
         }
     }
 
-    private static async Task<IReadOnlyList<RoomInfo>> RoomsAsync(Lobby lobby)
+    private static IReadOnlyList<RoomInfo> Rooms(Lobby lobby)
     {
-        await lobby.PruneAsync();
+        lobby.Prune();
         return lobby.Rooms;
     }
 

@@ -32,8 +32,16 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
     public async Task<SeatTicket> CreateRoom(CreateRoomArgs args)
     {
         EnsureUnbound();
-        var ticket = await lobby.CreateAsync(new RoomRequest(args.Game, args.Seats, args.Variant), args.Name, Context.ConnectionId);
-        await BindAsync(lobby.Find(ticket.Room), ticket);
+        var ticket = await lobby.CreateAsync(new RoomRequest(args.Game, args.Seats, args.Variant), args.Name, Context.ConnectionId, Owner());
+        var room = lobby.Find(ticket.Room);
+        await BindAsync(room, ticket);
+        // Rozlaczenie w trakcie zakladania przyszlo przed wiazaniem, wiec OnDisconnectedAsync nie znal pokoju —
+        // miejsce gospodarza zostaloby "polaczone" i pokoj czekalby godzinami.
+        if (Context.ConnectionAborted.IsCancellationRequested)
+        {
+            await room.DisconnectAsync(Context.ConnectionId);
+        }
+
         return ticket;
     }
 
@@ -75,7 +83,7 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
     public async Task<IReadOnlyList<RoomInfo>> WatchLobby()
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroups.Lobby);
-        await lobby.PruneAsync();
+        lobby.Prune();
         return lobby.Rooms;
     }
 
@@ -122,6 +130,8 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
         // Zmiana, ktora pokoj wyslal przed dolaczeniem do grupy, nie dotarla: stan idzie jeszcze raz.
         await Clients.Caller.Room(room.Info);
     }
+
+    private string? Owner() => Context.GetHttpContext() is { } http ? ClientKey.Of(http) : null;
 
     /// <summary>
     /// Wiazanie z pokojem zapisane przed wejsciem do niego: jesli klient rozlaczy sie w trakcie, OnDisconnectedAsync
