@@ -43,6 +43,10 @@ export default defineConfig({
       Rooms__FillBot: "random",
       Rooms__AutopilotBot: "random",
       RateLimit__PerMinute: "100000",
+      // Wszystkie przegladarki testu to jeden adres: limity na klienta tak jak w testach API.
+      RateLimit__HubCallsPerMinute: "100000",
+      Rooms__MaxRoomsPerOwner: "1000",
+      Experiments__MaxQueuedPerOwner: "100",
     },
   },
 });

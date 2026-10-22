@@ -22,7 +22,8 @@ docker compose up        # http://localhost:8080 — lobby, tables, replays and 
 
 One image: the ASP.NET Core server (SignalR hub + REST) also serves the built React front end, next to
 PostgreSQL for the match journal. Without Docker: `dotnet run --project src/BalanceLab.Api` with
-`BALANCE_LAB_DB` set and `Web__Root=web/dist` after `cd web && pnpm build`.
+`BALANCE_LAB_DB` set, `ASPNETCORE_URLS=http://localhost:5080` (plain `dotnet run` listens on :5000, while
+the `pnpm dev` proxy expects :5080) and `Web__Root=web/dist` after `cd web && pnpm build`.
 
 ## What is inside
 

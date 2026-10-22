@@ -298,6 +298,7 @@ Ocena elementów (`ItemVerdict`) jest liczona w symulatorze i trafia do raportu 
 tak samo.
 
 ```bash
+# serwer uruchomiony jak w „Gra na żywo” niżej (ASPNETCORE_URLS=http://localhost:5080; bez tego dotnet run słucha na :5000)
 curl -X POST localhost:5080/api/experiments -H 'Content-Type: application/json' \
   -d '{"game":"mozaika","kind":"League","bots":["greedy","greedy:kolumny","random"],"games":40,"seed":"1"}'
 curl localhost:5080/api/experiments/{id}     # status, postęp (done/total) i wynik
@@ -307,6 +308,7 @@ curl localhost:5080/api/experiments/{id}     # status, postęp (done/total) i wy
 
 ```bash
 export BALANCE_LAB_DB="Host=localhost;Username=postgres;Password=...;Database=balance_lab"
+export ASPNETCORE_URLS=http://localhost:5080   # bez tego dotnet run słucha na :5000
 dotnet run --project src/BalanceLab.Api      # migracje przy starcie, hub na /hubs/game
 ```
 
