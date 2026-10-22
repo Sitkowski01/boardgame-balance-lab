@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { parseRoute, routePath } from "./route";
+import { parseRoute, routePath, routeTitle } from "./route";
 import { roomId } from "./test/fixtures";
 
 describe("route", () => {
+  it("names every page in the browser tab", () => {
+    expect(routeTitle({ page: "lobby" })).toBe("Lobby · Balance Lab");
+    expect(routeTitle({ page: "room", id: roomId })).toBe("Stół · Balance Lab");
+    expect(routeTitle({ page: "match", id: roomId })).toBe("Powtórka · Balance Lab");
+    expect(routeTitle({ page: "lab", experiment: null })).toBe("Laboratorium · Balance Lab");
+    expect(routeTitle({ page: "missing" })).toBe("Nie ma takiej strony · Balance Lab");
+  });
+
   it("maps paths to pages and back", () => {
     expect(parseRoute("/")).toEqual({ page: "lobby" });
     expect(parseRoute("")).toEqual({ page: "lobby" });

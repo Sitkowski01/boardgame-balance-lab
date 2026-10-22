@@ -142,6 +142,10 @@ a:hover {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+/* Fokus po przejsciu na nowa strone (App) jest dla czytnika ekranu; ramka wokol calej strony tylko by przeszkadzala. */
+main[tabindex="-1"]:focus {
+  outline: none;
+}
 
 /* Rama: gorny pasek z nawigacja i stopka. */
 .topbar {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Connect } from "./api/connection";
 import { api } from "./api/rest";
 import type { LabClient } from "./lab/client";
@@ -6,7 +6,7 @@ import { LabPage } from "./lab/LabPage";
 import { Link } from "./Link";
 import { LobbyPage } from "./lobby/LobbyPage";
 import { ReplayPage } from "./replay/ReplayPage";
-import { parseRoute, type Route } from "./route";
+import { parseRoute, routeTitle, type Route } from "./route";
 import { Shell } from "./Shell";
 import { TablePage } from "./table/TablePage";
 import type { Tickets } from "./table/tickets";
@@ -31,10 +31,28 @@ export function App({ connect, tickets, lab }: AppProps) {
       window.removeEventListener("popstate", back);
     };
   }, []);
+  // Przejscie linkiem (nie "wstecz" ani pierwsze wczytanie): nowa strona od gory, a fokus na niej, zeby
+  // czytnik ekranu i klawiatura zaczynaly od tresci, a nie od linku, ktory wlasnie zniknal.
+  const moved = useRef(false);
   const navigate = useCallback((path: string): void => {
     window.history.pushState(null, "", path);
+    moved.current = true;
     setRoute(parseRoute(path));
   }, []);
+  useEffect(() => {
+    document.title = routeTitle(route);
+    if (!moved.current) {
+      return;
+    }
+
+    moved.current = false;
+    window.scrollTo(0, 0);
+    const main = document.querySelector("main");
+    if (main !== null) {
+      main.tabIndex = -1;
+      main.focus({ preventScroll: true });
+    }
+  }, [route]);
 
   return (
     <Shell route={route} navigate={navigate}>

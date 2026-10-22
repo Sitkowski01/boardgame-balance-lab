@@ -9,6 +9,7 @@ import { matchId, roomId } from "./test/fixtures";
 afterEach(() => {
   window.history.pushState(null, "", "/");
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 function app(path: string) {
@@ -57,6 +58,58 @@ describe("App", () => {
 
     expect(window.location.pathname).toBe("/");
     expect(await screen.findByRole("heading", { name: "Balance Lab" })).toBeInTheDocument();
+  });
+
+  it("names the browser tab after the page", async () => {
+    const user = app("/");
+    expect(document.title).toBe("Lobby · Balance Lab");
+
+    await user.click(await screen.findByRole("link", { name: "laboratorium" }));
+
+    expect(document.title).toBe("Laboratorium · Balance Lab");
+  });
+
+  it("after a link starts the new page at the top with the focus on it", async () => {
+    const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    const user = app("/");
+    await screen.findByRole("link", { name: "laboratorium" });
+    expect(scroll).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(document.body);
+
+    await user.click(screen.getByRole("link", { name: "laboratorium" }));
+
+    expect(await screen.findByRole("heading", { name: "Laboratorium balansu" })).toBeInTheDocument();
+    expect(scroll).toHaveBeenCalledWith(0, 0);
+    const main = screen.getByRole("main");
+    expect(document.activeElement).toBe(main);
+    expect(main).toHaveAttribute("tabindex", "-1");
+  });
+
+  it("leaves the scroll to the browser on the back button, but still names the tab", async () => {
+    const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    app("/");
+    window.history.pushState(null, "", "/nie-ma");
+    act(() => {
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+
+    expect(await screen.findByRole("heading", { name: "Nie ma takiej strony" })).toBeInTheDocument();
+    expect(document.title).toBe("Nie ma takiej strony · Balance Lab");
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it("stops following the back button when it goes away", () => {
+    const remove = vi.spyOn(window, "removeEventListener");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response("[]", { status: 200 }))),
+    );
+    const { connect } = fakeConnect();
+    const { unmount } = render(<App connect={connect} tickets={memoryTickets()} lab={fakeLab()} />);
+
+    unmount();
+
+    expect(remove).toHaveBeenCalledWith("popstate", expect.any(Function));
   });
 
   it("follows the browser back button", async () => {
