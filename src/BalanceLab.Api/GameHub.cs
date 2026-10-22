@@ -59,11 +59,6 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
         var target = Reserve(room);
         var ticket = await SitAsync(() => target.RejoinAsync(token, Context.ConnectionId));
         await BindAsync(target, ticket);
-        if (await target.ViewAsync(token) is { } view)
-        {
-            await Clients.Caller.View(view);
-        }
-
         return ticket;
     }
 
@@ -127,8 +122,13 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
         Context.Items[BindingKey] = new Binding(ticket.Room, ticket.Token);
         await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroups.Room(ticket.Room));
         await Groups.AddToGroupAsync(Context.ConnectionId, RoomGroups.Seat(ticket.Room, ticket.Seat));
-        // Zmiana, ktora pokoj wyslal przed dolaczeniem do grupy, nie dotarla: stan idzie jeszcze raz.
+        // Zmiana, ktora pokoj wyslal przed dolaczeniem do grupy, nie dotarla: stan idzie jeszcze raz — takze widok,
+        // gdy gospodarz zdazyl wystartowac partie miedzy zajeciem miejsca a dolaczeniem do grupy.
         await Clients.Caller.Room(room.Info);
+        if (await room.ViewAsync(ticket.Token) is { } view)
+        {
+            await Clients.Caller.View(view);
+        }
     }
 
     private string? Owner() => Context.GetHttpContext() is { } http ? ClientKey.Of(http) : null;
