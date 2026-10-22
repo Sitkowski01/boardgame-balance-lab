@@ -30,11 +30,31 @@ const linkLabel: Record<Connection, string> = {
 };
 
 export function TablePage({ room: id, connect, tickets, navigate, now = Date.now }: TablePageProps) {
-  const { table, link, error, pending, join, addBot, start, move, clearError } = useTable(id, connect, tickets);
+  const { table, link, error, gone, pending, join, addBot, start, move, clearError } = useTable(id, connect, tickets);
   const { room, view, moves } = table;
   const role = myRole(table);
   const names = room?.seats.map((s) => seatName(s) ?? `Miejsce ${String(s.seat + 1)}`) ?? [];
   const describe = useDescribe(room?.game ?? null, room?.variant ?? null);
+
+  // Pokoju nie ma: jedna jasna wiadomosc zamiast "brak polaczenia", bledu i wiecznego wczytywania.
+  if (gone) {
+    return (
+      <main className="missing">
+        <h1>Ten stół już nie istnieje</h1>
+        <p className="lead">Pokój rozszedł się po partii albo adres ma literówkę.</p>
+        {room !== null && room.matchId !== null && (
+          <p>
+            <Link to={`/matches/${room.matchId}`} navigate={navigate}>
+              Powtórka partii
+            </Link>
+          </p>
+        )}
+        <Link to="/" navigate={navigate}>
+          ← Lobby
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <main className="table-page">

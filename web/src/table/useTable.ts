@@ -6,10 +6,20 @@ import { emptyTable, reduceTable, type Table } from "./table";
 
 export type Connection = "connecting" | "online" | "reconnecting" | "closed";
 
+// Numer pokoju to Guid: inny adres serwer odrzuci (blad wiazania argumentu), wiec nie ma po co sie laczyc.
+const roomPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+/** Serwer nie zna pokoju (Lobby.Find): rozszedl sie po partii albo adres jest zly. */
+export function isMissingRoom(error: unknown): boolean {
+  return isRefusal(error) && hubMessage(error).startsWith("Nie ma pokoju");
+}
+
 export interface TableControls {
   table: Table;
   link: Connection;
   error: string | null;
+  /** Serwer nie zna tego pokoju (albo numer nie jest Guidem): strona pokazuje tylko to, bez polaczenia. */
+  gone: boolean;
   /** Ruch wyslany, a nowego widoku jeszcze nie ma: plansza nie przyjmuje drugiego kliku. */
   pending: boolean;
   join: (name: string) => Promise<void>;
@@ -28,11 +38,31 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
   const [table, dispatch] = useReducer(reduceTable, emptyTable);
   const [link, setLink] = useState<Connection>("connecting");
   const [error, setError] = useState<string | null>(null);
+  const [gone, setGone] = useState(() => !roomPattern.test(room));
   // Numer pozycji, do ktorej poszedl ruch; dopoki widok jej nie zmieni, kolejny klik nic nie wysyla.
   const [sent, setSent] = useState<number | null>(null);
   const server = useRef<GameServer | null>(null);
   // Kazde nowe polaczenie (i odmontowanie) podbija numer: zdarzenia i wyniki starszego polaczenia sa pomijane.
   const generation = useRef(0);
+  /** Pokoju nie ma: polaczenie sie zamyka, a jego zdarzenia przestaja dochodzic. */
+  const vanish = useCallback((): void => {
+    generation.current += 1;
+    void server.current?.close();
+    server.current = null;
+    setGone(true);
+  }, []);
+
+  /** Blad siadania: brak pokoju konczy strone stolu, inne bledy ida do komunikatu. */
+  const failed = useCallback(
+    (e: unknown): void => {
+      if (isMissingRoom(e)) {
+        vanish();
+      } else {
+        setError(hubMessage(e));
+      }
+    },
+    [vanish],
+  );
 
   /** Siada z biletem albo oglada; bilet, ktorego serwer nie zna (np. po restarcie), jest zapominany. */
   const sit = useCallback(
@@ -86,9 +116,7 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
           },
           reconnected: () => {
             setLink("online");
-            sit(hub).catch((e: unknown) => {
-              setError(hubMessage(e));
-            });
+            sit(hub).catch(failed);
           },
           closed: () => {
             setLink("closed");
@@ -107,25 +135,28 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
       setLink("online");
       await seat(hub);
     },
-    [connect, sit],
+    [connect, sit, failed],
   );
 
   useEffect(() => {
+    if (!roomPattern.test(room)) {
+      return undefined;
+    }
+
     // Stan zmienia sie dopiero po polaczeniu (asynchronicznie), nie w samym efekcie.
-    const failed = (e: unknown): void => {
-      setLink("closed");
-      setError(hubMessage(e));
-    };
     let left = false;
     const opening = Promise.resolve().then(() => (left ? undefined : open(sit)));
-    opening.catch(failed);
+    opening.catch((e: unknown) => {
+      setLink("closed");
+      failed(e);
+    });
     return () => {
       left = true;
       generation.current += 1;
       void server.current?.close();
       server.current = null;
     };
-  }, [open, sit]);
+  }, [room, open, sit, failed]);
 
   const act = useCallback(async (action: (hub: GameServer) => Promise<void>): Promise<void> => {
     const hub = server.current;
@@ -149,6 +180,7 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
     table,
     link,
     error,
+    gone,
     pending,
     join: async (name) => {
       setError(null);
@@ -160,6 +192,11 @@ export function useTable(room: string, connect: Connect, tickets: Tickets): Tabl
           dispatch({ type: "seated", seat: ticket.seat });
         });
       } catch (e) {
+        if (isMissingRoom(e)) {
+          vanish();
+          return;
+        }
+
         setError(hubMessage(e));
         await open(sit).catch(() => undefined);
       }
