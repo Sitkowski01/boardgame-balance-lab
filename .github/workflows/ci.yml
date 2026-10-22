@@ -5,9 +5,15 @@ on:
     branches: [main]
   pull_request:
 
+# Jawne `shell: bash` to bash -eo pipefail: blad pierwszego polecenia w potoku przerywa krok.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
     # Baza dla play/replay na zywo; testy integracyjne stawiaja wlasne kontenery (Testcontainers).
     services:
       postgres:
@@ -18,10 +24,14 @@ jobs:
         options: >-
           --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'dotnet-tools.json', 'global.json') }}
       - name: Testy (jednostkowe, wlasnosci FsCheck, statystyczne, sily botow, architektura, integracyjne, hub SignalR i e2e na PostgreSQL)
         run: dotnet test
       - name: Benchmarki uruchamiaja sie (przebieg probny)
@@ -40,7 +50,8 @@ jobs:
         env:
           BALANCE_LAB_DB: Host=localhost;Username=postgres;Password=ci;Database=balance_lab
         run: |
-          id=$(dotnet run --project src/BalanceLab.Cli -- play --game klejnoty --bots greedy ismcts:30 random --seed 7 | grep -oE '[0-9a-f]{8}-[0-9a-f-]{27}' | head -1)
+          id=$(dotnet run --project src/BalanceLab.Cli -- play --game klejnoty --bots greedy ismcts:30 random --seed 7 | grep -oE '[0-9a-f]{8}-[0-9a-f-]{27}' | sed -n 1p)
+          test -n "$id"
           dotnet run --project src/BalanceLab.Cli -- replay --match "$id" --at 40
       - name: Serwer gry na zywo (migracje przy starcie, katalog gier, lobby)
         env:
@@ -57,9 +68,10 @@ jobs:
 
   second-game:
     # Dowod z etapu 10: Mozaika weszla bez zmian w silniku, botach, symulatorze, raporcie, dzienniku, pokojach, serwerze i CLI.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Kod poza gra, katalogiem i frontem bez zmian od etapu 9
@@ -67,21 +79,27 @@ jobs:
 
   mutation:
     # Kazdy projekt w osobnym, rownoleglym zadaniu: CI trwa tyle, co najwolniejszy, a nie suma.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # Klejnoty licza sie ok. 3,5 h; limit lapie zawieszony przebieg dlugo przed domyslnymi 6 h.
+    timeout-minutes: 270
     strategy:
       fail-fast: false
       matrix:
         config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-mozaika.json, stryker-experiments.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'dotnet-tools.json', 'global.json') }}
       - name: Mutation testing (Stryker, prog 90%)
         run: |
           dotnet tool restore
           dotnet stryker -f ${{ matrix.config }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: stryker-${{ matrix.config }}
@@ -89,16 +107,17 @@ jobs:
 
   web:
     # Front: typy, format, lint, reguly architektury, testy z pokryciem, testy mutacyjne i build.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     defaults:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           package_json_file: web/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -113,7 +132,8 @@ jobs:
 
   e2e:
     # Przegladarka na prawdziwym serwerze gry z PostgreSQL: gra na zywo w trzy gry, powtorki i laboratorium balansu.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:17-alpine
@@ -128,14 +148,18 @@ jobs:
     env:
       BALANCE_LAB_DB: Host=localhost;Username=postgres;Password=ci;Database=balance_lab_e2e
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'dotnet-tools.json', 'global.json') }}
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
         with:
           package_json_file: web/package.json
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: pnpm
@@ -147,7 +171,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: E2E (Playwright)
         run: pnpm e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: playwright
