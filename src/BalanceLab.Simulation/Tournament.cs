@@ -29,7 +29,7 @@ public static class Tournament
             MaxDegreeOfParallelism = spec.MaxDegreeOfParallelism,
             CancellationToken = cancellationToken,
         };
-        Parallel.For(0, spec.Games, options, index =>
+        Parallel.For(0, spec.Games, options, (index, loop) =>
         {
             try
             {
@@ -38,6 +38,9 @@ public static class Tournament
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 failures[index] = new GameFailedException(index, SeedFor(spec.Seed, index, 0), ex);
+                // Dalsze partie nic juz nie zmienia — turniej i tak sie wywroci. Break dogrywa wszystkie
+                // partie o nizszych numerach, wiec zgloszony blad dalej nie zalezy od liczby watkow.
+                loop.Break();
             }
 
             progress?.Report(Interlocked.Increment(ref finished));

@@ -152,6 +152,23 @@ public sealed class TournamentTests
     }
 
     [Fact]
+    public void After_a_failed_game_the_remaining_games_are_not_played()
+    {
+        var cheater = new Contestant<NimState, int>("cheater", _ => new FixedPlayer<NimState, int>(4));
+        var played = 0;
+        var counter = new Contestant<NimState, int>("fair", seed =>
+        {
+            Interlocked.Increment(ref played);
+            return new RandomBot<NimState, int>(seed);
+        });
+
+        Assert.Throws<GameFailedException>(() =>
+            Tournament.Run(Nim, [cheater, counter], new TournamentSpec(1_000, 8) { MaxDegreeOfParallelism = 1 }));
+
+        Assert.Equal(1, played);
+    }
+
+    [Fact]
     public void Seeds_differ_by_game_and_by_purpose()
     {
         var seeds = new[] { Tournament.SeedFor(1, 0, 0), Tournament.SeedFor(1, 1, 0), Tournament.SeedFor(1, 0, 1), Tournament.SeedFor(2, 0, 0) };
