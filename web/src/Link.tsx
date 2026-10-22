@@ -1,14 +1,30 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 /**
  * Link w aplikacji: zwykly adres (da sie otworzyc w nowej karcie), ale klik zmienia strone bez
- * przeladowania — polaczenie z serwerem i stan zostaja.
+ * przeladowania — polaczenie z serwerem i stan zostaja. Ctrl/Cmd/Shift/Alt albo inny przycisk myszy
+ * zostawiaja klik przegladarce (nowa karta, nowe okno, pobranie).
  */
-export function Link({ to, navigate, children }: { to: string; navigate: (path: string) => void; children: ReactNode }) {
+export function Link({
+  to,
+  navigate,
+  className,
+  children,
+}: {
+  to: string;
+  navigate: (path: string) => void;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <a
       href={to}
-      onClick={(e) => {
+      className={className}
+      onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+          return;
+        }
+
         e.preventDefault();
         navigate(to);
       }}

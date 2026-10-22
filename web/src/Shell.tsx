@@ -52,17 +52,10 @@ export function Shell({ route, navigate, children, systemDark = prefersDark, sys
     <div className="shell">
       <header className="topbar">
         <div className="topbar-inner">
-          <a
-            className="brand"
-            href="/"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("/");
-            }}
-          >
+          <Link to="/" navigate={navigate} className="brand">
             <Logo />
             <span>Balance Lab</span>
-          </a>
+          </Link>
           <nav aria-label="Główna">
             <NavLink to="/" current={section === "play"} navigate={navigate}>
               Graj
