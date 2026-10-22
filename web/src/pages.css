@@ -352,7 +352,8 @@
   list-style: none;
 }
 .waiting .seats {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* min(): na telefonie 360 px kolumna nie jest szersza niz ekran. */
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
 }
 .seat {
   --seat: var(--accent);

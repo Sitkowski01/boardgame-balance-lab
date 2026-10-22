@@ -20,7 +20,7 @@ export function Seats({ room, names, host, onAddBot }: SeatsProps) {
           className={`seat seat-${String(seat.seat)}${room.toMove === seat.seat ? " to-move" : ""}${seat.kind === "Empty" ? " empty" : ""}`}
         >
           <Avatar seat={seat} name={names[seat.seat] ?? ""} />
-          <SeatLabel seat={seat} name={names[seat.seat] ?? ""} host={room.host === seat.seat} />
+          <SeatLabel seat={seat} name={names[seat.seat] ?? ""} host={room.host === seat.seat} toMove={room.toMove === seat.seat} />
           {host && room.status === "Waiting" && seat.kind === "Empty" && <BotPicker game={room.game} seat={seat.seat} onAdd={onAddBot} />}
         </li>
       ))}
@@ -36,7 +36,7 @@ function Avatar({ seat, name }: { seat: SeatInfo; name: string }) {
   );
 }
 
-function SeatLabel({ seat, name, host }: { seat: SeatInfo; name: string; host: boolean }) {
+function SeatLabel({ seat, name, host, toMove }: { seat: SeatInfo; name: string; host: boolean; toMove: boolean }) {
   if (seat.kind === "Empty") {
     return <span className="muted seat-name">wolne miejsce</span>;
   }
@@ -44,6 +44,8 @@ function SeatLabel({ seat, name, host }: { seat: SeatInfo; name: string; host: b
   return (
     <span className="seat-name">
       <strong>{name}</strong>
+      {/* Kolor ramki mowi to samo, ale nie kazdy go widzi (np. Czworki nie maja innego znaku kolejki). */}
+      {toMove && <span className="badge accent">na ruchu</span>}
       {seat.kind === "Bot" && <span className="badge">bot</span>}
       {host && <span className="badge">gospodarz</span>}
       {seat.kind === "Human" && !seat.connected && <span className="badge warn">rozłączony</span>}

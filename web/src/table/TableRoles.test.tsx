@@ -126,7 +126,9 @@ describe("what each person sees at the table", () => {
       HTMLElement,
       HTMLElement,
     ];
-    expect(ala).toHaveTextContent(/^AAlagospodarz$/u);
+    // Na ruchu jest Ala: znak slowem, nie tylko kolorem ramki.
+    expect(ala).toHaveTextContent(/^AAlana ruchugospodarz$/u);
+    expect(ala).toHaveClass("to-move");
     expect(bot).toHaveTextContent(/^⚙Losowybot$/u);
     expect(ola).toHaveTextContent(/^OOlarozłączonygra za niego bot$/u);
   });
