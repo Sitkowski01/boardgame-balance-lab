@@ -1,6 +1,7 @@
-import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { GameServer } from "../api/connection";
 import type { SeatTicket } from "../api/schemas";
 import { fakeConnect, last, memoryTickets, type FakeLink } from "../test/fakeServer";
 import { matchId, room, roomId } from "../test/fixtures";
@@ -227,5 +228,129 @@ describe("sitting down when watching fails too", () => {
     expect(links[1]?.server.joinRoom).toHaveBeenCalledTimes(1);
     await act(() => result.current.join("Ola"));
     expect(links).toHaveLength(3);
+  });
+});
+
+describe("a message from the server that does not fit the schema", () => {
+  it("is shown at the table", async () => {
+    const { links } = page();
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+
+    send(last(links), (e) => {
+      e.invalid("Serwer przysłał wiadomość View, której ta strona nie rozumie. Odśwież stronę.");
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Serwer przysłał wiadomość View");
+  });
+});
+
+describe("TablePage states", () => {
+  it("says it is connecting until the connection opens", async () => {
+    let open: (server: GameServer) => void = () => undefined;
+    const pending = fakeConnect();
+    const connect = vi.fn(() => new Promise<GameServer>((resolve) => (open = resolve)));
+    render(<TablePage room={roomId} connect={connect} tickets={memoryTickets()} navigate={vi.fn()} />);
+
+    expect(screen.getByText("Łączenie…")).toHaveClass("banner");
+    await waitFor(() => {
+      expect(connect).toHaveBeenCalled();
+    });
+    await pending.connect({});
+    act(() => {
+      open(last(pending.links).server);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Łączenie…")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows the clock only while the match is played", async () => {
+    const deadline = "2026-10-19T10:00:42Z";
+    const { links } = page();
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+
+    for (const status of ["Waiting", "Finished", "Abandoned"] as const) {
+      send(last(links), (e) => {
+        e.room(room({ version: 1 + ["Waiting", "Finished", "Abandoned"].indexOf(status), status, deadline, scores: [0, 0] }));
+      });
+      expect(screen.queryByLabelText("Czas na ruch")).not.toBeInTheDocument();
+    }
+  });
+
+  it("explains the waiting room differently to the host and to a guest", async () => {
+    const guestPage = page();
+    await waitFor(() => {
+      expect(guestPage.links).toHaveLength(1);
+    });
+    send(last(guestPage.links), (e) => {
+      e.room(room());
+    });
+    const waiting = screen.getByRole("region", { name: "Poczekalnia" });
+    expect(
+      within(waiting).getByText(/^Stół czeka na graczy\. Usiądź na wolnym miejscu albo oglądaj, aż gospodarz zacznie\.$/u),
+    ).toBeInTheDocument();
+    guestPage.view.unmount();
+
+    const hostPage = page({ tickets: memoryTickets([host]) });
+    await waitFor(() => {
+      expect(hostPage.links[0]?.server.rejoin).toHaveBeenCalled();
+    });
+    send(last(hostPage.links), (e) => {
+      e.room(room());
+    });
+    expect(
+      within(screen.getByRole("region", { name: "Poczekalnia" })).getByText(
+        /^Posadź boty na wolnych miejscach albo wyślij link znajomym — partia rusza, gdy klikniesz „Zacznij partię”\.$/u,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("colours each recent move by its seat", async () => {
+    const { links } = page();
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room({ status: "Playing", toMove: 0 }));
+      e.move({ room: roomId, number: 1, seat: 0, move: "3", byBot: false });
+      e.move({ room: roomId, number: 2, seat: 1, move: "4", byBot: false });
+    });
+
+    const items = within(screen.getByRole("region", { name: "Ostatnie ruchy" })).getAllByRole("listitem");
+    expect(items.map((li) => li.className)).toEqual(["seat-0", "seat-1"]);
+  });
+});
+
+describe("useTable without an open connection or with a move on its way", () => {
+  it("says there is no connection when acting before it opens", async () => {
+    const connect = vi.fn(() => new Promise<GameServer>(() => undefined));
+    const tickets = memoryTickets();
+    const { result } = renderHook(() => useTable(roomId, connect, tickets));
+
+    await act(() => result.current.start());
+
+    expect(result.current.error).toBe("Brak połączenia z serwerem.");
+  });
+
+  it("sends nothing while the previous move waits for a new view", async () => {
+    const { connect, links } = fakeConnect((s) => s.makeMove.mockReturnValue(new Promise(() => undefined)));
+    const tickets = memoryTickets([host]);
+    const { result } = renderHook(() => useTable(roomId, connect, tickets));
+    await waitFor(() => {
+      expect(result.current.link).toBe("online");
+    });
+
+    act(() => {
+      void result.current.move("3");
+    });
+    expect(result.current.pending).toBe(true);
+    await act(() => result.current.move("4"));
+
+    expect(last(links).server.makeMove.mock.calls).toEqual([[0, "3"]]);
   });
 });
