@@ -13,14 +13,16 @@ public static partial class HtmlReport
         var html = new Html().Heading($"{report.Game}: raport balansu",
             $"{report.Games} partii z ziarna {report.Seed}; ukonczone {report.Completed}, remisy {report.Draws}. To samo ziarno daje ten sam raport.");
         var fair = 1.0 / Math.Max(1, report.Seats.Length);
+        // Bez ukonczonych partii kazdy przedzial to 0-100% z kropka na 0%: wykres by klamal, tabela mowi "brak danych".
+        var known = report.Completed > 0;
         html.Section("Przewaga miejsca przy stole",
             $"Odsetek wygranych na kazdym miejscu z 95% przedzialem. Bez przewagi kazde miejsce wygrywa okolo {Html.Percent(fair)} (linia przerywana); przedzial, ktory jej nie obejmuje, to realna przewaga albo strata.",
-            Svg.Intervals([.. report.Seats.Select(s => Row($"miejsce {s.Seat + 1}", s.Wins, fair))], 0, 1, fair, Html.Percent),
+            known ? Svg.Intervals([.. report.Seats.Select(s => Row($"miejsce {s.Seat + 1}", s.Wins, fair))], 0, 1, fair, Html.Percent) : null,
             Html.Table(["Miejsce", "Wygrane (95% przedzial)", "Sredni wynik"],
                 report.Seats.Select(s => (IReadOnlyList<string>)[$"{s.Seat + 1}", Html.WithInterval(s.Wins), Score(s.MeanScore)]), collapsed: true));
         html.Section("Uczestnicy",
             "Kazdy uczestnik siedzi na kazdym miejscu tyle samo razy, wiec przewaga miejsca nie przechyla tego porownania.",
-            Svg.Intervals([.. report.Contestants.Select(c => Row(c.Name, c.Wins, fair))], 0, 1, fair, Html.Percent),
+            known ? Svg.Intervals([.. report.Contestants.Select(c => Row(c.Name, c.Wins, fair))], 0, 1, fair, Html.Percent) : null,
             Html.Table(["Uczestnik", "Wygrane (95% przedzial)", "Sredni wynik"],
                 report.Contestants.Select(c => (IReadOnlyList<string>)[Html.Encode(c.Name), Html.WithInterval(c.Wins), Score(c.MeanScore)]), collapsed: true));
         if (report.Length is { } length)

@@ -34,6 +34,8 @@ public sealed class GoldenTests
         var text = actual.Replace("><", ">\n<", StringComparison.Ordinal) + "\n";
         if (Environment.GetEnvironmentVariable("BALANCE_LAB_APPROVE") == "1")
         {
+            // Zatwierdzanie porownuje plik z samym soba — w CI test przestalby czegokolwiek pilnowac.
+            Assert.Null(Environment.GetEnvironmentVariable("CI"));
             File.WriteAllText(path, text);
         }
 

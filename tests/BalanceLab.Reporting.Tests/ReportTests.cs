@@ -89,6 +89,20 @@ public sealed class ReportTests
     }
 
     [Fact]
+    public void Without_finished_games_win_charts_are_left_out_and_tables_stay()
+    {
+        var some = HtmlReport.Tournament(Tournament(items: false));
+        var none = HtmlReport.Tournament(Tournament(items: false) with { Completed = 0 });
+
+        Assert.Equal(2, Count(some, "<svg"));
+        Assert.Equal(0, Count(none, "<svg"));
+        Assert.Contains("Przewaga miejsca przy stole", none, StringComparison.Ordinal);
+        Assert.Contains("<table", none, StringComparison.Ordinal);
+    }
+
+    private static int Count(string text, string part) => text.Split(part).Length - 1;
+
+    [Fact]
     public void League_report_ranks_and_fills_the_matrix_from_both_sides()
     {
         LeagueReport league = new("Gra", 100, 3, [new("a", 1550, 0.6), new("b", 1450, 0.4)],
