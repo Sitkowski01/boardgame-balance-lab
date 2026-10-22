@@ -23,6 +23,14 @@ describe("PairMatrix", () => {
     expect(screen.getByText(/40 partii na parę/u)).toBeInTheDocument();
   });
 
+  it("says how many games each pair played, in the right Polish form", () => {
+    const { rerender } = render(<PairMatrix report={league({ gamesPerPair: 1 })} />);
+    expect(screen.getByText(/\(1 partia na parę, remis = pół\)/u)).toBeInTheDocument();
+
+    rerender(<PairMatrix report={league({ gamesPerPair: 4 })} />);
+    expect(screen.getByText(/\(4 partie na parę, remis = pół\)/u)).toBeInTheDocument();
+  });
+
   it("switches to dark ink exactly where the color gets strong", () => {
     expect(inkOn(0.325)).toBe("dark");
     expect(inkOn(0.5)).toBe("theme");

@@ -75,7 +75,9 @@ describe("experiment form", () => {
 
     expect(botChoices(mozaika, tight).map((b) => b.spec)).toContain("ismcts:30");
     expect(problems({ ...defaultForm(mozaika), games: "20" }, mozaika, tight)).toEqual(["Liczba partii: od 1 do 10."]);
-    expect(problems({ ...defaultForm(mozaika, "League") }, mozaika, tight)).toContain("Najwyżej 2 botów.");
+    expect(problems({ ...defaultForm(mozaika, "League") }, mozaika, tight)).toContain("Najwyżej 2 boty.");
+    expect(problems({ ...defaultForm(mozaika, "League") }, mozaika, { ...tight, maxBots: 1 })).toContain("Najwyżej 1 bot.");
+    expect(problems({ ...defaultForm(mozaika, "League") }, mozaika, { ...tight, maxBots: 0 })).toContain("Najwyżej 0 botów.");
   });
 
   it("weighs bots and counts work like the server", () => {

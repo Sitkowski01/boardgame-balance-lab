@@ -159,8 +159,8 @@ describe("Results", () => {
     const ranking = render(<Results result={{ kind: "League", report: league() }} />);
     expect(tiles()).toEqual(["NajlepszygreedyElo 1720", "Pary340 partii na parę"]);
     ranking.unmount();
-    const empty = render(<Results result={{ kind: "League", report: league({ ratings: [], pairs: [] }) }} />);
-    expect(tiles()).toEqual(["Najlepszy—", "Pary040 partii na parę"]);
+    const empty = render(<Results result={{ kind: "League", report: league({ ratings: [], pairs: [], gamesPerPair: 2 }) }} />);
+    expect(tiles()).toEqual(["Najlepszy—", "Pary02 partie na parę"]);
     empty.unmount();
     render(<Results result={{ kind: "Comparison", report: comparison() }} />);
     expect(tiles()).toEqual([

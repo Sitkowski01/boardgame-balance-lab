@@ -1,3 +1,4 @@
+import { plural } from "../../plural";
 import { pairScore, percent, type LeagueReport } from "../model";
 
 /** Kolor komorki: szary przy 50%, niebieski ku wygranej wiersza, czerwony ku przegranej (skala rozbiezna). */
@@ -27,7 +28,10 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
     <figure className="chart">
       <figcaption>
         <strong>Kto bije kogo</strong>
-        <span>Średni wynik bota z wiersza przeciw botowi z kolumny ({report.gamesPerPair} partii na parę, remis = pół).</span>
+        <span>
+          Średni wynik bota z wiersza przeciw botowi z kolumny ({report.gamesPerPair}{" "}
+          {plural(report.gamesPerPair, "partia", "partie", "partii")} na parę, remis = pół).
+        </span>
       </figcaption>
       <div className="matrix-scroll">
         <table className="matrix" aria-label="Kto bije kogo">

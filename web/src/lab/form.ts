@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { GameInfo } from "../api/schemas";
+import { plural } from "../plural";
 import type { ExperimentKind, ExperimentRequest } from "./model";
 
 /** Formularz eksperymentu przed wyslaniem; liczby jako tekst, tak jak w polach. */
@@ -98,7 +99,8 @@ export function problems(form: ExperimentForm, game: GameInfo, limits: LabLimits
     );
   }
 
-  if (form.bots.length > limits.maxBots) found.push(`Najwyżej ${String(limits.maxBots)} botów.`);
+  if (form.bots.length > limits.maxBots)
+    found.push(`Najwyżej ${String(limits.maxBots)} ${plural(limits.maxBots, "bot", "boty", "botów")}.`);
   if (!/^\d+$/.test(form.games) || games < 1 || games > limits.maxGames) {
     found.push(`Liczba partii: od 1 do ${String(limits.maxGames)}.`);
   } else if (players > 0 && games % players !== 0) {

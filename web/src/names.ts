@@ -1,4 +1,5 @@
 import type { GameInfo } from "./api/schemas";
+import { plural } from "./plural";
 
 /**
  * Nazwy dla gracza. Serwer nazywa gry i boty po swojemu (ConnectFour, greedy:kolory, ismcts:300) — te same
@@ -45,7 +46,7 @@ export function playerName(name: string): string {
 /** "3 gry, od 2 do 4 graczy" z katalogu serwera. */
 export function gamesFact(games: readonly GameInfo[]): string {
   const n = games.length;
-  const noun = n === 1 ? "gra" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? "gry" : "gier";
+  const noun = plural(n, "gra", "gry", "gier");
   const min = Math.min(...games.map((g) => g.minPlayers));
   const max = Math.max(...games.map((g) => g.maxPlayers));
   return `${String(n)} ${noun}, ${min === max ? `${String(min)} graczy` : `od ${String(min)} do ${String(max)} graczy`}`;

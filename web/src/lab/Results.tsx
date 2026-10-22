@@ -2,6 +2,7 @@ import { DiffBars } from "./charts/DiffBars";
 import { IntervalBars, type IntervalRow } from "./charts/IntervalBars";
 import { ItemScatter } from "./charts/ItemScatter";
 import { PairMatrix } from "./charts/PairMatrix";
+import { plural } from "../plural";
 import {
   decimal,
   percent,
@@ -94,7 +95,11 @@ export function LeagueResults({ report }: { report: LeagueReport }) {
             value: report.ratings[0]?.name ?? "—",
             note: report.ratings[0] === undefined ? undefined : `Elo ${report.ratings[0].elo.toFixed(0)}`,
           },
-          { label: "Pary", value: String(report.pairs.length), note: `${String(report.gamesPerPair)} partii na parę` },
+          {
+            label: "Pary",
+            value: String(report.pairs.length),
+            note: `${String(report.gamesPerPair)} ${plural(report.gamesPerPair, "partia", "partie", "partii")} na parę`,
+          },
         ]}
       />
       <DiffBars
