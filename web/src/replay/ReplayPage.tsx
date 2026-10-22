@@ -171,6 +171,7 @@ export function ReplayPage({
                   <li key={i} className={i + 1 === position ? "current" : ""}>
                     <button
                       type="button"
+                      aria-current={i + 1 === position ? "step" : undefined}
                       onClick={() => {
                         go(i + 1);
                       }}

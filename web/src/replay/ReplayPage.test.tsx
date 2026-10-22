@@ -173,3 +173,131 @@ describe("ReplayPage", () => {
     expect(navigate).toHaveBeenCalledWith("/");
   });
 });
+
+describe("ReplayPage details", () => {
+  const wait = (ms: number): Promise<void> => act(() => new Promise<void>((r) => setTimeout(r, ms)));
+
+  it("asks for no frame before the match is loaded", async () => {
+    const { loadFrame } = page({ loadMatch: () => new Promise<MatchReplay>(() => undefined), settle: 0 });
+
+    await wait(50);
+
+    expect(loadFrame).not.toHaveBeenCalled();
+    expect(screen.getByText("Wczytywanie partii…")).toBeInTheDocument();
+  });
+
+  /** Klatka po dwoch ruchach odpowiada dopiero na zawolanie; reszta od razu. */
+  function slowSecond() {
+    let settle: { ok: () => void; fail: () => void } = { ok: () => undefined, fail: () => undefined };
+    const loadFrame = vi.fn((_: string, moves: number): Promise<ReplayFrame> =>
+      moves === 2
+        ? new Promise((resolve, reject) => {
+            settle = {
+              ok: () => {
+                resolve(frame(2));
+              },
+              fail: () => {
+                reject(new Error("za pozno"));
+              },
+            };
+          })
+        : Promise.resolve(frame(moves)),
+    );
+    page({ loadFrame, settle: 0 });
+    return { loadFrame, answer: () => settle };
+  }
+
+  async function leaveSecond(loadFrame: ReturnType<typeof vi.fn>): Promise<void> {
+    const slider = await screen.findByRole("slider", { name: "Ruch" });
+    fireEvent.change(slider, { target: { value: "2" } });
+    await waitFor(() => {
+      expect(loadFrame.mock.calls.some(([, n]) => n === 2)).toBe(true);
+    });
+    fireEvent.change(slider, { target: { value: "3" } });
+    await waitFor(() => {
+      expect(discs()).toBe(3);
+    });
+  }
+
+  it("ignores a late error for a position the slider already left", async () => {
+    const { loadFrame, answer } = slowSecond();
+    await leaveSecond(loadFrame);
+
+    answer().fail();
+    await wait(20);
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("ignores a late frame for a position the slider already left", async () => {
+    const { loadFrame, answer } = slowSecond();
+    await leaveSecond(loadFrame);
+
+    answer().ok();
+    await wait(20);
+
+    expect(discs()).toBe(3);
+  });
+
+  it("offers playing again, not pausing, when the end is reached while playing", async () => {
+    const { user } = page({ pace: 60_000 });
+    await user.click(await screen.findByRole("button", { name: "▶ Odtwarzaj" }));
+    expect(screen.getByRole("button", { name: "⏸ Pauza" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Koniec ⏭" }));
+
+    expect(screen.getByRole("button", { name: "▶ Odtwarzaj" })).toBeDisabled();
+  });
+
+  it("marks a verified journal and only a verified one", async () => {
+    page({ loadMatch: () => Promise.resolve(replay({ verified: true })) });
+    expect(await screen.findByText("sprawdzona z dziennika")).toHaveClass("badge", "accent");
+  });
+
+  it("names no winner without scores, even at the last move", async () => {
+    const { user } = page({ loadMatch: () => Promise.resolve(replay({ scores: [] })) });
+
+    await user.click(await screen.findByRole("button", { name: "Koniec ⏭" }));
+
+    await waitFor(() => {
+      expect(position()).toBe("ruch 3 z 3");
+    });
+    expect(screen.queryByText(/Wygrywa/u)).not.toBeInTheDocument();
+  });
+
+  it("marks the current move in the list for screen readers", async () => {
+    const { user } = page();
+    const list = await screen.findByRole("list", { name: "Ruchy partii" });
+    expect(within(list).queryByRole("button", { current: "step" })).not.toBeInTheDocument();
+
+    await user.click(within(list).getAllByRole("button")[1] as HTMLElement);
+
+    expect(within(list).getByRole("button", { current: "step" })).toHaveTextContent("Losowy: wrzuca do kolumny 5");
+    expect(
+      within(list)
+        .getAllByRole("button")
+        .filter((b) => b.hasAttribute("aria-current")),
+    ).toHaveLength(1);
+  });
+
+  it("loads again when given another source of matches or frames", async () => {
+    const first = vi.fn(() => Promise.resolve(replay()));
+    const frames = vi.fn((_: string, moves: number) => Promise.resolve(frame(moves)));
+    const view = render(<ReplayPage match={matchId} navigate={vi.fn()} loadMatch={first} loadFrame={frames} settle={0} />);
+    await waitFor(() => {
+      expect(frames).toHaveBeenCalledWith(matchId, 0);
+    });
+
+    const second = vi.fn(() => Promise.resolve(replay({ gameName: "ConnectFour" })));
+    view.rerender(<ReplayPage match={matchId} navigate={vi.fn()} loadMatch={second} loadFrame={frames} settle={0} />);
+    await waitFor(() => {
+      expect(second).toHaveBeenCalledWith(matchId);
+    });
+
+    const otherFrames = vi.fn((_: string, moves: number) => Promise.resolve(frame(moves)));
+    view.rerender(<ReplayPage match={matchId} navigate={vi.fn()} loadMatch={second} loadFrame={otherFrames} settle={0} />);
+    await waitFor(() => {
+      expect(otherFrames).toHaveBeenCalledWith(matchId, 0);
+    });
+  });
+});
