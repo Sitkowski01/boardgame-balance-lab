@@ -41,7 +41,7 @@ public sealed class RoomPlayTests
             (await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(token, number, move))).Message;
 
         Assert.Equal("Nie twoja kolej.", await Rejected(ola.Token, 0, "3"));
-        Assert.Equal("Ruch do nieaktualnej pozycji: partia ma juz 0 ruchow, a ruch zakladal 1.", await Rejected(ala.Token, 1, "3"));
+        Assert.Equal("Ruch do nieaktualnej pozycji: partia ma już 0 ruchów, a ruch zakładał 1.", await Rejected(ala.Token, 1, "3"));
         Assert.Equal("Nieznany ruch 'x'.", await Rejected(ala.Token, 0, "x"));
         Assert.Equal("Nieznany ruch ''.", await Rejected(ala.Token, 0, null!));
         Assert.Equal("Ruch '9' jest nielegalny.", await Rejected(ala.Token, 0, "9"));
@@ -50,7 +50,7 @@ public sealed class RoomPlayTests
         Assert.Empty(table.MovesOf(room));
 
         await room.MoveAsync(ala.Token, 0, "3");
-        Assert.Equal("Ruch do nieaktualnej pozycji: partia ma juz 1 ruchow, a ruch zakladal 0.", await Rejected(ala.Token, 0, "3"));
+        Assert.Equal("Ruch do nieaktualnej pozycji: partia ma już 1 ruchów, a ruch zakładał 0.", await Rejected(ala.Token, 0, "3"));
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class RoomPlayTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(host.Token, 0, "3"));
 
-        Assert.Equal("Partia sie nie toczy.", ex.Message);
+        Assert.Equal("Partia się nie toczy.", ex.Message);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public sealed class HubTests(ApiFixture api)
         var host = await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
         await ola.Hub.InvokeAsync<SeatTicket>("JoinRoom", host.Room, "Ola");
 
-        Assert.Equal("Tylko gospodarz moze to zrobic.", await ErrorAsync(ola, "Start"));
+        Assert.Equal("Tylko gospodarz może to zrobić.", await ErrorAsync(ola, "Start"));
         await ala.Hub.InvokeAsync("Start");
         Assert.Equal("Nie twoja kolej.", await ErrorAsync(ola, "MakeMove", 0, "3"));
         Assert.Equal("Ruch '7' jest nielegalny.", await ErrorAsync(ala, "MakeMove", 0, "7"));
@@ -29,8 +29,8 @@ public sealed class HubTests(ApiFixture api)
         await using var stranger = await api.ConnectAsync();
         var host = await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
 
-        Assert.StartsWith("To polaczenie jest juz w pokoju", await ErrorAsync(ala, "JoinRoom", host.Room, "Ala2"), StringComparison.Ordinal);
-        Assert.StartsWith("Najpierw usiadz przy stole", await ErrorAsync(stranger, "MakeMove", 0, "3"), StringComparison.Ordinal);
+        Assert.StartsWith("To połączenie jest już w pokoju", await ErrorAsync(ala, "JoinRoom", host.Room, "Ala2"), StringComparison.Ordinal);
+        Assert.StartsWith("Najpierw usiądź przy stole", await ErrorAsync(stranger, "MakeMove", 0, "3"), StringComparison.Ordinal);
         Assert.Equal($"Nie ma pokoju {Guid.Empty}.", await ErrorAsync(stranger, "JoinRoom", Guid.Empty, "Ola"));
         Assert.StartsWith("Nieznana gra 'go'", await ErrorAsync(stranger, "CreateRoom", new CreateRoomArgs("go", 2, null, "Ola")), StringComparison.Ordinal);
     }
@@ -75,7 +75,7 @@ public sealed class HubTests(ApiFixture api)
         var move = await watcher.WaitAsync(() => watcher.Moves.FirstOrDefault(m => m.Number == 2));
         Assert.Equal((1, true), (move.Seat, move.ByBot));
         Assert.All(watcher.Views, v => Assert.Null(v.Seat));
-        Assert.StartsWith("Najpierw usiadz przy stole", await ErrorAsync(watcher, "MakeMove", 2, "3"), StringComparison.Ordinal);
+        Assert.StartsWith("Najpierw usiądź przy stole", await ErrorAsync(watcher, "MakeMove", 2, "3"), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -98,8 +98,8 @@ public sealed class HubTests(ApiFixture api)
         await using var ala = await api.ConnectAsync();
         var host = await ala.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala"));
 
-        Assert.StartsWith("To polaczenie jest juz w pokoju", await ErrorAsync(ala, "CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala")), StringComparison.Ordinal);
-        Assert.StartsWith("To polaczenie jest juz w pokoju", await ErrorAsync(ala, "Watch", host.Room), StringComparison.Ordinal);
+        Assert.StartsWith("To połączenie jest już w pokoju", await ErrorAsync(ala, "CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala")), StringComparison.Ordinal);
+        Assert.StartsWith("To połączenie jest już w pokoju", await ErrorAsync(ala, "Watch", host.Room), StringComparison.Ordinal);
     }
 
     [Fact]

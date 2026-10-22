@@ -62,7 +62,7 @@ public sealed class LobbyTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => table.Lobby.CreateAsync(new RoomRequest("connectfour", 2), name!, "c"));
 
-        Assert.Equal("Nazwa gracza: od 1 do 24 znakow, bez znakow sterujacych i niewidocznych.", ex.Message);
+        Assert.Equal("Nazwa gracza: od 1 do 24 znaków, bez znaków sterujących i niewidocznych.", ex.Message);
         Assert.Empty(table.Lobby.Rooms);
     }
 
@@ -85,7 +85,7 @@ public sealed class LobbyTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => table.CreateAsync());
 
-        Assert.Equal("Serwer ma juz 2 pokoi - sprobuj pozniej.", ex.Message);
+        Assert.Equal("Serwer ma już 2 pokoi - spróbuj później.", ex.Message);
         Assert.Equal(2, table.Lobby.Rooms.Count);
     }
 
@@ -99,7 +99,7 @@ public sealed class LobbyTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => table.Lobby.CreateAsync(request, "Ala", "c3", "10.0.0.1"));
 
-        Assert.Equal("Masz juz 2 otwarte pokoje - dokoncz albo zamknij ktorys.", ex.Message);
+        Assert.Equal("Masz już 2 otwarte pokoje - dokończ albo zamknij któryś.", ex.Message);
         await table.Lobby.CreateAsync(request, "Ola", "c4", "10.0.0.2");
         await table.Lobby.CreateAsync(request, "Ola", "c5"); // bez adresu (np. testy, narzedzia) — bez limitu
         Assert.Equal(4, table.Lobby.Rooms.Count);

@@ -34,7 +34,7 @@ public sealed class RoomTimeTests
 
         Assert.Null(info.Deadline);
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(ala.Token, 0, "3"));
-        Assert.Equal("Czas na ruch minal - za ciebie gra bot.", ex.Message);
+        Assert.Equal("Czas na ruch minął - za ciebie gra bot.", ex.Message);
         Assert.Empty((await table.Notifier.ViewAsync(room.Id, 0, 0)).LegalMoves);
     }
 
@@ -119,7 +119,7 @@ public sealed class RoomTimeTests
         Assert.Equal((1, (int?)null, (DateTimeOffset?)null), (info.Moves, info.ToMove, info.Deadline));
         Assert.Empty((await room.ViewAsync(host.Token))!.LegalMoves);
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(host.Token, 1, "3"));
-        Assert.Equal("Partia sie nie toczy.", ex.Message);
+        Assert.Equal("Partia się nie toczy.", ex.Message);
     }
 
     [Fact]
@@ -189,7 +189,7 @@ public sealed class RoomTimeTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(ala.Token, 0, "3"));
 
-        Assert.Equal("Nie udalo sie zapisac ruchu - sprobuj jeszcze raz.", ex.Message);
+        Assert.Equal("Nie udało się zapisać ruchu - spróbuj jeszcze raz.", ex.Message);
         Assert.Equal(0, room.Info.Moves);
         Assert.Empty(table.Notifier.Moves);
         await room.MoveAsync(ala.Token, 0, "3");
@@ -241,7 +241,7 @@ public sealed class RoomTimeTests
         await room.DisposeAsync();
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(ala.Token, 0, "3"));
-        Assert.Equal("Pokoj jest juz zamkniety.", ex.Message);
+        Assert.Equal("Pokój jest już zamknięty.", ex.Message);
     }
 
     [Fact]

@@ -163,14 +163,14 @@ public sealed class GameHub(Lobby lobby) : Hub<IGameClient>
     {
         if (Context.Items.ContainsKey(BindingKey))
         {
-            throw new HubException("To polaczenie jest juz w pokoju - do innego pokoju potrzebne jest nowe polaczenie.");
+            throw new HubException("To połączenie jest już w pokoju - do innego pokoju potrzebne jest nowe połączenie.");
         }
     }
 
     private (IRoom Room, string Token) Seat() =>
         Context.Items.TryGetValue(BindingKey, out var value) && value is Binding { Token: { } token } binding
             ? (lobby.Find(binding.Room), token)
-            : throw new HubException("Najpierw usiadz przy stole (CreateRoom, JoinRoom albo Rejoin).");
+            : throw new HubException("Najpierw usiądź przy stole (CreateRoom, JoinRoom albo Rejoin).");
 
     /// <summary>Pokoj polaczenia i bilet miejsca; widz nie ma biletu.</summary>
     private sealed record Binding(Guid Room, string? Token);

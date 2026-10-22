@@ -134,7 +134,7 @@ public sealed class RestTests(ApiFixture api)
         var frame = await http.GetAsync($"/api/matches/{room.MatchId}/frames/2");
 
         Assert.Equal((HttpStatusCode.UnprocessableEntity, HttpStatusCode.UnprocessableEntity), (match.StatusCode, frame.StatusCode));
-        Assert.Contains("Dziennik partii nie zgadza sie z zasadami gry", await match.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-        Assert.Contains("Dziennik partii nie zgadza sie z zasadami gry", await frame.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Contains("Dziennik partii nie zgadza się z zasadami gry", await match.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        Assert.Contains("Dziennik partii nie zgadza się z zasadami gry", await frame.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
 }

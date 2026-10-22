@@ -44,7 +44,7 @@ internal sealed partial class RoomQueue : IAsyncDisposable
             }
         }))
         {
-            done.SetException(new RoomException("Pokoj jest juz zamkniety."));
+            done.SetException(new RoomException("Pokój jest już zamknięty."));
         }
 
         return done.Task;

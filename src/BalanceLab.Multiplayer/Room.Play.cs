@@ -15,7 +15,7 @@ internal sealed partial class Room<TState, TMove, TGame>
     public Task StartAsync(string token) => _queue.Post(async () =>
     {
         EnsureHost(token);
-        Ensure(RoomStatus.Waiting, "Partia juz sie zaczela.");
+        Ensure(RoomStatus.Waiting, "Partia już się zaczęła.");
         var setup = new GameSetup(_seats.Length, _seed);
         // Najpierw zapis w dzienniku: gdy sie nie uda, pokoj zostaje taki, jak byl.
         try
@@ -26,7 +26,7 @@ internal sealed partial class Room<TState, TMove, TGame>
         catch (Exception ex)
         {
             LogRecordFailed(_logger, ex, Id, 0);
-            throw new RoomException("Nie udalo sie zapisac partii - sprobuj jeszcze raz.", ex);
+            throw new RoomException("Nie udało się zapisać partii - spróbuj jeszcze raz.", ex);
         }
 
         foreach (var seat in _seats)
@@ -47,10 +47,10 @@ internal sealed partial class Room<TState, TMove, TGame>
     public Task MoveAsync(string token, int number, string move) => _queue.Post(async () =>
     {
         var seat = SeatOf(token);
-        Ensure(RoomStatus.Playing, "Partia sie nie toczy.");
+        Ensure(RoomStatus.Playing, "Partia się nie toczy.");
         if (number != _moves)
         {
-            throw new RoomException($"Ruch do nieaktualnej pozycji: partia ma juz {_moves} ruchow, a ruch zakladal {number}.");
+            throw new RoomException($"Ruch do nieaktualnej pozycji: partia ma już {_moves} ruchów, a ruch zakładał {number}.");
         }
 
         if (seat != _rules.CurrentPlayer(_state))
@@ -60,7 +60,7 @@ internal sealed partial class Room<TState, TMove, TGame>
 
         if (_timedOut)
         {
-            throw new RoomException("Czas na ruch minal - za ciebie gra bot.");
+            throw new RoomException("Czas na ruch minął - za ciebie gra bot.");
         }
 
         TMove decoded;
@@ -106,7 +106,7 @@ internal sealed partial class Room<TState, TMove, TGame>
         if (failure is not null && !await WrittenAnywayAsync(move))
         {
             LogRecordFailed(_logger, failure, Id, _moves + 1);
-            throw new RoomException("Nie udalo sie zapisac ruchu - sprobuj jeszcze raz.", failure);
+            throw new RoomException("Nie udało się zapisać ruchu - spróbuj jeszcze raz.", failure);
         }
 
         _state = next;

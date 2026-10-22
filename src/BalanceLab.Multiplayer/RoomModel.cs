@@ -81,7 +81,7 @@ internal static class PlayerName
         var trimmed = name?.Trim() ?? "";
         return trimmed.Length == 0 || trimmed.Length > maxLength
             || trimmed.Any(c => char.IsControl(c) || char.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.Format)
-            ? throw new RoomException($"Nazwa gracza: od 1 do {maxLength} znakow, bez znakow sterujacych i niewidocznych.")
+            ? throw new RoomException($"Nazwa gracza: od 1 do {maxLength} znaków, bez znaków sterujących i niewidocznych.")
             : trimmed;
     }
 }

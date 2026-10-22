@@ -114,7 +114,7 @@ public sealed class RoomQueueTests
         Assert.True(sent);
         Assert.False(fired);
         var ex = await Assert.ThrowsAsync<RoomException>(() => queue.Post(() => 1));
-        Assert.Equal("Pokoj jest juz zamkniety.", ex.Message);
+        Assert.Equal("Pokój jest już zamknięty.", ex.Message);
         await queue.DisposeAsync();
     }
 }

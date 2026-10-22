@@ -26,7 +26,7 @@ public sealed class RoomJournalTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.MoveAsync(ala.Token, 0, "3"));
 
-        Assert.Equal("Nie udalo sie zapisac ruchu - sprobuj jeszcze raz.", ex.Message);
+        Assert.Equal("Nie udało się zapisać ruchu - spróbuj jeszcze raz.", ex.Message);
         Assert.Equal(0, room.Info.Moves);
         await room.MoveAsync(ala.Token, 0, "3");
         Assert.Equal(["3"], table.MovesOf(room));

@@ -9,7 +9,7 @@ internal sealed partial class Room<TState, TMove, TGame>
     public Task<SeatTicket> JoinAsync(string name, string connection) => _queue.Post(() =>
     {
         var player = PlayerName.Validate(name, _options.MaxNameLength);
-        Ensure(RoomStatus.Waiting, "Partia juz trwa - mozesz ja ogladac.");
+        Ensure(RoomStatus.Waiting, "Partia już trwa - możesz ją oglądać.");
         var seat = Array.FindIndex(_seats, s => s.Kind == SeatKind.Empty);
         if (seat < 0)
         {
@@ -53,10 +53,10 @@ internal sealed partial class Room<TState, TMove, TGame>
     public Task AddBotAsync(string token, int seat, string bot) => _queue.Post(() =>
     {
         EnsureHost(token);
-        Ensure(RoomStatus.Waiting, "Boty dodaje sie przed startem partii.");
+        Ensure(RoomStatus.Waiting, "Boty dodaje się przed startem partii.");
         if (seat < 0 || seat >= _seats.Length)
         {
-            throw new RoomException($"Nie ma miejsca {seat}; stol ma {_seats.Length} miejsc.");
+            throw new RoomException($"Nie ma miejsca {seat}; stół ma {_seats.Length} miejsc.");
         }
 
         if (_seats[seat].Kind == SeatKind.Human)
@@ -66,7 +66,7 @@ internal sealed partial class Room<TState, TMove, TGame>
 
         if (string.IsNullOrWhiteSpace(bot) || bot.Length > _options.MaxNameLength)
         {
-            throw new RoomException($"Opis bota: od 1 do {_options.MaxNameLength} znakow (np. mcts:300).");
+            throw new RoomException($"Opis bota: od 1 do {_options.MaxNameLength} znaków (np. mcts:300).");
         }
 
         Contestant<TState, TMove> contestant;

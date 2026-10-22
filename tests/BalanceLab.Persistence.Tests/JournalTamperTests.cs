@@ -31,7 +31,7 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
         var verification = await journal.VerifyAsync(id);
 
         Assert.Equal((false, (int?)3), (verification.Ok, verification.FirstBadMove));
-        Assert.Equal("Po ruchu nr 3 powtorka daje inny hash niz dziennik.", verification.Problem);
+        Assert.Equal("Po ruchu nr 3 powtórka daje inny hash niż dziennik.", verification.Problem);
         var ex = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 3));
         Assert.Contains("Po ruchu nr 3 partii", ex.Message, StringComparison.Ordinal);
         Assert.Equal(2, (await journal.StateAtAsync(id, 2)).MovesPlayed);
@@ -82,7 +82,7 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
         var other = ConnectFour.EncodeState(ConnectFour.Apply(ConnectFour.Setup(new GameSetup(2, 1)), new ConnectFourMove(6)));
         await db.TamperAsync("match_snapshots", $"UPDATE match_snapshots SET state = '{other}' WHERE seq = 4");
 
-        Assert.Equal(new JournalVerification(6, 3, 4, "Migawka po ruchu nr 4 nie zgadza sie z powtorka."), await journal.VerifyAsync(id));
+        Assert.Equal(new JournalVerification(6, 3, 4, "Migawka po ruchu nr 4 nie zgadza się z powtórką."), await journal.VerifyAsync(id));
         var ex = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 5));
         Assert.Contains("Migawka po ruchu nr 4 partii", ex.Message, StringComparison.Ordinal);
     }
@@ -109,7 +109,7 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
 
         var ex = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 4));
         Assert.Contains("Migawka po ruchu nr 4 partii", ex.Message, StringComparison.Ordinal);
-        Assert.Contains("nie zgadza sie z dziennikiem ruchow", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("nie zgadza się z dziennikiem ruchów", ex.Message, StringComparison.Ordinal);
         await Assert.ThrowsAsync<JournalMismatchException>(() => journal.AppendAsync(id, 4, Moves[4]));
         Assert.Equal(4, (await journal.VerifyAsync(id)).FirstBadMove);
     }
@@ -132,7 +132,7 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
 
         Assert.Contains("Ruch nr 2 (kolumna 9) jest nielegalny.", illegal.Message, StringComparison.Ordinal);
         Assert.IsType<IllegalMoveException>(illegal.InnerException);
-        Assert.Contains("nie daje sie odtworzyc: Ruch nr 2 ('zzz'): 'zzz' to nie numer kolumny.", unreadable.Message, StringComparison.Ordinal);
+        Assert.Contains("nie daje się odtworzyć: Ruch nr 2 ('zzz'): 'zzz' to nie numer kolumny.", unreadable.Message, StringComparison.Ordinal);
         var load = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.LoadAsync(id));
         Assert.Contains("nieczytelny ruch: Ruch nr 2 ('zzz')", load.Message, StringComparison.Ordinal);
         Assert.Equal(4L, await db.ScalarAsync<long>("SELECT count(*) FROM match_moves"));
@@ -169,9 +169,9 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
         await using var _ = db;
         await db.TamperAsync("match_moves", "DELETE FROM match_moves WHERE seq = 5");
 
-        Assert.Equal(new JournalVerification(5, 3, null, "Naglowek mowi o 6 ruchach, a w dzienniku jest 5."), await journal.VerifyAsync(id));
+        Assert.Equal(new JournalVerification(5, 3, null, "Nagłówek mówi o 6 ruchach, a w dzienniku jest 5."), await journal.VerifyAsync(id));
         var ex = await Assert.ThrowsAsync<JournalMismatchException>(() => journal.StateAtAsync(id, 5));
-        Assert.Contains("brakuje ruchow miedzy 4 a 5", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("brakuje ruchów między 4 a 5", ex.Message, StringComparison.Ordinal);
 
         // Luka przy zgodnej liczbie: ruch nr 5 zastapiony ruchem nr 7.
         await db.TamperAsync("match_moves", $"INSERT INTO match_moves (match_id, seq, move, hash_after) VALUES ('{id}', 7, '6', 0)");
@@ -185,13 +185,13 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
         await using var _ = db;
         await db.TamperAsync("match_snapshots", $"INSERT INTO match_snapshots (match_id, seq, state, hash) SELECT match_id, 8, state, hash FROM match_snapshots WHERE seq = 6");
 
-        Assert.Equal(new JournalVerification(6, 4, null, "Migawka po ruchu, ktorego nie ma w dzienniku."), await journal.VerifyAsync(id));
+        Assert.Equal(new JournalVerification(6, 4, null, "Migawka po ruchu, którego nie ma w dzienniku."), await journal.VerifyAsync(id));
     }
 
     [Theory]
-    [InlineData("status = 'Finished'", "Naglowek mowi, ze partia sie skonczyla, a powtorka nie doszla do konca.")]
-    [InlineData("status = 'Abandoned', final_hash = 0", "Wynik w naglowku nie zgadza sie z powtorka.")]
-    [InlineData("status = 'Abandoned', scores = '{1,0}'", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    [InlineData("status = 'Finished'", "Nagłówek mówi, że partia się skończyła, a powtórka nie doszła do końca.")]
+    [InlineData("status = 'Abandoned', final_hash = 0", "Wynik w nagłówku nie zgadza się z powtórką.")]
+    [InlineData("status = 'Abandoned', scores = '{1,0}'", "Wynik w nagłówku nie zgadza się z powtórką.")]
     public async Task Header_that_disagrees_with_an_unfinished_replay_is_found(string change, string problem)
     {
         var (db, journal, id) = await RecordAsync(postgres);
@@ -202,11 +202,11 @@ public sealed class JournalTamperTests(PostgresFixture postgres)
     }
 
     [Theory]
-    [InlineData("status = 'InProgress'", "Powtorka doszla do konca partii, a naglowek mowi: InProgress.")]
-    [InlineData("status = 'Abandoned'", "Powtorka doszla do konca partii, a naglowek mowi: Abandoned.")]
-    [InlineData("final_hash = final_hash + 1", "Wynik w naglowku nie zgadza sie z powtorka.")]
-    [InlineData("scores = '{0,1}'", "Wynik w naglowku nie zgadza sie z powtorka.")]
-    [InlineData("scores = NULL", "Wynik w naglowku nie zgadza sie z powtorka.")]
+    [InlineData("status = 'InProgress'", "Powtórka doszła do końca partii, a nagłówek mówi: InProgress.")]
+    [InlineData("status = 'Abandoned'", "Powtórka doszła do końca partii, a nagłówek mówi: Abandoned.")]
+    [InlineData("final_hash = final_hash + 1", "Wynik w nagłówku nie zgadza się z powtórką.")]
+    [InlineData("scores = '{0,1}'", "Wynik w nagłówku nie zgadza się z powtórką.")]
+    [InlineData("scores = NULL", "Wynik w nagłówku nie zgadza się z powtórką.")]
     public async Task Header_that_disagrees_with_a_finished_replay_is_found(string change, string problem)
     {
         await using var db = await postgres.CreateDatabaseAsync();

@@ -28,7 +28,7 @@ public sealed class RoomSetupTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.JoinAsync("Iza", "c-iza"));
 
-        Assert.Equal("Partia juz trwa - mozesz ja ogladac.", ex.Message);
+        Assert.Equal("Partia już trwa - możesz ją oglądać.", ex.Message);
     }
 
     [Fact]
@@ -63,20 +63,20 @@ public sealed class RoomSetupTests
         var (room, host) = await table.CreateAsync("klejnoty", 3);
         var ola = await room.JoinAsync("Ola", "c-ola");
 
-        Assert.Equal("Tylko gospodarz moze to zrobic.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(ola.Token, 2, "random"))).Message);
+        Assert.Equal("Tylko gospodarz może to zrobić.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(ola.Token, 2, "random"))).Message);
         Assert.Equal("Nieznany bilet miejsca w tym pokoju.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync("zly", 2, "random"))).Message);
         Assert.Equal("Miejsce 1 zajmuje gracz.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 1, "random"))).Message);
-        Assert.Equal("Nie ma miejsca 3; stol ma 3 miejsc.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 3, "random"))).Message);
-        Assert.Equal("Nie ma miejsca -1; stol ma 3 miejsc.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, -1, "random"))).Message);
+        Assert.Equal("Nie ma miejsca 3; stół ma 3 miejsc.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 3, "random"))).Message);
+        Assert.Equal("Nie ma miejsca -1; stół ma 3 miejsc.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, -1, "random"))).Message);
         Assert.Equal("Bot 'mcts:5001': najwyżej 5000 iteracji.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, "mcts:5001"))).Message);
-        Assert.Equal("Opis bota: od 1 do 24 znakow (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, new string('x', 25)))).Message);
-        Assert.Equal("Opis bota: od 1 do 24 znakow (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, " "))).Message);
-        Assert.Equal("Opis bota: od 1 do 24 znakow (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, null!))).Message);
+        Assert.Equal("Opis bota: od 1 do 24 znaków (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, new string('x', 25)))).Message);
+        Assert.Equal("Opis bota: od 1 do 24 znaków (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, " "))).Message);
+        Assert.Equal("Opis bota: od 1 do 24 znaków (np. mcts:300).", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, null!))).Message);
         Assert.StartsWith("Nieznany bot 'alfa'", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, "alfa"))).Message, StringComparison.Ordinal);
         Assert.Equal(SeatKind.Empty, room.Info.Seats[2].Kind);
 
         await room.StartAsync(host.Token);
-        Assert.Equal("Boty dodaje sie przed startem partii.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, "random"))).Message);
+        Assert.Equal("Boty dodaje się przed startem partii.", (await Assert.ThrowsAsync<RoomException>(() => room.AddBotAsync(host.Token, 2, "random"))).Message);
     }
 
     [Fact]
@@ -107,9 +107,9 @@ public sealed class RoomSetupTests
         var (room, host) = await table.CreateAsync();
         var ola = await room.JoinAsync("Ola", "c-ola");
 
-        Assert.Equal("Tylko gospodarz moze to zrobic.", (await Assert.ThrowsAsync<RoomException>(() => room.StartAsync(ola.Token))).Message);
+        Assert.Equal("Tylko gospodarz może to zrobić.", (await Assert.ThrowsAsync<RoomException>(() => room.StartAsync(ola.Token))).Message);
         await room.StartAsync(host.Token);
-        Assert.Equal("Partia juz sie zaczela.", (await Assert.ThrowsAsync<RoomException>(() => room.StartAsync(host.Token))).Message);
+        Assert.Equal("Partia już się zaczęła.", (await Assert.ThrowsAsync<RoomException>(() => room.StartAsync(host.Token))).Message);
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public sealed class RoomSetupTests
 
         var ex = await Assert.ThrowsAsync<RoomException>(() => room.StartAsync(host.Token));
 
-        Assert.Equal("Nie udalo sie zapisac partii - sprobuj jeszcze raz.", ex.Message);
+        Assert.Equal("Nie udało się zapisać partii - spróbuj jeszcze raz.", ex.Message);
         Assert.Contains(table.Logs.Entries, e => e.Level == Microsoft.Extensions.Logging.LogLevel.Error && e.Message.EndsWith("nie udalo sie zapisac ruchu nr 0", StringComparison.Ordinal));
 
         Assert.Equal(RoomStatus.Waiting, room.Info.Status);

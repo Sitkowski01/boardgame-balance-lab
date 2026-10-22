@@ -110,7 +110,7 @@ public sealed partial class JournalCommandsTests(JournalDatabase postgres) : ICl
         // Prosba o stan po 5 ruchach nie znika po cichu: lista konczy sie na 5 ruchach, a stan jest pominiety z powodem.
         Assert.Equal(5, MoveLine().Count(output));
         Assert.Contains("Stan po ruchu 5: pominiety, bo dziennik sie nie zgadza", output, StringComparison.Ordinal);
-        Assert.Equal("Powtorka nie zgadza sie z dziennikiem: Po ruchu nr 3 powtorka daje inny hash niz dziennik.", error.Trim());
+        Assert.Equal("Powtorka nie zgadza sie z dziennikiem: Po ruchu nr 3 powtórka daje inny hash niż dziennik.", error.Trim());
     }
 
     [Fact]

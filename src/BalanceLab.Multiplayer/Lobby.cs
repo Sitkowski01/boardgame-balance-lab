@@ -73,12 +73,12 @@ public sealed class Lobby : IAsyncDisposable
             Prune();
             if (_rooms.Count >= _options.MaxRooms)
             {
-                throw new RoomException($"Serwer ma juz {_options.MaxRooms} pokoi - sprobuj pozniej.");
+                throw new RoomException($"Serwer ma już {_options.MaxRooms} pokoi - spróbuj później.");
             }
 
             if (owner is not null && OpenRoomsOf(owner) >= _options.MaxRoomsPerOwner)
             {
-                throw new RoomException($"Masz juz {_options.MaxRoomsPerOwner} otwarte pokoje - dokoncz albo zamknij ktorys.");
+                throw new RoomException($"Masz już {_options.MaxRoomsPerOwner} otwarte pokoje - dokończ albo zamknij któryś.");
             }
 
             room = definition.Accept(new Builder(this, request, Guid.CreateVersion7(_clock.GetUtcNow()), _seeds()));

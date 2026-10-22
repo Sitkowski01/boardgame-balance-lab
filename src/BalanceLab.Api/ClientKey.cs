@@ -47,6 +47,6 @@ internal sealed class HubCallLimiter(PartitionedRateLimiter<string> limiter) : I
         using var lease = limiter.AttemptAcquire(ClientKey.Of(invocationContext.Context.GetHttpContext()?.Connection.RemoteIpAddress));
         return lease.IsAcquired
             ? await next(invocationContext)
-            : throw new HubException("Za duzo prosb naraz - zwolnij na chwile.");
+            : throw new HubException("Za dużo próśb naraz - zwolnij na chwilę.");
     }
 }

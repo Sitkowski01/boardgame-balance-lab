@@ -42,7 +42,7 @@ public sealed class ServerTests(ApiFixture api)
         await browser.Hub.InvokeAsync<List<RoomInfo>>("WatchLobby");
         var ex = await Assert.ThrowsAsync<HubException>(() => browser.Hub.InvokeAsync<List<RoomInfo>>("WatchLobby"));
 
-        Assert.Contains("Za duzo prosb naraz - zwolnij na chwile.", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("Za dużo próśb naraz - zwolnij na chwilę.", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class ServerTests(ApiFixture api)
 
         var ex = await Assert.ThrowsAsync<HubException>(() => again.Hub.InvokeAsync<SeatTicket>("CreateRoom", new CreateRoomArgs("connectfour", 2, null, "Ala")));
 
-        Assert.Contains("Masz juz 1 otwarte pokoje", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("Masz już 1 otwarte pokoje", ex.Message, StringComparison.Ordinal);
     }
 
     [Theory]

@@ -101,7 +101,7 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
     {
         if (SeatOf(token) != _host)
         {
-            throw new RoomException("Tylko gospodarz moze to zrobic.");
+            throw new RoomException("Tylko gospodarz może to zrobić.");
         }
     }
 

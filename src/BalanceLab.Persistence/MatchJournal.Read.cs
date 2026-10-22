@@ -96,7 +96,7 @@ public sealed partial class MatchJournal<TState, TMove>
         {
             if (tail.Count == 0 || tail[0].Seq != from || tail[0].HashAfter != snapshot.Hash)
             {
-                throw new JournalMismatchException($"Migawka po ruchu nr {from} partii {row.Id} nie zgadza sie z dziennikiem ruchow.");
+                throw new JournalMismatchException($"Migawka po ruchu nr {from} partii {row.Id} nie zgadza się z dziennikiem ruchów.");
             }
 
             tail.RemoveAt(0);
@@ -104,7 +104,7 @@ public sealed partial class MatchJournal<TState, TMove>
 
         if (tail.Count != moves - from)
         {
-            throw new JournalMismatchException($"W dzienniku partii {row.Id} brakuje ruchow miedzy {from} a {moves}.");
+            throw new JournalMismatchException($"W dzienniku partii {row.Id} brakuje ruchów między {from} a {moves}.");
         }
 
         // Blad w zapisanym ruchu albo migawce to uszkodzony dziennik, a nie nielegalny ruch wolajacego.
@@ -116,14 +116,14 @@ public sealed partial class MatchJournal<TState, TMove>
         }
         catch (Exception ex) when (ex is FormatException or IllegalMoveException)
         {
-            throw new JournalMismatchException($"Dziennik partii {row.Id} nie daje sie odtworzyc: {ex.Message}", ex);
+            throw new JournalMismatchException($"Dziennik partii {row.Id} nie daje się odtworzyć: {ex.Message}", ex);
         }
 
         for (var i = 0; i < tail.Count; i++)
         {
             if (replay.Hashes[i] != unchecked((ulong)tail[i].HashAfter))
             {
-                throw new JournalMismatchException($"Po ruchu nr {tail[i].Seq} partii {row.Id} powtorka daje inny hash niz dziennik.");
+                throw new JournalMismatchException($"Po ruchu nr {tail[i].Seq} partii {row.Id} powtórka daje inny hash niż dziennik.");
             }
         }
 
@@ -135,7 +135,7 @@ public sealed partial class MatchJournal<TState, TMove>
         var state = rules.States.DecodeState(snapshot.State);
         return rules.Game.Hash(state) == unchecked((ulong)snapshot.Hash)
             ? state
-            : throw new JournalMismatchException($"Migawka po ruchu nr {snapshot.Seq} partii {match} nie zgadza sie ze swoim hashem.");
+            : throw new JournalMismatchException($"Migawka po ruchu nr {snapshot.Seq} partii {match} nie zgadza się ze swoim hashem.");
     }
 
     private static TMove Decode(StoredGame<TState, TMove> rules, MoveRow move)
@@ -167,7 +167,7 @@ public sealed partial class MatchJournal<TState, TMove>
     {
         if (moves.Count != row.Moves)
         {
-            return (null, $"Naglowek mowi o {row.Moves} ruchach, a w dzienniku jest {moves.Count}.");
+            return (null, $"Nagłówek mówi o {row.Moves} ruchach, a w dzienniku jest {moves.Count}.");
         }
 
         var state = rules.Game.Setup(SetupOf(row));
@@ -191,7 +191,7 @@ public sealed partial class MatchJournal<TState, TMove>
             var hash = rules.Game.Hash(state);
             if (hash != unchecked((ulong)moves[i].HashAfter))
             {
-                return (seq, $"Po ruchu nr {seq} powtorka daje inny hash niz dziennik.");
+                return (seq, $"Po ruchu nr {seq} powtórka daje inny hash niż dziennik.");
             }
 
             if (snapshots.TryGetValue(seq, out var snapshot) && SnapshotProblem(rules, snapshot, hash) is { } problem)
@@ -202,7 +202,7 @@ public sealed partial class MatchJournal<TState, TMove>
 
         if (snapshots.Keys.Any(seq => seq > moves.Count))
         {
-            return (null, "Migawka po ruchu, ktorego nie ma w dzienniku.");
+            return (null, "Migawka po ruchu, którego nie ma w dzienniku.");
         }
 
         return (null, HeaderProblem(row, rules.Game, state));
@@ -214,7 +214,7 @@ public sealed partial class MatchJournal<TState, TMove>
         {
             return unchecked((ulong)snapshot.Hash) == hash && rules.Game.Hash(rules.States.DecodeState(snapshot.State)) == hash
                 ? null
-                : $"Migawka po ruchu nr {snapshot.Seq} nie zgadza sie z powtorka.";
+                : $"Migawka po ruchu nr {snapshot.Seq} nie zgadza się z powtórką.";
         }
         catch (FormatException ex)
         {
@@ -227,7 +227,7 @@ public sealed partial class MatchJournal<TState, TMove>
         var terminal = game.IsTerminal(state);
         if ((row.Status == MatchStatus.Finished) != terminal)
         {
-            return terminal ? $"Powtorka doszla do konca partii, a naglowek mowi: {row.Status}." : "Naglowek mowi, ze partia sie skonczyla, a powtorka nie doszla do konca.";
+            return terminal ? $"Powtórka doszła do końca partii, a nagłówek mówi: {row.Status}." : "Nagłówek mówi, że partia się skończyła, a powtórka nie doszła do końca.";
         }
 
         if (row.Status == MatchStatus.InProgress)
@@ -236,7 +236,7 @@ public sealed partial class MatchJournal<TState, TMove>
         }
 
         var scoresMatch = row.Status == MatchStatus.Abandoned ? row.Scores is null : row.Scores is { } s && s.SequenceEqual(game.Scores(state));
-        return row.FinalHash == unchecked((long)game.Hash(state)) && scoresMatch ? null : "Wynik w naglowku nie zgadza sie z powtorka.";
+        return row.FinalHash == unchecked((long)game.Hash(state)) && scoresMatch ? null : "Wynik w nagłówku nie zgadza się z powtórką.";
     }
 
     private static MatchInfo Info(MatchRow row) => new(

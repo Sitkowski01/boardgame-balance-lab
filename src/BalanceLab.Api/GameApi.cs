@@ -85,7 +85,7 @@ internal static class GameApi
     }
 
     private static ProblemHttpResult Unreadable(JournalMismatchException ex) =>
-        TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status422UnprocessableEntity, title: "Dziennik partii nie zgadza sie z zasadami gry");
+        TypedResults.Problem(ex.Message, statusCode: StatusCodes.Status422UnprocessableEntity, title: "Dziennik partii nie zgadza się z zasadami gry");
 }
 
 /// <summary>Co minute usuwa z lobby skonczone i opuszczone pokoje.</summary>
