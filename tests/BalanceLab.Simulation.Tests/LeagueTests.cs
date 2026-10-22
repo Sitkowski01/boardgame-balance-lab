@@ -51,6 +51,26 @@ public sealed class LeagueTests
     }
 
     [Fact]
+    public void Dominant_chain_is_fitted_to_convergence()
+    {
+        // Lancuch, w ktorym silniejszy wygrywa zawsze, jest symetryczny wzgledem srodka. MM zbiega tu
+        // tak wolno, ze po stalych 2000 krokach skrajne oceny roznily sie od siebie o 0,2.
+        string[] names = ["a", "b", "c", "d", "e"];
+        PairResult[] pairs =
+        [
+            .. from i in Enumerable.Range(0, 5)
+               from j in Enumerable.Range(i + 1, 4 - i)
+               select new PairResult(names[i], names[j], 200, Proportion.Of(200, 200), Proportion.Of(0, 200), 1.0),
+        ];
+
+        var elo = League.Elo(names, pairs);
+
+        Assert.Equal(1500.0, elo[2]);
+        Assert.Equal(elo[0] - 1500, 1500 - elo[4], 1);
+        Assert.Equal(elo[1] - 1500, 1500 - elo[3], 1);
+    }
+
+    [Fact]
     public void Ratings_are_transitive_for_a_clear_order()
     {
         // a bije b, b bije c, a bije c: ranking a > b > c, mimo ze c nigdy nie gral "rowno".

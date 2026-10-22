@@ -24,7 +24,9 @@ public sealed record LeagueReport(
 /// </summary>
 public static class League
 {
-    private const int Iterations = 2_000;
+    // MM zbiega wolno, gdy jedna strategia wygrywa prawie wszystko — liczymy do zbieznosci, z bezpiecznikiem.
+    private const int MaxIterations = 1_000_000;
+    private const double Converged = 1e-12;
 
     /// <param name="progress">Ile partii ligi juz rozegrano (wszystkie pary razem: pary * partie na pare).</param>
     public static LeagueReport Run<TState, TMove>(
@@ -115,7 +117,7 @@ public static class League
         }
 
         var strength = Enumerable.Repeat(1.0, n).ToArray();
-        for (var iteration = 0; iteration < Iterations; iteration++)
+        for (var iteration = 0; iteration < MaxIterations; iteration++)
         {
             var next = new double[n];
             for (var i = 0; i < n; i++)
@@ -131,7 +133,13 @@ public static class League
 
             // Model nie zna skali (g i 2g daja te same szanse), wiec trzymamy sume rowna n — inaczej liczby by plynely.
             var sum = next.Sum();
-            strength = [.. next.Select(g => g * n / sum)];
+            var scaled = next.Select(g => g * n / sum).ToArray();
+            var change = scaled.Zip(strength, (a, b) => Math.Abs(Math.Log(a / b))).Max();
+            strength = scaled;
+            if (change < Converged)
+            {
+                break;
+            }
         }
 
         // Elo: 400 punktow roznicy = 10 razy wieksza sila, srednia 1500. Zaokraglenie do 0,1 chowa roznice
