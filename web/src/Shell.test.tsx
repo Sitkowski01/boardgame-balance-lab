@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Repository, Shell } from "./Shell";
@@ -33,6 +33,27 @@ describe("Shell", () => {
     expect(navigate).toHaveBeenLastCalledWith("/lab");
     await user.click(screen.getByRole("link", { name: "Balance Lab" }));
     expect(navigate).toHaveBeenLastCalledWith("/");
+    expect(screen.getByRole("link", { name: "Balance Lab" })).toHaveClass("brand");
+    expect(screen.getByRole("link", { name: "Balance Lab" })).toHaveAttribute("href", "/");
+  });
+
+  it("lets the brand open in a new tab with Ctrl", () => {
+    const { navigate } = shell("lobby");
+
+    expect(fireEvent.click(screen.getByRole("link", { name: "Balance Lab" }), { ctrlKey: true })).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("names and draws the theme switch after the theme it switches to", async () => {
+    const { user } = shell("lobby");
+    const toggle = (): HTMLElement => screen.getByRole("button", { name: /motyw/u });
+
+    expect(toggle()).toHaveAttribute("title", "Ciemny motyw");
+    // Ksiezyc to sam sierp (path), slonce ma kolo w srodku.
+    expect(toggle().querySelector("circle")).toBeNull();
+    await user.click(toggle());
+    expect(toggle()).toHaveAttribute("title", "Jasny motyw");
+    expect(toggle().querySelector("circle")).not.toBeNull();
   });
 
   it("marks the lab as the current section on lab pages", () => {
@@ -66,6 +87,34 @@ describe("Shell", () => {
 });
 
 describe("Shell and the system theme", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("asks the browser for a dark system theme by default", () => {
+    const matchMedia = vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    vi.stubGlobal("matchMedia", matchMedia);
+    render(
+      <Shell route={{ page: "lobby" }} navigate={vi.fn()}>
+        <main />
+      </Shell>,
+    );
+
+    expect(screen.getByRole("button", { name: "Włącz jasny motyw" })).toBeInTheDocument();
+    expect(matchMedia).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
+  });
+
+  it("starts light in a browser without media queries", () => {
+    vi.stubGlobal("matchMedia", undefined);
+    render(
+      <Shell route={{ page: "lobby" }} navigate={vi.fn()}>
+        <main />
+      </Shell>,
+    );
+
+    expect(screen.getByRole("button", { name: "Włącz ciemny motyw" })).toBeInTheDocument();
+  });
+
   function query(matches: boolean) {
     const listeners = new Set<(e: MediaQueryListEvent) => void>();
     const list = {

@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Balance Lab</title>
+    <script>
+      // Motyw wybrany wczesniej (theme.ts: ten sam klucz i atrybut) przed pierwszym malowaniem, bez mrugniecia jasnym tlem.
+      try {
+        var theme = localStorage.getItem("balance-lab:theme");
+        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      } catch (e) {
+        // Bez dostepu do pamieci strona idzie za motywem systemu.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

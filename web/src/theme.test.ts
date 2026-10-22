@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import page from "../index.html?raw";
 import { applyTheme, currentTheme, loadTheme, saveTheme } from "./theme";
 
 function memory(initial: Record<string, string> = {}): Storage {
@@ -52,5 +53,49 @@ describe("theme", () => {
     expect(root.dataset.theme).toBe("dark");
     applyTheme(null, root);
     expect(root.hasAttribute("data-theme")).toBe(false);
+  });
+});
+
+describe("theme before the first paint", () => {
+  /** Skrypt z <head> w index.html: dziala, zanim React sie wczyta. */
+  const early = (): void => {
+    const script = /<script>([\s\S]*?)<\/script>/u.exec(page)?.[1];
+    if (script === undefined) throw new Error("index.html bez skryptu motywu");
+    // Posredni eval: skrypt dziala w zasiegu globalnym, tak jak w przegladarce.
+    (0, eval)(script);
+  };
+
+  afterEach(() => {
+    localStorage.clear();
+    delete document.documentElement.dataset.theme;
+    vi.restoreAllMocks();
+  });
+
+  it("puts the theme saved by the switch on the page before React starts", () => {
+    saveTheme("dark");
+    early();
+    expect(document.documentElement.dataset.theme).toBe("dark");
+
+    saveTheme("light");
+    early();
+    expect(document.documentElement.dataset.theme).toBe("light");
+  });
+
+  it("leaves the system theme alone without a valid choice", () => {
+    early();
+    expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
+
+    localStorage.setItem("balance-lab:theme", "blue");
+    early();
+    expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
+  });
+
+  it("does not break the page when storage is blocked", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("brak dostepu");
+    });
+
+    expect(early).not.toThrow();
+    expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
   });
 });
