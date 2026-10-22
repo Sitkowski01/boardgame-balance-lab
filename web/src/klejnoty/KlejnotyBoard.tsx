@@ -1,3 +1,4 @@
+import { plural } from "../plural";
 import { Bank } from "./Bank";
 import { Card } from "./Card";
 import { Cost } from "./Gem";
@@ -44,14 +45,18 @@ export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, onMove }: 
           .reverse()
           .map(({ row, tier }) => {
             const deck = legalMoves.includes(`deck:${String(tier)}`) ? `deck:${String(tier)}` : null;
+            const size = view.deckSizes[tier - 1] ?? 0;
             return (
               <div key={tier} className="market-row">
                 <div className={`deck tier-${String(tier)}`} aria-label={`Talia ${String(tier)}`}>
                   <span className="deck-tier">{"I".repeat(tier)}</span>
-                  <span className="deck-count">{view.deckSizes[tier - 1]} kart</span>
+                  <span className="deck-count">
+                    {size} {plural(size, "karta", "karty", "kart")}
+                  </span>
                   {deck !== null && (
                     <button
                       type="button"
+                      aria-label={`Rezerwuj w ciemno z talii ${"I".repeat(tier)}`}
                       onClick={() => {
                         onMove(deck);
                       }}
@@ -60,11 +65,12 @@ export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, onMove }: 
                     </button>
                   )}
                 </div>
+                {/* Numer karty i numer slotu moga sie pokryc (karta #2 obok pustego slotu 2), stad przedrostki w kluczach. */}
                 {row.map((id, slot) =>
                   id === null ? (
-                    <div key={slot} className="card empty" aria-label="Pusty slot" />
+                    <div key={`empty-${String(slot)}`} className="card empty" aria-label="Pusty slot" />
                   ) : (
-                    <Card key={id} card={sheet.cards[id]} id={id} legalMoves={legalMoves} onMove={onMove} />
+                    <Card key={`card-${String(id)}`} card={sheet.cards[id]} id={id} legalMoves={legalMoves} onMove={onMove} />
                   ),
                 )}
               </div>

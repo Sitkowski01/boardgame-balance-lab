@@ -29,6 +29,7 @@ export function Card({ card, id, legalMoves, onMove }: CardProps) {
           <button
             type="button"
             className="buy"
+            aria-label={`Kup kartę #${String(id)}`}
             onClick={() => {
               onMove(buy);
             }}
@@ -39,6 +40,7 @@ export function Card({ card, id, legalMoves, onMove }: CardProps) {
         {reserve !== null && (
           <button
             type="button"
+            aria-label={`Rezerwuj kartę #${String(id)}`}
             onClick={() => {
               onMove(reserve);
             }}

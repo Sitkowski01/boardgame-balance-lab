@@ -5,6 +5,7 @@ export function Gem({ gem, count, label }: { gem: number; count?: number; label?
   return (
     <span
       className={`gem gem-${String(gem)}`}
+      role="img"
       title={gemName(gem)}
       aria-label={label ?? `${gemName(gem)}${count === undefined ? "" : `: ${String(count)}`}`}
     >

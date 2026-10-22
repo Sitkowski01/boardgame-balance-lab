@@ -76,9 +76,12 @@ describe("KlejnotyBoard", () => {
     const { onMove, user } = board({ legalMoves: ["buy:41", "reserve:0", "deck:3"] });
 
     expect(within(screen.getByLabelText("Karta #42")).queryByRole("button")).not.toBeInTheDocument();
-    await user.click(within(screen.getByLabelText("Karta #41")).getByRole("button", { name: "Kup" }));
-    await user.click(within(screen.getByLabelText("Karta #0")).getByRole("button", { name: "Rezerwuj" }));
-    await user.click(within(screen.getByLabelText("Talia 3")).getByRole("button", { name: "Rezerwuj w ciemno" }));
+    await user.click(within(screen.getByLabelText("Karta #41")).getByRole("button", { name: "Kup kartę #41" }));
+    await user.click(within(screen.getByLabelText("Karta #0")).getByRole("button", { name: "Rezerwuj kartę #0" }));
+    // Przycisk mowi, z ktorej talii, a na ekranie zostaje krotkie "Rezerwuj w ciemno".
+    const blind = within(screen.getByLabelText("Talia 3")).getByRole("button", { name: "Rezerwuj w ciemno z talii III" });
+    expect(blind).toHaveTextContent(/^Rezerwuj w ciemno$/u);
+    await user.click(blind);
     expect(within(screen.getByLabelText("Talia 2")).queryByRole("button")).not.toBeInTheDocument();
 
     expect(onMove.mock.calls.map(([m]) => m)).toEqual(["buy:41", "reserve:0", "deck:3"]);
@@ -90,7 +93,7 @@ describe("KlejnotyBoard", () => {
     });
     const { onMove, user } = board({ view, legalMoves: ["buy-reserved:5"] });
 
-    await user.click(within(screen.getByLabelText("Karta #5")).getByRole("button", { name: "Kup" }));
+    await user.click(within(screen.getByLabelText("Karta #5")).getByRole("button", { name: "Kup kartę #5" }));
 
     expect(onMove).toHaveBeenCalledWith("buy-reserved:5");
     expect(within(screen.getByLabelText("Gracz Ola")).getByLabelText("Zakryta karta poziomu 2")).toBeInTheDocument();
@@ -136,5 +139,35 @@ describe("KlejnotyBoard", () => {
 
     expect(screen.queryByText("na ruchu")).not.toBeInTheDocument();
     expect(screen.queryByText(/Ostatnia runda/u)).not.toBeInTheDocument();
+  });
+});
+
+describe("KlejnotyBoard for every reader", () => {
+  it("counts the cards left in each deck in Polish", () => {
+    board({ view: klejnoty({ deckSizes: [1, 2, 5] }) });
+
+    expect(within(screen.getByLabelText("Talia 1")).getByText(/kart/u)).toHaveTextContent(/^1 karta$/u);
+    expect(within(screen.getByLabelText("Talia 2")).getByText(/kart/u)).toHaveTextContent(/^2 karty$/u);
+    expect(within(screen.getByLabelText("Talia 3")).getByText(/kart/u)).toHaveTextContent(/^5 kart$/u);
+  });
+
+  it("presents tokens and costs as named images", () => {
+    board();
+
+    const cost = within(screen.getByLabelText("Karta #41")).getByRole("img", { name: "zielony: 3" });
+    expect(cost).toHaveClass("gem");
+    expect(cost).toHaveTextContent("3");
+  });
+
+  it("keeps an empty slot and a card with the same number apart", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const market = klejnoty().market.map((id, i) => (i === 0 ? 1 : i === 1 || i === 2 ? null : id));
+
+    board({ view: klejnoty({ market }) });
+
+    expect(screen.getByLabelText("Karta #1")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Pusty slot")).toHaveLength(2);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });
