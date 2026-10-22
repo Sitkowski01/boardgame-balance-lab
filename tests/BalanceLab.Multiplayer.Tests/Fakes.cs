@@ -75,6 +75,15 @@ internal sealed class MemoryRecorders : IMatchRecorderFactory
     /// <summary>Ile najblizszych zapisow (start albo ruch) ma sie nie udac.</summary>
     public int Failures { get; set; }
 
+    /// <summary>Ile najblizszych ruchow zapisze sie, a mimo to zglosi blad (polaczenie padlo po zatwierdzeniu).</summary>
+    public int LostReplies { get; set; }
+
+    /// <summary>Ile najblizszych sprawdzen, czy ruch jest w dzienniku, ma sie nie udac.</summary>
+    public int CheckFailures { get; set; }
+
+    /// <summary>Partie zamkniete jako porzucone.</summary>
+    public ConcurrentBag<Guid> Abandoned { get; } = [];
+
     /// <summary>Zapis ruchu czeka na te bramke (gdy jest): pokoj stoi wtedy w polowie ruchu.</summary>
     public TaskCompletionSource? Gate { get; set; }
 
@@ -117,6 +126,30 @@ internal sealed class MemoryRecorders : IMatchRecorderFactory
             owner.MaybeFail();
             Assert.Equal(expectedMoves, owner.Moves[match].Count);
             owner.Moves[match].Enqueue(rules(_variant).Moves.EncodeMove(move));
+            if (owner.LostReplies > 0)
+            {
+                owner.LostReplies--;
+                throw new TimeoutException("odpowiedz bazy zaginela");
+            }
+        }
+
+        public Task<bool> ContainsAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default)
+        {
+            if (owner.CheckFailures > 0)
+            {
+                owner.CheckFailures--;
+                throw new InvalidOperationException("baza lezy");
+            }
+
+            var moves = owner.Moves[match].ToArray();
+            return Task.FromResult(moves.Length == expectedMoves + 1 && moves[^1] == rules(_variant).Moves.EncodeMove(move));
+        }
+
+        public Task AbandonAsync(Guid match, CancellationToken cancellationToken = default)
+        {
+            owner.MaybeFail();
+            owner.Abandoned.Add(match);
+            return Task.CompletedTask;
         }
     }
 }

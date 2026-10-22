@@ -20,7 +20,8 @@ internal sealed partial class Room<TState, TMove, TGame>
         // Najpierw zapis w dzienniku: gdy sie nie uda, pokoj zostaje taki, jak byl.
         try
         {
-            _match = await _recorder.StartAsync(setup, [.. _seats.Select(s => s.Kind == SeatKind.Empty ? _fill.Name : s.Name!)], _variant);
+            using var timeout = RecordTimeout();
+            _match = await _recorder.StartAsync(setup, [.. _seats.Select(s => s.Kind == SeatKind.Empty ? _fill.Name : s.Name!)], _variant, timeout.Token);
         }
         catch (Exception ex)
         {
@@ -91,14 +92,21 @@ internal sealed partial class Room<TState, TMove, TGame>
             throw new RoomException($"Ruch '{_rules.EncodeMove(move)}' jest nielegalny.", ex);
         }
 
+        Exception? failure = null;
         try
         {
-            await _recorder.AppendAsync(_match!.Value, _moves, move);
+            using var timeout = RecordTimeout();
+            await _recorder.AppendAsync(_match!.Value, _moves, move, timeout.Token);
         }
         catch (Exception ex)
         {
-            LogRecordFailed(_logger, ex, Id, _moves + 1);
-            throw new RoomException("Nie udalo sie zapisac ruchu - sprobuj jeszcze raz.", ex);
+            failure = ex;
+        }
+
+        if (failure is not null && !await WrittenAnywayAsync(move))
+        {
+            LogRecordFailed(_logger, failure, Id, _moves + 1);
+            throw new RoomException("Nie udalo sie zapisac ruchu - sprobuj jeszcze raz.", failure);
         }
 
         _state = next;
@@ -153,6 +161,24 @@ internal sealed partial class Room<TState, TMove, TGame>
         ScheduleBot(_rules.CurrentPlayer(_state), _options.BotDelay);
         // Widoki tez: klient gracza musi przestac pokazywac ruchy, ktorych juz nie moze zagrac.
         PublishAll();
+    }
+
+    /// <summary>
+    /// Blad zapisu nie znaczy, ze ruchu nie ma: polaczenie moglo pasc juz po zatwierdzeniu. Wtedy pokoj musi go
+    /// przyjac — inaczej mialby o ruch mniej niz dziennik i kazdy kolejny zapis konczylby sie konfliktem.
+    /// </summary>
+    private async Task<bool> WrittenAnywayAsync(TMove move)
+    {
+        try
+        {
+            using var timeout = RecordTimeout();
+            return await _recorder.ContainsAsync(_match!.Value, _moves, move, timeout.Token);
+        }
+        catch (Exception ex)
+        {
+            LogRecordFailed(_logger, ex, Id, _moves + 1);
+            return false;
+        }
     }
 
     private void StopClock()

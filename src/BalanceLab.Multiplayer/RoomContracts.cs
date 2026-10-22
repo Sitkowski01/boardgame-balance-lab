@@ -27,6 +27,12 @@ public interface IMatchRecorder<in TMove>
 
     /// <param name="expectedMoves">Ile ruchow partia ma przed tym; inna liczba w dzienniku to blad zapisu.</param>
     Task AppendAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default);
+
+    /// <summary>Czy ostatni zapisany ruch to ten, po <paramref name="expectedMoves"/> wczesniejszych (zapis, ktory zglosil blad, mogl jednak wejsc).</summary>
+    Task<bool> ContainsAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default);
+
+    /// <summary>Zamyka trwajaca partie jako porzucona; zamknieta zostaje bez zmian.</summary>
+    Task AbandonAsync(Guid match, CancellationToken cancellationToken = default);
 }
 
 /// <summary>Tworzy zapis dla gry z katalogu.</summary>
@@ -56,6 +62,12 @@ public sealed class JournalRecorderFactory(JournalDb db) : IMatchRecorderFactory
 
         public Task AppendAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default) =>
             journal.AppendAsync(match, expectedMoves, move, cancellationToken);
+
+        public Task<bool> ContainsAsync(Guid match, int expectedMoves, TMove move, CancellationToken cancellationToken = default) =>
+            journal.ContainsAsync(match, expectedMoves, move, cancellationToken);
+
+        public Task AbandonAsync(Guid match, CancellationToken cancellationToken = default) =>
+            journal.AbandonAsync(match, cancellationToken);
     }
 }
 
@@ -85,6 +97,9 @@ public sealed record RoomOptions
 
     /// <summary>Najwiecej iteracji MCTS/ISMCTS dla bota z lobby: bot liczy na serwerze.</summary>
     public int MaxBotIterations { get; init; } = 5_000;
+
+    /// <summary>Tyle czeka pokoj na zapis w dzienniku; wolna baza nie moze zatrzymac kolejki pokoju na dlugo.</summary>
+    public TimeSpan RecordTimeout { get; init; } = TimeSpan.FromSeconds(10);
 
     /// <summary>Tyle nieudanych zapisow ruchu bota z rzedu i partia jest porzucana, zamiast ponawiac bez konca.</summary>
     public int MaxRecordFailures { get; init; } = 5;

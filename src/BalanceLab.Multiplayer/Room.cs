@@ -81,6 +81,9 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
         _timer?.Dispose();
     }
 
+    /// <summary>Limit czasu na jedno wywolanie dziennika, liczony zegarem pokoju.</summary>
+    private CancellationTokenSource RecordTimeout() => new(_options.RecordTimeout, _clock);
+
     private int SeatOf(string token)
     {
         var seat = Array.FindIndex(_seats, s => s.Token is not null && s.Token == token);
