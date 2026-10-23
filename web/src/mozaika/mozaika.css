@@ -250,7 +250,8 @@
 /* Plansze graczy. */
 .mozaika .players {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  /* 400 px: tyle potrzebuje plansza (rzedy wzoru i sciana obok); przy 330 na tablecie sciana wychodzila za ramke. */
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 12px;
 }
 .mozaika-player {
