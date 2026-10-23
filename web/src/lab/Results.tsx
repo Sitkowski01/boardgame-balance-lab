@@ -1,4 +1,5 @@
 import { DiffBars } from "./charts/DiffBars";
+import { CountUp } from "./CountUp";
 import { IntervalBars, type IntervalRow } from "./charts/IntervalBars";
 import { ItemScatter } from "./charts/ItemScatter";
 import { PairMatrix } from "./charts/PairMatrix";
@@ -42,7 +43,9 @@ function Tiles({ tiles }: { tiles: readonly { label: string; value: string; note
       {tiles.map((t) => (
         <div key={t.label} className="stat">
           <span className="stat-label">{t.label}</span>
-          <span className="stat-value">{t.value}</span>
+          <span className="stat-value">
+            <CountUp text={t.value} />
+          </span>
           {t.note !== undefined && <span className="stat-note">{t.note}</span>}
         </div>
       ))}
