@@ -125,6 +125,29 @@
   }
 }
 
+/*
+ * Kafelek, ktory wlasnie trafil na rzad wzoru, wskakuje na miejsce; pole sciany, ktore wlasnie sie zapelnilo,
+ * rozblyska. Animacja rusza, gdy kafelek sie pojawia albo pole traci "faint", wiec gra tylko to, co sie zmienilo.
+ */
+.line .tile {
+  animation: tile-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes tile-in {
+  from {
+    transform: translateY(-8px) scale(0.8);
+    opacity: 0;
+  }
+}
+.wall .tile:not(.faint) {
+  animation: tile-set 0.55s ease-out;
+}
+@keyframes tile-set {
+  40% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 70%, transparent);
+  }
+}
+
 /* Warsztaty i srodek stolu. */
 .mozaika .table {
   display: flex;
