@@ -1,9 +1,10 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { GameInfo } from "../api/schemas";
 import { games } from "../test/labReports";
 import { ExperimentFormView } from "./ExperimentFormView";
+import { DefaultLimits } from "./form";
 import type { ExperimentRequest } from "./model";
 
 type Submit = (request: ExperimentRequest) => Promise<void>;
@@ -50,6 +51,22 @@ describe("ExperimentFormView", () => {
       ["klejnoty", "Klejnoty"],
       ["mozaika", "Mozaika"],
     ]);
+  });
+
+  it("fills the work bar with the share of the server limit and warns near and over it", async () => {
+    const { user, form } = view();
+    const bar = (): HTMLElement | null => within(form).getByLabelText("Praca").querySelector(".work-bar span");
+    expect(bar()?.style.width).toBe("1%");
+    expect(bar()).not.toHaveClass("near");
+
+    await user.clear(within(form).getByLabelText("Partie"));
+    await user.type(within(form).getByLabelText("Partie"), "1000");
+    expect(bar()?.style.width).toBe("13%");
+    expect(bar()?.className).toBe("");
+
+    cleanup();
+    render(<ExperimentFormView games={games} limits={{ ...DefaultLimits, maxWork: 6000 }} onSubmit={vi.fn<Submit>()} />);
+    expect(screen.getByLabelText("Praca").querySelector(".work-bar span")).toHaveClass("near");
   });
 
   it("drops spaces typed around the numbers", async () => {

@@ -211,6 +211,9 @@ describe("LabPage", () => {
     expect(await within(form).findByText("Liczba partii: od 1 do 50.")).toBeInTheDocument();
     expect(within(form).getByRole("option", { name: "ISMCTS 40" })).toBeInTheDocument();
     expect(within(form).getByLabelText("Praca")).toHaveTextContent("Praca: 5 100 z 1 000 jednostek");
+    const bar = (): HTMLElement | null => within(form).getByLabelText("Praca").querySelector(".work-bar span");
+    expect(bar()).toHaveClass("over");
+    expect(bar()?.style.width).toBe("100%");
   });
 
   it("keeps default limits when the server does not give them", async () => {

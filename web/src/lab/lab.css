@@ -183,6 +183,35 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+/* Pasek pracy: zielony, blisko limitu zloty, ponad limit czerwony. */
+.work {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.work-bar {
+  flex: 0 0 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+.work-bar span {
+  display: block;
+  min-width: 4px;
+  height: 100%;
+  background: var(--accent);
+  transition:
+    width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.2s;
+}
+.work-bar .near {
+  background: var(--gold);
+}
+.work-bar .over {
+  background: var(--warn);
+}
 .hint {
   font-size: 0.8rem;
   color: var(--muted);

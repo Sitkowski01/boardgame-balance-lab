@@ -47,6 +47,8 @@ export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit, st
   }
 
   const found = problems(form, game, limits);
+  // Ile limitu serwera zjada zamowienie: pasek mowi to szybciej niz dwie duze liczby.
+  const load = Number.isFinite(work(form)) ? work(form) / limits.maxWork : 1;
   const set = (patch: Partial<ExperimentForm>): void => {
     setForm({ ...form, ...patch });
     setError(null);
@@ -158,7 +160,13 @@ export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit, st
         )}
       </div>
 
-      <p className="hint" aria-label="Praca">
+      <p className="hint work" aria-label="Praca">
+        <span className="work-bar" aria-hidden="true">
+          <span
+            className={load > 1 ? "over" : load > 0.75 ? "near" : ""}
+            style={{ width: `${String(Math.round(Math.min(1, load) * 100))}%` }}
+          />
+        </span>
         Praca: {Number.isFinite(work(form)) ? grouped(work(form)) : "—"} z {grouped(limits.maxWork)} jednostek (partie × iteracje botów)
       </p>
       {found.length > 0 && (
