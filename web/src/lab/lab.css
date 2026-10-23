@@ -86,10 +86,6 @@
 .lab-form input {
   min-width: 8ch;
   padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg);
-  color: var(--text);
 }
 .lab-form .variant {
   flex: 1 1 260px;
@@ -522,6 +518,17 @@ button.primary:disabled {
   padding: 8px 12px;
   border: 2px solid var(--panel);
   border-radius: 4px;
+}
+/* Telefon: wezsze komorki, zeby trzy-cztery boty miescily sie bez przewijania. */
+@media (max-width: 480px) {
+  .matrix td.cell {
+    min-width: 0;
+    padding: 6px 4px;
+    font-size: 0.8rem;
+  }
+  .matrix th {
+    font-size: 0.8rem;
+  }
 }
 .matrix td.ink-light {
   color: #fff;

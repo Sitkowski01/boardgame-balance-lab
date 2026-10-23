@@ -42,7 +42,7 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
               </th>
               {names.map((n) => (
                 <th key={n} scope="col">
-                  {n}
+                  <Breakable name={n} />
                 </th>
               ))}
             </tr>
@@ -78,5 +78,18 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
         <span className="key-swatch win" /> wiersz wygrywa
       </p>
     </figure>
+  );
+}
+
+/** Nazwa bota w naglowku kolumny moze sie zlamac po dwukropku ("greedy:" / "kolory"), zeby macierz zmiescila sie na telefonie. */
+function Breakable({ name }: { name: string }) {
+  const [head, ...rest] = name.split(":");
+  return rest.length === 0 ? (
+    <>{name}</>
+  ) : (
+    <>
+      {head}:<wbr />
+      {rest.join(":")}
+    </>
   );
 }
