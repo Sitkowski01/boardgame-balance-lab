@@ -692,7 +692,13 @@ button.primary:disabled {
   .flagged .range {
     display: block;
     color: var(--muted);
-    white-space: nowrap;
+    font-size: 0.72rem;
+  }
+  /* Szeroka tabela przewija sie w swoim panelu, zamiast wystawac za jego ramke. */
+  .chart table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 @media (max-width: 640px) {
