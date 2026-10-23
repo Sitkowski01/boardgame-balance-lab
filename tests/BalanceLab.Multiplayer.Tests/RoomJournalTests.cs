@@ -70,7 +70,7 @@ public sealed class RoomJournalTests
     [Fact]
     public async Task Running_game_whose_room_disappears_is_closed_in_the_journal()
     {
-        await using var table = new Table();
+        await using var table = IdleTable();
         var (playing, _, _) = await table.StartedPairAsync();
         var (waiting, _) = await table.CreateAsync();
 
@@ -85,7 +85,7 @@ public sealed class RoomJournalTests
     [Fact]
     public async Task Failed_closing_of_a_vanished_game_is_only_logged()
     {
-        await using var table = new Table();
+        await using var table = IdleTable();
         var (playing, _, _) = await table.StartedPairAsync();
         table.Recorders.Failures = 1;
 
@@ -96,4 +96,18 @@ public sealed class RoomJournalTests
         Assert.Contains(table.Logs.Entries, e => e.Message.EndsWith("nie udalo sie zapisac ruchu nr 0", StringComparison.Ordinal));
         Assert.Equal(RoomStatus.Playing, playing.Info.Status);
     }
+
+    /// <summary>
+    /// Stol, na ktorym nic sie samo nie dzieje przez caly czas bezczynnosci. Czas na ruch jest dluzszy niz
+    /// <see cref="RoomOptions.KeepIdle"/>: inaczej przesuniecie zegara odpala autopilota, a jego ruch (przetwarzany
+    /// w tle) odswieza pokoj albo przed sprzataniem, albo po nim — i test staje sie loteria.
+    /// </summary>
+    private static Table IdleTable() => new(new RoomOptions
+    {
+        BotDelay = TimeSpan.Zero,
+        DisconnectGrace = TimeSpan.Zero,
+        FillBot = "random",
+        AutopilotBot = "random",
+        MoveTimeout = TimeSpan.FromHours(1),
+    });
 }
