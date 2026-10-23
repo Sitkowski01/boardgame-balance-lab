@@ -348,6 +348,17 @@
   .create-fields label {
     flex: 1 1 140px;
   }
+  /* Telefon: opis gry tylko przy wybranej; trzy pelne karty zajmowaly caly ekran przed polem imienia. */
+  .game-card:not(.chosen) .game-card-blurb {
+    display: none;
+  }
+  .game-card {
+    grid-template-columns: 64px 1fr;
+    padding: 10px 12px;
+  }
+  .game-card .game-art {
+    width: 64px;
+  }
   .rooms {
     grid-template-columns: 1fr;
   }
