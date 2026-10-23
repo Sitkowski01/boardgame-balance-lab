@@ -158,7 +158,10 @@ export function ItemScatter({ report }: { report: TournamentReport }) {
                 </td>
                 <td>{percent(item.taken.rate)}</td>
                 <td>
-                  {percent(item.ownerWins.rate)} ({percent(item.ownerWins.low)}–{percent(item.ownerWins.high)})
+                  {percent(item.ownerWins.rate)}{" "}
+                  <span className="range">
+                    ({percent(item.ownerWins.low)}–{percent(item.ownerWins.high)})
+                  </span>
                 </td>
               </tr>
             ))}

@@ -8,7 +8,8 @@
   --viz-grid: #e1e0d9;
   --viz-axis: #c3c2b7;
   --series-1: #2a78d6;
-  --win: #2a78d6;
+  /* Ciemniejszy niz seria: bialy procent na pelnym niebieskim w macierzy ma 4,5:1. */
+  --win: #2268c8;
   --loss: #e34948;
   --neutral: #f0efec;
   --critical: #c22f2f;
@@ -594,6 +595,15 @@ button.primary:disabled {
     font-size: 0.8rem;
   }
 }
+/* W ciemnym motywie niebieski jest jasniejszy, wiec pelny kolor dostaje ciemny tekst. */
+:root[data-theme="dark"] .matrix td.ink-light {
+  color: #0b0b0b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) .matrix td.ink-light {
+    color: #0b0b0b;
+  }
+}
 .matrix td.ink-light {
   color: #fff;
 }
@@ -644,6 +654,17 @@ button.primary:disabled {
 }
 .again {
   margin: 28px 0 0;
+}
+/* Telefon: przedzial przechodzi pod wartosc, zeby kolumna nazwy karty nie zwezala sie do kilku liter. */
+@media (max-width: 640px) {
+  .flagged {
+    font-size: 0.8rem;
+  }
+  .flagged .range {
+    display: block;
+    color: var(--muted);
+    white-space: nowrap;
+  }
 }
 @media (max-width: 640px) {
   .recent li {
