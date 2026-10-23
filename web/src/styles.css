@@ -18,6 +18,7 @@
   --warn-soft: #f7e4d8;
   --felt: #2c5a4b;
   --felt-deep: #1f4337;
+  --glow: rgb(255 248 228 / 0.9);
   --shadow-1: 0 1px 2px rgb(52 40 16 / 0.06), 0 1px 1px rgb(52 40 16 / 0.04);
   --shadow-2: 0 10px 30px -12px rgb(52 40 16 / 0.25), 0 2px 6px -2px rgb(52 40 16 / 0.08);
   --radius: 12px;
@@ -56,6 +57,7 @@
     --warn-soft: #3a2419;
     --felt: #1f4136;
     --felt-deep: #162f27;
+    --glow: rgb(92 194 157 / 0.08);
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-2: 0 14px 34px -14px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4);
     --gem-4: #3a3a3a;
@@ -79,6 +81,7 @@
   --warn-soft: #3a2419;
   --felt: #1f4136;
   --felt-deep: #162f27;
+  --glow: rgb(92 194 157 / 0.08);
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-2: 0 14px 34px -14px rgb(0 0 0 / 0.7), 0 2px 6px -2px rgb(0 0 0 / 0.4);
   --gem-4: #3a3a3a;
@@ -91,6 +94,16 @@ body {
   margin: 0;
   background: var(--bg);
   min-height: 100vh;
+}
+/*
+ * Tlo jak blat pod lampa: cieple swiatlo z gory, przyciemnione brzegi i drobne ziarno papieru (szum SVG, 4%).
+ * Bez obrazkow z sieci i bez ruchu; pod tym tlem nadal jest pelny kolor --bg dla kontrastu tekstu.
+ */
+.shell {
+  background:
+    radial-gradient(1200px 520px at 50% -120px, var(--glow), transparent 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--bg);
 }
 #root {
   min-height: 100vh;
