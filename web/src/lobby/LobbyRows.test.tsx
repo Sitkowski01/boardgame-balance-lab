@@ -67,6 +67,43 @@ describe("room rows", () => {
     expect(navigate).toHaveBeenCalledWith(`/matches/${matchId}`);
   });
 
+  it("keep open tables apart from finished games and show only the latest games until asked", async () => {
+    const finished = Array.from({ length: 8 }, (_, i) =>
+      room({
+        id: `f${String(i)}`,
+        gameName: `Partia ${String(i)}`,
+        status: "Finished",
+        matchId,
+        createdAt: `2026-10-19T10:0${String(i)}:00Z`,
+      }),
+    );
+    const { user } = await lobby([...finished, room({ id: "open", gameName: "Otwarty" })]);
+
+    const lists = within(screen.getByRole("region", { name: "Pokoje" })).getAllByRole("list");
+    expect(
+      within(lists[0] as HTMLElement)
+        .getAllByRole("listitem")
+        .map((r) => r.getAttribute("aria-label")),
+    ).toEqual(["Pokój Otwarty"]);
+    const shown = () =>
+      within(lists[1] as HTMLElement)
+        .getAllByRole("listitem")
+        .map((r) => r.getAttribute("aria-label"));
+    expect(shown()).toEqual(["Pokój Partia 7", "Pokój Partia 6", "Pokój Partia 5", "Pokój Partia 4", "Pokój Partia 3", "Pokój Partia 2"]);
+    expect(screen.getByRole("heading", { name: "Ostatnie partie" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Pokaż wszystkie (8)" }));
+    expect(shown()).toHaveLength(8);
+    expect(screen.queryByRole("button", { name: /^Pokaż wszystkie/u })).toBeNull();
+  });
+
+  it("say there is no open table when only finished games are left", async () => {
+    await lobby([room({ id: "done", status: "Finished", matchId })]);
+
+    expect(screen.getByText("Żaden stół nie czeka teraz na graczy — załóż własny.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Pokaż wszystkie/u })).toBeNull();
+  });
+
   it("show no error before anything goes wrong", async () => {
     await lobby();
 

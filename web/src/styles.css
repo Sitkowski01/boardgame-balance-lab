@@ -14,7 +14,7 @@
   --accent-soft: #dfece5;
   --accent-ink: #ffffff;
   --gold: #e0b041;
-  --warn: #b4532a;
+  --warn: #a4471f;
   --warn-soft: #f7e4d8;
   --felt: #2c5a4b;
   --felt-deep: #1f4337;
@@ -25,7 +25,7 @@
   --display: "Fraunces Variable", Georgia, serif;
   --gem-0: #f5f3ee;
   --gem-1: #2f6fd1;
-  --gem-2: #2e9a4f;
+  --gem-2: #26864a;
   --gem-3: #c9353b;
   --gem-4: #2b2b2b;
   --gem-5: #d9a520;
@@ -395,8 +395,21 @@ select:focus {
     padding-right: 16px;
     gap: 10px;
   }
+  /* Telefon: cele dotyku co najmniej 44 px (nawigacja, motyw, przyciski stolow, link w stopce). */
   .nav-link a {
-    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 6px 12px;
+  }
+  .brand,
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .footer-inner a {
+    display: inline-block;
+    padding: 12px 0;
   }
 }
 @media (max-width: 400px) {
@@ -410,6 +423,7 @@ select:focus {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
   }
 }

@@ -6,7 +6,7 @@ import { gamesFact } from "../names";
 import type { GameInfo, RoomInfo } from "../api/schemas";
 import type { Tickets } from "../table/tickets";
 import { CreateRoom } from "./CreateRoom";
-import { refreshRooms, sortRooms, upsertRoom } from "./lobby";
+import { isLive, RecentFinished, refreshRooms, sortRooms, upsertRoom } from "./lobby";
 import { RoomRow } from "./RoomRow";
 
 export interface LobbyPageProps {
@@ -38,6 +38,7 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
   const [games, setGames] = useState<GameInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<LobbyLink>("online");
+  const [allFinished, setAllFinished] = useState(false);
 
   useEffect(() => {
     // Zmiana stanu po odmontowaniu React po prostu pomija; pilnowac trzeba tylko polaczenia, ktore otworzy
@@ -107,6 +108,10 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
     }
   };
 
+  const sorted = sortRooms(rooms);
+  const live = sorted.filter(isLive);
+  const done = sorted.filter((room) => !isLive(room));
+
   return (
     <main className="lobby">
       <section className="hero">
@@ -141,15 +146,40 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
       <h2>Nowy stół</h2>
       <CreateRoom games={games} onCreate={create} />
       <section aria-label="Pokoje" className="rooms-section">
-        <h2>Pokoje</h2>
-        {rooms.length === 0 ? (
-          <p className="empty-rooms">Nie ma jeszcze żadnego pokoju — załóż pierwszy.</p>
+        <h2>Otwarte stoły</h2>
+        {live.length === 0 ? (
+          <p className="empty-rooms">
+            {rooms.length === 0
+              ? "Nie ma jeszcze żadnego pokoju — załóż pierwszy."
+              : "Żaden stół nie czeka teraz na graczy — załóż własny."}
+          </p>
         ) : (
           <ul className="rooms">
-            {sortRooms(rooms).map((room) => (
+            {live.map((room) => (
               <RoomRow key={room.id} room={room} navigate={navigate} />
             ))}
           </ul>
+        )}
+        {done.length > 0 && (
+          <>
+            <h2>Ostatnie partie</h2>
+            <ul className="rooms finished">
+              {(allFinished ? done : done.slice(0, RecentFinished)).map((room) => (
+                <RoomRow key={room.id} room={room} navigate={navigate} />
+              ))}
+            </ul>
+            {!allFinished && done.length > RecentFinished && (
+              <button
+                type="button"
+                className="more"
+                onClick={() => {
+                  setAllFinished(true);
+                }}
+              >
+                Pokaż wszystkie ({done.length})
+              </button>
+            )}
+          </>
         )}
       </section>
       <section className="lab-teaser panel" aria-label="Laboratorium">

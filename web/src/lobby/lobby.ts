@@ -28,6 +28,12 @@ export function sortRooms(rooms: readonly RoomInfo[]): RoomInfo[] {
   return [...rooms].sort((a, b) => order[a.status] - order[b.status] || b.createdAt.localeCompare(a.createdAt));
 }
 
+/** Ile skonczonych partii widac od razu; lobby po kilkudziesieciu partiach nie moze byc kilometrowa lista. */
+export const RecentFinished = 6;
+
+/** Stol, do ktorego mozna usiasc albo ktory mozna ogladac; reszta to juz tylko powtorki. */
+export const isLive = (room: RoomInfo): boolean => room.status === "Waiting" || room.status === "Playing";
+
 export function freeSeats(room: RoomInfo): number {
   return room.seats.filter((s) => s.kind === "Empty").length;
 }

@@ -219,9 +219,38 @@
   background: var(--accent);
   color: var(--accent-ink);
 }
-.room.Finished,
-.room.Abandoned {
+/* Skonczone partie sa cichsze od otwartych stolow: bez cienia, na tle strony, z mniejsza ilustracja. */
+.rooms.finished .room {
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+  box-shadow: none;
+  padding: 8px 12px;
+}
+.rooms.finished .game-art {
+  width: 48px;
   opacity: 0.85;
+}
+.rooms-section .more {
+  display: block;
+  margin: 12px auto 0;
+}
+/* Karta stolu i karta gry unosza sie pod kursorem — widac, ze da sie w nie wejsc. */
+@media (hover: hover) {
+  .room,
+  .game-card {
+    transition:
+      transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 0.18s,
+      border-color 0.15s,
+      background-color 0.15s;
+  }
+  .room:hover,
+  .game-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2);
+  }
+  .room:hover {
+    border-color: var(--line-strong);
+  }
 }
 .lab-teaser {
   margin-top: 36px;
@@ -278,6 +307,11 @@
   }
   .rooms {
     grid-template-columns: 1fr;
+  }
+  .room-action a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }
 
