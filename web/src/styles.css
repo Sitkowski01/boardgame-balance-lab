@@ -376,6 +376,20 @@ select:focus {
   box-shadow: var(--shadow-1);
 }
 
+/* Liczba po zmianie (Bump): krotkie podskoczenie w kolorze akcentu. */
+.bump {
+  display: inline-block;
+  /* Od lewej krawedzi: podpis rosnie w strone wolnego miejsca, a nie na sasiednie zetony. */
+  transform-origin: left center;
+  animation: bump 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes bump {
+  30% {
+    transform: scale(1.15);
+    color: var(--accent);
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

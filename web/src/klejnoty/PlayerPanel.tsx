@@ -1,3 +1,4 @@
+import { Bump } from "../Bump";
 import { Card } from "./Card";
 import { Gem } from "./Gem";
 import { gemName, totalTokens, type KlejnotySheet, type PlayerView } from "./model";
@@ -22,18 +23,22 @@ export function PlayerPanel({ player, name, me, toMove, sheet, legalMoves, onMov
         {me && <span className="badge">ty</span>}
         {toMove && <span className="badge">na ruchu</span>}
         <span className="points" aria-label="Punkty">
-          {player.points} pkt
+          <Bump value={player.points}>{player.points}</Bump> pkt
         </span>
       </header>
       <div className="row tokens" aria-label="Żetony">
         {player.tokens.map((n, gem) => (n > 0 ? <Gem key={gem} gem={gem} count={n} /> : null))}
-        <span className="muted">żetony: {totalTokens(player)}/10</span>
+        <span className="muted">
+          <Bump value={totalTokens(player)}>żetony: {totalTokens(player)}/10</Bump>
+        </span>
       </div>
       <div className="row bonuses" aria-label="Rabaty">
         {player.bonuses.map((n, gem) =>
           n > 0 ? <Gem key={gem} gem={gem} count={n} label={`rabat ${gemName(gem)}: ${String(n)}`} /> : null,
         )}
-        <span className="muted">kart: {player.bought.length}</span>
+        <span className="muted">
+          <Bump value={player.bought.length}>kart: {player.bought.length}</Bump>
+        </span>
         {player.patrons.length > 0 && <span className="muted">patroni: {player.patrons.length}</span>}
       </div>
       {player.reserved.length > 0 && (

@@ -1,3 +1,4 @@
+import { Bump } from "../Bump";
 import { floorCount, floorPenalty, tileName, WallSize, type MozaikaPlayerView, type MozaikaSheet } from "./model";
 import type { Line } from "./moves";
 import { Tile } from "./Tile";
@@ -39,7 +40,7 @@ export function PlayerBoard({ player, name, me, toMove, sheet, placements, onMov
         {me && <span className="badge">ty</span>}
         {toMove && <span className="badge">na ruchu</span>}
         <span className="points" aria-label="Punkty">
-          {player.score} pkt
+          <Bump value={player.score}>{player.score}</Bump> pkt
         </span>
       </header>
       <div className="mozaika-boards">
