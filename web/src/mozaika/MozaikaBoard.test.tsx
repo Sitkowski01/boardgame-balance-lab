@@ -136,6 +136,20 @@ describe("MozaikaBoard", () => {
     expect(screen.queryByText("ty")).not.toBeInTheDocument();
   });
 
+  it("dims only the factories that were emptied", () => {
+    board({
+      view: mozaika({
+        factories: [
+          [0, 0, 0, 0, 0],
+          [0, 0, 4, 0, 0],
+        ],
+      }),
+    });
+
+    const factories = [...document.querySelectorAll(".factory")];
+    expect(factories.map((f) => f.className)).toEqual(["factory empty", "factory"]);
+  });
+
   it("names unnamed players and marks nobody on the move after the end", () => {
     board({ names: [], seat: null, view: mozaika({ over: true }) });
 

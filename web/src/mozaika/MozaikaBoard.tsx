@@ -75,7 +75,7 @@ export function MozaikaBoard({ view, sheet, legalMoves, seat, names, onMove }: M
     <div className="mozaika">
       <section aria-label="Warsztaty" className="table">
         {view.factories.map((tiles, f) => (
-          <div key={f} className="factory">
+          <div key={f} className={`factory${total(tiles) === 0 ? " empty" : ""}`}>
             {sourceTiles(f, tiles, `Warsztat ${String(f + 1)}`)}
           </div>
         ))}
