@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { itemName } from "../../names";
 import { useWidth } from "./useWidth";
 import { edge, percent, points, verdictMark, verdictWord, type ItemStats, type TournamentReport } from "../model";
 
@@ -32,7 +33,7 @@ export function ItemScatter({ report }: { report: TournamentReport }) {
     .sort((a, b) => order(a) - order(b) || Math.abs(edge(report, b)) - Math.abs(edge(report, a)));
   const noun = report.itemNoun;
   const describe = (item: ItemStats): string =>
-    `${item.name}: w ${percent(item.taken.rate)} partii, właściciel wygrywa ${percent(item.ownerWins.rate)} (${points(edge(report, item))} wobec grupy „${item.group}”)${item.verdict === "None" ? "" : ` — ${verdictWord(item.verdict, noun)}`}`;
+    `${itemName(item.name)}: w ${percent(item.taken.rate)} partii, właściciel wygrywa ${percent(item.ownerWins.rate)} (${points(edge(report, item))} wobec grupy „${item.group}”)${item.verdict === "None" ? "" : ` — ${verdictWord(item.verdict, noun)}`}`;
 
   return (
     <figure className="chart">
@@ -121,7 +122,7 @@ export function ItemScatter({ report }: { report: TournamentReport }) {
           <tbody>
             {report.items.map((item) => (
               <tr key={item.id}>
-                <td>{item.name}</td>
+                <td>{itemName(item.name)}</td>
                 <td>{item.group}</td>
                 <td>{percent(item.taken.rate)}</td>
                 <td>
@@ -149,7 +150,7 @@ export function ItemScatter({ report }: { report: TournamentReport }) {
           <tbody>
             {flagged.slice(0, 12).map((item) => (
               <tr key={item.id}>
-                <td>{item.name}</td>
+                <td>{itemName(item.name)}</td>
                 <td>
                   <span className={`tag ${item.verdict.toLowerCase()}`}>
                     {verdictMark(item.verdict)} {verdictWord(item.verdict, noun)}

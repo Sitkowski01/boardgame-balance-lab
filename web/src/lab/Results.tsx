@@ -2,6 +2,7 @@ import { DiffBars } from "./charts/DiffBars";
 import { IntervalBars, type IntervalRow } from "./charts/IntervalBars";
 import { ItemScatter } from "./charts/ItemScatter";
 import { PairMatrix } from "./charts/PairMatrix";
+import { itemName, playerName } from "../names";
 import { plural } from "../plural";
 import {
   decimal,
@@ -51,12 +52,22 @@ function Tiles({ tiles }: { tiles: readonly { label: string; value: string; note
 
 export function TournamentResults({ report }: { report: TournamentReport }) {
   const fair = 1 / Math.max(1, report.seats.length);
+  const best = report.contestants.reduce<(typeof report.contestants)[number] | undefined>(
+    (top, c) => (top === undefined || c.wins.rate > top.wins.rate ? c : top),
+    undefined,
+  );
   return (
     <section className="results" aria-label="Wyniki turnieju">
       <Tiles
         tiles={[
-          { label: "Ukończone partie", value: `${String(report.completed)} z ${String(report.games)}`, note: `ziarno ${report.seed}` },
-          { label: "Remisy", value: percent(report.completed === 0 ? 0 : report.draws / report.completed) },
+          ...(best === undefined
+            ? []
+            : [{ label: "Najczęściej wygrywa", value: playerName(best.name), note: `${percent(best.wins.rate)} partii` }]),
+          {
+            label: "Remisy",
+            value: percent(report.completed === 0 ? 0 : report.draws / report.completed),
+            note: `ukończone: ${String(report.completed)} z ${String(report.games)}`,
+          },
           ...(report.length === null
             ? []
             : [
@@ -77,7 +88,7 @@ export function TournamentResults({ report }: { report: TournamentReport }) {
       <IntervalBars
         title="Boty"
         caption="Odsetek wygranych każdego bota z 95% przedziałem."
-        rows={report.contestants.map((c) => row(c.name, c.name, c.wins))}
+        rows={report.contestants.map((c) => row(c.name, playerName(c.name), c.wins))}
         reference={{ value: fair, label: `uczciwy udział ${percent(fair)}` }}
       />
       {report.items.length > 0 && <ItemScatter report={report} />}
@@ -92,7 +103,7 @@ export function LeagueResults({ report }: { report: LeagueReport }) {
         tiles={[
           {
             label: "Najlepszy",
-            value: report.ratings[0]?.name ?? "—",
+            value: report.ratings[0] === undefined ? "—" : playerName(report.ratings[0].name),
             note: report.ratings[0] === undefined ? undefined : `Elo ${report.ratings[0].elo.toFixed(0)}`,
           },
           {
@@ -107,7 +118,7 @@ export function LeagueResults({ report }: { report: LeagueReport }) {
         caption="Siła względem średniej 1500 (model Bradleya-Terry'ego ze wszystkich partii). 200 punktów różnicy to ok. 76% wygranych."
         rows={report.ratings.map((r) => ({
           key: r.name,
-          label: r.name,
+          label: playerName(r.name),
           delta: r.elo - 1500,
           low: r.elo - 1500,
           high: r.elo - 1500,
@@ -154,7 +165,7 @@ export function ComparisonResults({ report }: { report: ComparisonReport }) {
         caption="Wariant minus oryginał. Te same rozdania po obu stronach, więc różnica bierze się ze zmiany zasad."
         rows={report.contestants.map((c) => ({
           key: c.name,
-          label: c.name,
+          label: playerName(c.name),
           ...c.wins,
           detail: `${percent(c.wins.baseline)} → ${percent(c.wins.variant)}`,
         }))}
@@ -180,7 +191,7 @@ export function ComparisonResults({ report }: { report: ComparisonReport }) {
             caption={`Zmiana wygranych właściciela; ${String(changed.length)} z ${String(report.items.length)}${changed.length > 15 ? ", poniżej 15 największych" : ""}.`}
             rows={changed.slice(0, 15).map((i) => ({
               key: String(i.id),
-              label: i.name,
+              label: itemName(i.name),
               ...i.ownerWins,
               detail: `udział w partiach ${pp(i.taken.delta)}, właściciel wygrywa ${percent(i.ownerWins.baseline)} → ${percent(i.ownerWins.variant)}`,
             }))}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gameBlurbs, gamesFact, gameTitle, playerName, seatName } from "./names";
+import { gameBlurbs, gamesFact, gameTitle, itemName, playerName, seatName } from "./names";
 
 describe("names for people", () => {
   it("names Connect Four in Polish and leaves other games and variants alone", () => {
@@ -23,6 +23,19 @@ describe("names for people", () => {
     expect(playerName("greedyAla")).toBe("greedyAla");
     expect(playerName("Ala greedy")).toBe("Ala greedy");
     expect(playerName("greedy:")).toBe("greedy:");
+  });
+});
+
+describe("item names", () => {
+  it("spells out a Klejnoty card in words and leaves other items alone", () => {
+    expect(itemName("#17 poz.1 U 0 pkt, koszt W1 G1 R2 K1")).toBe(
+      "#17 · I · niebieska, 0 pkt · koszt: 1 biały, 1 zielony, 2 czerwone, 1 czarny",
+    );
+    expect(itemName("#83 poz.3 R 4 pkt, koszt G7")).toBe("#83 · III · czerwona, 4 pkt · koszt: 7 zielonych");
+    expect(itemName("#5 poz.2 W 1 pkt, koszt U12 K22")).toBe("#5 · II · biała, 1 pkt · koszt: 12 niebieskich, 22 czarne");
+    expect(itemName("rząd 1, kolumna 2 (turkus)")).toBe("rząd 1, kolumna 2 (turkus)");
+    expect(itemName("#17 poz.4 U 0 pkt, koszt W1")).toBe("#17 poz.4 U 0 pkt, koszt W1");
+    expect(itemName("x#17 poz.1 U 0 pkt, koszt W1")).toBe("x#17 poz.1 U 0 pkt, koszt W1");
   });
 });
 

@@ -12,8 +12,7 @@ describe("Results", () => {
   it("shows a tournament: tiles, seats against the fair share, bots and items", () => {
     render(<Results result={{ kind: "Tournament", report: tournament() }} />);
 
-    expect(screen.getByText("98 z 100")).toBeInTheDocument();
-    expect(screen.getByText("ziarno 7")).toBeInTheDocument();
+    expect(screen.getByText("ukończone: 98 z 100")).toBeInTheDocument();
     expect(screen.getByText("62,4 ruchu")).toBeInTheDocument();
     expect(screen.getByText("mediana 61, 90% poniżej 80")).toBeInTheDocument();
     const seats = within(list("Przewaga miejsca przy stole")).getAllByRole("listitem");
@@ -78,19 +77,19 @@ describe("Results", () => {
   it("shows a league: Elo against 1500 and who beats whom", () => {
     render(<Results result={{ kind: "League", report: league() }} />);
 
-    expect(screen.getByText("greedy", { selector: ".stat-value" })).toBeInTheDocument();
+    expect(screen.getByText("Zachłanny", { selector: ".stat-value" })).toBeInTheDocument();
     expect(screen.getByText("Elo 1720")).toBeInTheDocument();
     expect(
       within(list("Ranking Elo"))
         .getAllByRole("listitem")
         .map((r) => r.getAttribute("aria-label")),
     ).toEqual([
-      "greedy: +220 · Elo 1720, średni wynik 80,0%",
-      "ismcts:50: −20 · Elo 1480, średni wynik 45,0%",
-      "random: −200 · Elo 1300, średni wynik 20,0%",
+      "Zachłanny: +220 · Elo 1720, średni wynik 80,0%",
+      "ISMCTS 50: −20 · Elo 1480, średni wynik 45,0%",
+      "Losowy: −200 · Elo 1300, średni wynik 20,0%",
     ]);
     const matrix = screen.getByRole("table", { name: "Kto bije kogo" });
-    expect(within(matrix).getByText("95,0%")).toHaveAttribute("title", "greedy przeciw random");
+    expect(within(matrix).getByText("95,0%")).toHaveAttribute("title", "Zachłanny przeciw Losowy");
     expect(within(matrix).getByText("95,0%")).toHaveClass("ink-light");
     expect(within(matrix).getByText("5,0%")).toBeInTheDocument();
     expect(within(matrix).getAllByText("brak partii")).toHaveLength(2);
@@ -106,7 +105,7 @@ describe("Results", () => {
     const bots = within(list("Boty: zmiana odsetka wygranych")).getAllByRole("listitem");
     expect(bots[0]).toHaveClass("significant");
     expect(bots[1]).toHaveClass("faint");
-    expect(bots[0]).toHaveAttribute("aria-label", "greedy: +6,0 pp (95%: +2,0 pp do +10,0 pp), istotna · 70,0% → 76,0%");
+    expect(bots[0]).toHaveAttribute("aria-label", "Zachłanny: +6,0 pp (95%: +2,0 pp do +10,0 pp), istotna · 70,0% → 76,0%");
     expect(screen.getByText("Karty, które zmieniły się istotnie")).toBeInTheDocument();
     expect(within(list("Karty, które zmieniły się istotnie")).getAllByRole("listitem")).toHaveLength(1);
   });
@@ -154,10 +153,14 @@ describe("Results", () => {
     const tiles = (): (string | null)[] => [...document.querySelectorAll(".stat")].map((t) => t.textContent);
 
     const { unmount } = render(<Results result={{ kind: "Tournament", report: tournament() }} />);
-    expect(tiles()).toEqual(["Ukończone partie98 z 100ziarno 7", "Remisy4,1%", "Długość partii62,4 ruchumediana 61, 90% poniżej 80"]);
+    expect(tiles()).toEqual([
+      "Najczęściej wygrywaZachłanny71,4% partii",
+      "Remisy4,1%ukończone: 98 z 100",
+      "Długość partii62,4 ruchumediana 61, 90% poniżej 80",
+    ]);
     unmount();
     const ranking = render(<Results result={{ kind: "League", report: league() }} />);
-    expect(tiles()).toEqual(["NajlepszygreedyElo 1720", "Pary340 partii na parę"]);
+    expect(tiles()).toEqual(["NajlepszyZachłannyElo 1720", "Pary340 partii na parę"]);
     ranking.unmount();
     const empty = render(<Results result={{ kind: "League", report: league({ ratings: [], pairs: [], gamesPerPair: 2 }) }} />);
     expect(tiles()).toEqual(["Najlepszy—", "Pary02 partie na parę"]);

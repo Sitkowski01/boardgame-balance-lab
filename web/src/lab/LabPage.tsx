@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameInfo } from "../api/schemas";
-import { gameTitle } from "../names";
+import { gameTitle, playerName } from "../names";
 import { Link } from "../Link";
 import type { LabClient } from "./client";
 import { ExperimentFormView } from "./ExperimentFormView";
@@ -110,14 +110,7 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
         gry i to, co zmienia poprawka w zasadach. Każda liczba ma 95% przedział — widać, co jest efektem, a co szumem.
       </p>
 
-      {typeof games === "string" ? (
-        <p role="alert">{games}</p>
-      ) : games === null ? (
-        <p>Wczytywanie gier…</p>
-      ) : (
-        <ExperimentFormView games={games} limits={limits} onSubmit={submit} />
-      )}
-
+      {/* Otwarty eksperyment idzie przed formularzem: kto wchodzi z linku, chce najpierw zobaczyc wynik. */}
       {experiment !== null && (
         <section className="experiment" aria-label="Eksperyment">
           {error !== null && <p role="alert">{error}</p>}
@@ -128,6 +121,14 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
         </section>
       )}
 
+      {typeof games === "string" ? (
+        <p role="alert">{games}</p>
+      ) : games === null ? (
+        <p>Wczytywanie gier…</p>
+      ) : (
+        <ExperimentFormView games={games} limits={limits} onSubmit={submit} />
+      )}
+
       {recent.length > 0 && (
         <section className="recent" aria-label="Ostatnie eksperymenty">
           <h2>Ostatnie eksperymenty</h2>
@@ -135,7 +136,7 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
             {recent.slice(0, MaxRecent).map((e) => (
               <li key={e.id} className={e.id === experiment ? "current" : ""}>
                 <Link to={`/lab/${e.id}`} navigate={navigate}>
-                  {KindNames[e.request.kind]}: {gameName(e.request.game)}, {e.request.bots.join(" · ")}
+                  {KindNames[e.request.kind]}: {gameName(e.request.game)}, {e.request.bots.map(playerName).join(" · ")}
                 </Link>
                 <span className={`status ${e.status.toLowerCase()}`}>{StatusNames[e.status]}</span>
               </li>
@@ -175,7 +176,7 @@ function Progress({ info, game, onCancel }: { info: ExperimentInfo; game: string
         <span style={{ width: `${String(Math.round(share * 100))}%` }} />
       </div>
       <p className="note">
-        {info.done} z {info.total} partii · boty: {info.request.bots.join(", ")} · ziarno {info.request.seed}
+        {info.done} z {info.total} partii · boty: {info.request.bots.map(playerName).join(", ")} · ziarno {info.request.seed}
       </p>
       {info.error !== null && <p role="alert">{info.error}</p>}
     </div>

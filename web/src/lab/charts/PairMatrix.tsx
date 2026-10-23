@@ -1,3 +1,4 @@
+import { playerName } from "../../names";
 import { plural } from "../../plural";
 import { pairScore, percent, type LeagueReport } from "../model";
 
@@ -42,7 +43,7 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
               </th>
               {names.map((n) => (
                 <th key={n} scope="col">
-                  <Breakable name={n} />
+                  {playerName(n)}
                 </th>
               ))}
             </tr>
@@ -50,7 +51,7 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
           <tbody>
             {names.map((row) => (
               <tr key={row}>
-                <th scope="row">{row}</th>
+                <th scope="row">{playerName(row)}</th>
                 {names.map((column) => {
                   const score = row === column ? null : pairScore(report, row, column);
                   return score === null ? (
@@ -62,7 +63,7 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
                       key={column}
                       className={`cell ink-${inkOn(score)}`}
                       style={{ background: cellColor(score) }}
-                      title={`${row} przeciw ${column}`}
+                      title={`${playerName(row)} przeciw ${playerName(column)}`}
                     >
                       {percent(score)}
                     </td>
@@ -78,18 +79,5 @@ export function PairMatrix({ report }: { report: LeagueReport }) {
         <span className="key-swatch win" /> wiersz wygrywa
       </p>
     </figure>
-  );
-}
-
-/** Nazwa bota w naglowku kolumny moze sie zlamac po dwukropku ("greedy:" / "kolory"), zeby macierz zmiescila sie na telefonie. */
-function Breakable({ name }: { name: string }) {
-  const [head, ...rest] = name.split(":");
-  return rest.length === 0 ? (
-    <>{name}</>
-  ) : (
-    <>
-      {head}:<wbr />
-      {rest.join(":")}
-    </>
   );
 }

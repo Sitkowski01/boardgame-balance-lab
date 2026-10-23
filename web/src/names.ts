@@ -43,6 +43,39 @@ export function playerName(name: string): string {
   return /^\d+$/u.test(detail) ? `${kind} ${detail}` : `${kind}: ${detail}`;
 }
 
+/** Kolory klejnotow w zapisie serwera (Gems.ToString): przymiotnik karty i formy liczby przy koszcie. */
+const gems: Record<string, { card: string; forms: [string, string, string] }> = {
+  W: { card: "biała", forms: ["biały", "białe", "białych"] },
+  U: { card: "niebieska", forms: ["niebieski", "niebieskie", "niebieskich"] },
+  G: { card: "zielona", forms: ["zielony", "zielone", "zielonych"] },
+  R: { card: "czerwona", forms: ["czerwony", "czerwone", "czerwonych"] },
+  K: { card: "czarna", forms: ["czarny", "czarne", "czarnych"] },
+};
+const tiers = ["", "I", "II", "III"];
+const klejnotyCard = /^#(\d+) poz\.([123]) ([WUGRK]) (\d+) pkt, koszt ((?:[WUGRK]\d+ ?)+)$/u;
+
+/**
+ * Element gry w raporcie laboratorium. Karte Klejnotow serwer opisuje skrotem ("#17 poz.1 U 0 pkt, koszt W1 G1"),
+ * bo ten sam opis idzie do raportow CLI; strona rozpisuje go slowami. Inne elementy zostaja bez zmian.
+ */
+export function itemName(name: string): string {
+  const card = klejnotyCard.exec(name);
+  if (card === null) {
+    return name;
+  }
+
+  const [, id, tier, bonus, points, cost] = card as unknown as [string, string, string, string, string, string];
+  const parts = cost
+    .trim()
+    .split(" ")
+    .map((part) => {
+      const n = Number(part.slice(1));
+      const forms = gems[part.charAt(0)]?.forms ?? ["", "", ""];
+      return `${String(n)} ${plural(n, ...forms)}`;
+    });
+  return `#${id} · ${tiers[Number(tier)] ?? tier} · ${gems[bonus]?.card ?? bonus}, ${points} pkt · koszt: ${parts.join(", ")}`;
+}
+
 /** "3 gry, od 2 do 4 graczy" z katalogu serwera. */
 export function gamesFact(games: readonly GameInfo[]): string {
   const n = games.length;

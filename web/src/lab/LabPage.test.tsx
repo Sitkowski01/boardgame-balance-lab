@@ -247,7 +247,7 @@ describe("LabPage", () => {
     const recent = await screen.findByRole("region", { name: "Ostatnie eksperymenty" });
     const items = within(recent).getAllByRole("listitem");
     expect(items[0]).toHaveClass("current");
-    expect(items[0]).toHaveTextContent("Liga: Mozaika, greedy · random");
+    expect(items[0]).toHaveTextContent("Liga: Mozaika, Zachłanny · Losowy");
     expect(items[1]).toHaveTextContent("anulowany");
     await user.click(within(items[1] ?? recent).getByRole("link"));
     expect(navigate).toHaveBeenCalledWith("/lab/00000000-0000-0000-0000-0000000000e2");
@@ -274,7 +274,7 @@ describe("LabPage", () => {
     expect(bar.querySelector("span")?.style.width).toBe("25%");
     expect(document.querySelector(".progress-head strong")?.textContent).toBe("Turniej: Mozaika (tiles=3)");
     expect(screen.getByText("liczy się", { selector: ".progress-head .status" })).toHaveAttribute("class", "status running");
-    expect(screen.getByText("30 z 120 partii · boty: greedy, random · ziarno 1")).toBeInTheDocument();
+    expect(screen.getByText("30 z 120 partii · boty: Zachłanny, Losowy · ziarno 1")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByRole("region", { name: "Wyniki turnieju" })).toBeNull();
   });
