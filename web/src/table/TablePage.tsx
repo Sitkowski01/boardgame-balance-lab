@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Connect } from "../api/connection";
 import { EmptyTable } from "../EmptyTable";
 import { GameBoard, useDescribe } from "../games";
@@ -36,6 +37,10 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
   const role = myRole(table);
   const names = room?.seats.map((s) => seatName(s) ?? `Miejsce ${String(s.seat + 1)}`) ?? [];
   const describe = useDescribe(room?.game ?? null, room?.variant ?? null);
+  // Partia trwala na oczach gracza: jej koniec dostaje konfetti; wejscie na stol juz po partii nie (wzorzec
+  // "stan z poprzedniego renderu" z dokumentacji Reacta zamiast efektu).
+  const [sawPlay, setSawPlay] = useState(false);
+  if (!sawPlay && room?.status === "Playing") setSawPlay(true);
 
   // Pokoju nie ma: jedna jasna wiadomosc zamiast "brak polaczenia", bledu i wiecznego wczytywania.
   if (gone) {
@@ -111,7 +116,9 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
             <div className="table-layout">
               <div className="board-area">
                 {role.myTurn && !pending && <p className="your-turn">Twój ruch!</p>}
-                {(room.status === "Finished" || room.status === "Abandoned") && <Result room={room} names={names} navigate={navigate} />}
+                {(room.status === "Finished" || room.status === "Abandoned") && (
+                  <Result room={room} names={names} navigate={navigate} celebrate={sawPlay} />
+                )}
                 {view !== null && (
                   <GameBoard
                     game={room.game}

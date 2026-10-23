@@ -1,13 +1,23 @@
 import type { RoomInfo } from "../api/schemas";
 import { Link } from "../Link";
+import { Confetti } from "./Confetti";
 import { winners } from "./table";
 
+export interface ResultProps {
+  room: RoomInfo;
+  names: readonly string[];
+  navigate: (path: string) => void;
+  /** Partia skonczyla sie na oczach gracza (a nie byla skonczona przy wejsciu): wtedy krotkie konfetti. */
+  celebrate?: boolean | undefined;
+}
+
 /** Koniec partii (albo jej przerwanie): zwyciezcy, wyniki wszystkich i link do powtorki z dziennika. */
-export function Result({ room, names, navigate }: { room: RoomInfo; names: readonly string[]; navigate: (path: string) => void }) {
+export function Result({ room, names, navigate, celebrate = false }: ResultProps) {
   const best = winners(room.scores);
   const finished = room.status === "Finished";
   return (
     <section className={`result panel${finished ? "" : " abandoned"}`} aria-label="Wynik">
+      {celebrate && finished && <Confetti />}
       <span className="result-mark" aria-hidden="true">
         {finished ? "🏆" : "⏸"}
       </span>

@@ -22,6 +22,18 @@ describe("Result", () => {
     expect(result).toHaveTextContent("🏆");
   });
 
+  it("celebrates only a game that finished before the player's eyes", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);
+    const show = (status: "Finished" | "Abandoned", celebrate?: boolean) =>
+      render(<Result room={room({ status, scores: [1, 0], matchId })} names={["Ala", "Ola"]} navigate={vi.fn()} celebrate={celebrate} />);
+
+    const cases = [show("Finished", true), show("Finished"), show("Abandoned", true)];
+    expect(cases.map((c) => c.container.querySelector("canvas.confetti") !== null)).toEqual([true, false, false]);
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it("says the game was stopped and shows no scores when there are none", () => {
     render(<Result room={room({ status: "Abandoned", scores: [], matchId: null })} names={[]} navigate={vi.fn()} />);
 

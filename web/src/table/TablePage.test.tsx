@@ -131,6 +131,37 @@ describe("TablePage", () => {
     expect(screen.queryByLabelText("Czas na ruch")).not.toBeInTheDocument();
   });
 
+  it("throws confetti only for a game that ended while the player watched", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);
+    const confetti = () => document.querySelector("canvas.confetti");
+
+    const late = page();
+    await waitFor(() => {
+      expect(late.links[0]?.server.watch).toHaveBeenCalled();
+    });
+    send(last(late.links), (e) => {
+      e.room(room({ status: "Finished", scores: [1, 0], matchId }));
+    });
+    expect(screen.getByRole("heading", { name: "Koniec partii" })).toBeInTheDocument();
+    expect(confetti()).toBeNull();
+    late.view.unmount();
+
+    const live = page();
+    await waitFor(() => {
+      expect(live.links[0]?.server.watch).toHaveBeenCalled();
+    });
+    send(last(live.links), (e) => {
+      e.room(room({ status: "Playing", toMove: 0 }));
+    });
+    send(last(live.links), (e) => {
+      e.room(room({ version: 9, status: "Finished", scores: [1, 0], matchId }));
+    });
+    expect(confetti()).not.toBeNull();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it("marks moves a bot made for a human and shows seat states", async () => {
     const { links } = page();
     await waitFor(() => {
