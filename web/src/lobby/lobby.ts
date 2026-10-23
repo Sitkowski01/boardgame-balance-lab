@@ -31,6 +31,9 @@ export function sortRooms(rooms: readonly RoomInfo[]): RoomInfo[] {
 /** Ile skonczonych partii widac od razu; lobby po kilkudziesieciu partiach nie moze byc kilometrowa lista. */
 export const RecentFinished = 6;
 
+/** Tyle otwartych stolow naraz (trzy rzedy na komputerze); reszta pod przyciskiem. */
+export const OpenShown = 9;
+
 /** Stol, do ktorego mozna usiasc albo ktory mozna ogladac; reszta to juz tylko powtorki. */
 export const isLive = (room: RoomInfo): boolean => room.status === "Waiting" || room.status === "Playing";
 

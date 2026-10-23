@@ -92,8 +92,21 @@ describe("room rows", () => {
     expect(shown()).toEqual(["Pokój Partia 7", "Pokój Partia 6", "Pokój Partia 5", "Pokój Partia 4", "Pokój Partia 3", "Pokój Partia 2"]);
     expect(screen.getByRole("heading", { name: "Ostatnie partie" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Pokaż wszystkie (8)" }));
+    await user.click(screen.getByRole("button", { name: "Pokaż wszystkie partie (8)" }));
     expect(shown()).toHaveLength(8);
+    expect(screen.queryByRole("button", { name: /^Pokaż wszystkie/u })).toBeNull();
+  });
+
+  it("show nine open tables at first and the rest on request", async () => {
+    const open = Array.from({ length: 11 }, (_, i) =>
+      room({ id: `o${String(i)}`, gameName: `Stol ${String(i)}`, createdAt: `2026-10-19T10:${String(10 + i)}:00Z` }),
+    );
+    const { user } = await lobby(open);
+    const shown = () => within(screen.getByRole("region", { name: "Pokoje" })).getAllByRole("listitem");
+    expect(shown()).toHaveLength(9);
+
+    await user.click(screen.getByRole("button", { name: "Pokaż wszystkie stoły (11)" }));
+    expect(shown()).toHaveLength(11);
     expect(screen.queryByRole("button", { name: /^Pokaż wszystkie/u })).toBeNull();
   });
 

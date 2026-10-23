@@ -6,7 +6,7 @@ import { gamesFact } from "../names";
 import type { GameInfo, RoomInfo } from "../api/schemas";
 import type { Tickets } from "../table/tickets";
 import { CreateRoom } from "./CreateRoom";
-import { isLive, RecentFinished, refreshRooms, sortRooms, upsertRoom } from "./lobby";
+import { isLive, OpenShown, RecentFinished, refreshRooms, sortRooms, upsertRoom } from "./lobby";
 import { RoomRow } from "./RoomRow";
 
 export interface LobbyPageProps {
@@ -38,7 +38,6 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
   const [games, setGames] = useState<GameInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [link, setLink] = useState<LobbyLink>("online");
-  const [allFinished, setAllFinished] = useState(false);
 
   useEffect(() => {
     // Zmiana stanu po odmontowaniu React po prostu pomija; pilnowac trzeba tylko polaczenia, ktore otworzy
@@ -154,31 +153,12 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
               : "Żaden stół nie czeka teraz na graczy — załóż własny."}
           </p>
         ) : (
-          <ul className="rooms">
-            {live.map((room) => (
-              <RoomRow key={room.id} room={room} navigate={navigate} />
-            ))}
-          </ul>
+          <RoomList rooms={live} shown={OpenShown} more="Pokaż wszystkie stoły" navigate={navigate} />
         )}
         {done.length > 0 && (
           <>
             <h2>Ostatnie partie</h2>
-            <ul className="rooms finished">
-              {(allFinished ? done : done.slice(0, RecentFinished)).map((room) => (
-                <RoomRow key={room.id} room={room} navigate={navigate} />
-              ))}
-            </ul>
-            {!allFinished && done.length > RecentFinished && (
-              <button
-                type="button"
-                className="more"
-                onClick={() => {
-                  setAllFinished(true);
-                }}
-              >
-                Pokaż wszystkie ({done.length})
-              </button>
-            )}
+            <RoomList rooms={done} shown={RecentFinished} more="Pokaż wszystkie partie" finished navigate={navigate} />
           </>
         )}
       </section>
@@ -195,6 +175,38 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
         </Link>
       </section>
     </main>
+  );
+}
+
+/** Lista pokoi z limitem: pierwsze `shown`, reszta po kliknieciu — lobby nie rosnie w kilometrowa liste. */
+function RoomList(props: {
+  rooms: readonly RoomInfo[];
+  shown: number;
+  more: string;
+  finished?: boolean;
+  navigate: (path: string) => void;
+}) {
+  const { rooms, shown, more, finished = false, navigate } = props;
+  const [all, setAll] = useState(false);
+  return (
+    <>
+      <ul className={`rooms${finished ? " finished" : ""}`}>
+        {(all ? rooms : rooms.slice(0, shown)).map((room) => (
+          <RoomRow key={room.id} room={room} navigate={navigate} />
+        ))}
+      </ul>
+      {!all && rooms.length > shown && (
+        <button
+          type="button"
+          className="more"
+          onClick={() => {
+            setAll(true);
+          }}
+        >
+          {more} ({rooms.length})
+        </button>
+      )}
+    </>
   );
 }
 
