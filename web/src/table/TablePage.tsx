@@ -4,7 +4,7 @@ import { EmptyTable } from "../EmptyTable";
 import { GameBoard, useDescribe } from "../games";
 import { Link } from "../Link";
 import { GameArt } from "../lobby/GameArt";
-import { gameTitle, seatName } from "../names";
+import { gameRules, gameTitle, seatName } from "../names";
 import { CopyLink } from "./CopyLink";
 import { freeSeats, statusLabel } from "../lobby/lobby";
 import { Clock } from "./Clock";
@@ -111,6 +111,16 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
                 </button>
               )}
               {!role.host && role.seat !== null && <p className="note">Czekamy, aż gospodarz zacznie partię.</p>}
+              {gameRules[room.game] !== undefined && (
+                <section className="rules" aria-label="Zasady w skrócie">
+                  <h3>Jak się gra</h3>
+                  <ol>
+                    {gameRules[room.game]?.map((rule) => (
+                      <li key={rule}>{rule}</li>
+                    ))}
+                  </ol>
+                </section>
+              )}
             </section>
           ) : (
             <div className="table-layout">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gameBlurbs, gamesFact, gameTitle, itemName, playerName, seatName } from "./names";
+import { gameBlurbs, gameRules, gamesFact, gameTitle, itemName, playerName, seatName } from "./names";
 
 describe("names for people", () => {
   it("names Connect Four in Polish and leaves other games and variants alone", () => {
@@ -10,6 +10,11 @@ describe("names for people", () => {
 
   it("has a blurb for every game in the catalog", () => {
     expect(Object.keys(gameBlurbs).sort()).toEqual(["connectfour", "klejnoty", "mozaika"]);
+  });
+
+  it("explains every game of the catalog in exactly three steps", () => {
+    expect(Object.keys(gameRules).sort()).toEqual(["connectfour", "klejnoty", "mozaika"]);
+    expect(Object.values(gameRules).every((steps) => steps.length === 3 && steps.every((s) => s.endsWith(".")))).toBe(true);
   });
 
   it("translates bot names with their settings and keeps people's names", () => {

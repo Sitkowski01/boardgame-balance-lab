@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameServer } from "../api/connection";
 import type { SeatTicket } from "../api/schemas";
 import { fakeConnect, last, memoryTickets, type FakeLink } from "../test/fakeServer";
+import { gameRules } from "../names";
 import { matchId, room, roomId } from "../test/fixtures";
 import { TablePage } from "./TablePage";
 import { isMissingRoom, useTable } from "./useTable";
@@ -308,6 +309,29 @@ describe("TablePage states", () => {
         /^Posadź boty na wolnych miejscach albo wyślij link znajomym — partia rusza, gdy klikniesz „Zacznij partię”\.$/u,
       ),
     ).toBeInTheDocument();
+  });
+
+  it("shows the rules of the game in three steps while the table waits, and none for an unknown game", async () => {
+    const { links, view } = page();
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room());
+    });
+    const rules = screen.getByRole("region", { name: "Zasady w skrócie" });
+    expect(within(rules).getByRole("heading", { name: "Jak się gra" })).toBeInTheDocument();
+    expect(
+      within(rules)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent),
+    ).toEqual([...(gameRules.connectfour ?? [])]);
+
+    send(last(links), (e) => {
+      e.room(room({ version: 2, game: "nieznana" }));
+    });
+    expect(screen.queryByRole("region", { name: "Zasady w skrócie" })).toBeNull();
+    view.unmount();
   });
 
   it("colours each recent move by its seat", async () => {

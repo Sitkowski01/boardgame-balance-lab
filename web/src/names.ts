@@ -24,6 +24,25 @@ export const gameBlurbs: Record<string, string> = {
   connectfour: "Cztery krążki w linii: krótka partia na rozgrzewkę z botem MCTS, który nie wybacza.",
 };
 
+/** Zasady w trzech zdaniach dla poczekalni: czas na lekture, zanim gospodarz zacznie partie. */
+export const gameRules: Record<string, readonly string[]> = {
+  connectfour: [
+    "Na zmianę wrzucacie krążki do jednej z siedmiu kolumn — krążek spada na najniższe wolne pole.",
+    "Wygrywa, kto pierwszy ułoży cztery w linii: poziomo, pionowo albo po skosie.",
+    "Pełna plansza bez czwórki to remis.",
+  ],
+  klejnoty: [
+    "W ruchu bierzesz żetony (trzy różne albo dwa takie same), kupujesz kartę albo rezerwujesz ją ze złotem; żetonów najwyżej 10.",
+    "Kupione karty dają punkty i stały rabat w swoim kolorze, więc kolejne są tańsze; patron przychodzi sam, gdy masz jego rabaty.",
+    "Kto pierwszy dojdzie do 15 punktów, kończy grę — runda dogrywa się do końca.",
+  ],
+  mozaika: [
+    "Bierzesz wszystkie kafelki jednego koloru z warsztatu (reszta idzie na środek) albo ze środka.",
+    "Kładziesz je na jeden rząd wzoru; to, co się nie zmieści, spada na podłogę i odbiera punkty.",
+    "Pełny rząd wzoru przenosi kafelek na ścianę i daje punkty za sąsiadów; pełny rząd ściany kończy grę.",
+  ],
+};
+
 const botKinds: Record<string, string> = { greedy: "Zachłanny", random: "Losowy", mcts: "MCTS", ismcts: "ISMCTS" };
 const botName = /^(greedy|random|mcts|ismcts)(?::(.+))?$/u;
 
