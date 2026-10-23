@@ -70,7 +70,7 @@ describe("TablePage connection", () => {
     const connect = vi.fn().mockRejectedValue(new Error("Failed to fetch"));
     render(<TablePage room={roomId} connect={connect} tickets={memoryTickets()} navigate={vi.fn()} />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Failed to fetch");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nie udało się połączyć z serwerem gry. Sprawdź internet i odśwież stronę.");
     expect(screen.getByText("Brak połączenia z serwerem. Odśwież stronę.")).toBeInTheDocument();
   });
 

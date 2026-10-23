@@ -65,10 +65,6 @@ export interface GameServer {
 export type Connect = (events: Partial<GameEvents>) => Promise<GameServer>;
 
 /**
- * Komunikat dla gracza z bledu wywolania huba. Klient SignalR opakowuje HubException w zdanie
- * "An unexpected error occurred invoking 'X' on the server. HubException: <komunikat>".
- */
-/**
  * Czy serwer odmowil (HubException z komunikatem), a nie zawiodla siec. Tylko odmowa znaczy np. "nie znam
  * tego biletu" — zerwane polaczenie w trakcie Rejoin nie jest powodem, zeby zapomniec miejsce.
  */
@@ -78,8 +74,20 @@ export function isRefusal(error: unknown): boolean {
 
 const marker = "HubException: ";
 
+/** Bledy sieci i transportu z klienta SignalR i fetch — po angielsku i bez znaczenia dla gracza. */
+const transport = /WebSocket|Failed to (?:fetch|start|complete)|connection|NetworkError|timeout|Invocation canceled/iu;
+
+/** Co powiedziec graczowi, gdy zawiodla siec albo serwer gry nie odpowiada. */
+export const OfflineMessage = "Nie udało się połączyć z serwerem gry. Sprawdź internet i odśwież stronę.";
+
+/**
+ * Komunikat dla gracza z bledu wywolania huba. Klient SignalR opakowuje HubException w zdanie
+ * "An unexpected error occurred invoking 'X' on the server. HubException: <komunikat>"; z niego zostaje sam
+ * komunikat serwera. Angielski blad transportu zamienia sie w zdanie po polsku, a wlasne bledy strony zostaja.
+ */
 export function hubMessage(error: unknown): string {
   const text = error instanceof Error ? error.message : String(error);
   const at = text.lastIndexOf(marker);
-  return at >= 0 ? text.slice(at + marker.length) : text;
+  if (at >= 0) return text.slice(at + marker.length);
+  return transport.test(text) ? OfflineMessage : text;
 }

@@ -83,7 +83,7 @@ describe("moves and connection", () => {
     const { connect, links } = fakeConnect((s) => s.rejoin.mockRejectedValue(new Error("WebSocket closed")));
     render(<TablePage room={roomId} connect={connect} tickets={tickets} navigate={vi.fn()} />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("WebSocket closed");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nie udało się połączyć z serwerem gry.");
     expect(tickets.find(roomId)).toEqual(host);
     expect(links[0]?.server.watch).not.toHaveBeenCalled();
   });

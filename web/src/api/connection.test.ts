@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { hubMessage, isRefusal, receive } from "./connection";
+import { hubMessage, isRefusal, OfflineMessage, receive } from "./connection";
 
 describe("hubMessage", () => {
   it("keeps only the player's message from a hub error", () => {
@@ -9,6 +9,19 @@ describe("hubMessage", () => {
     );
     expect(hubMessage(new Error("Brak sieci"))).toBe("Brak sieci");
     expect(hubMessage("tekst")).toBe("tekst");
+  });
+
+  it("says in Polish that the game server is unreachable instead of showing a transport error", () => {
+    for (const text of [
+      "WebSocket failed to connect. The connection could not be found on the server.",
+      "Failed to start the connection: Error: WebSocket failed to connect.",
+      "Failed to fetch",
+      "Server timeout elapsed without receiving a message from the server.",
+      "Invocation canceled due to the underlying connection being closed.",
+    ]) {
+      expect(hubMessage(new Error(text))).toBe(OfflineMessage);
+    }
+    expect(OfflineMessage).toBe("Nie udało się połączyć z serwerem gry. Sprawdź internet i odśwież stronę.");
   });
 });
 
