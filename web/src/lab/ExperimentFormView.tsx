@@ -5,6 +5,7 @@ import { BotsField } from "./BotsField";
 import {
   DefaultLimits,
   defaultForm,
+  fromRequest,
   grouped,
   KindHelp,
   KindNames,
@@ -22,6 +23,8 @@ export interface ExperimentFormProps {
   limits?: LabLimits;
   /** Wysyla zamowienie; odrzucona obietnica zostawia formularz z komunikatem. */
   onSubmit: (request: ExperimentRequest) => Promise<void>;
+  /** Zamowienie, od ktorego formularz startuje (otwarty eksperyment); bez niego ustawienia domyslne pierwszej gry. */
+  start?: ExperimentRequest | undefined;
 }
 
 const kinds: ExperimentKind[] = ["Tournament", "League", "Comparison"];
@@ -30,10 +33,12 @@ const kinds: ExperimentKind[] = ["Tournament", "League", "Comparison"];
 const syntaxHint = (syntax: string): string => `Zmiany oddzielaj średnikami: ${syntax.replace(/^zmiany po średnikach: /u, "")}`;
 
 /** Zamowienie eksperymentu: gra, rodzaj, boty, liczba partii, ziarno i wariant zasad. */
-export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit }: ExperimentFormProps) {
+export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit, start }: ExperimentFormProps) {
   const id = useId();
   const first = games[0];
-  const [form, setForm] = useState<ExperimentForm | null>(first === undefined ? null : defaultForm(first));
+  const [form, setForm] = useState<ExperimentForm | null>(() =>
+    start !== undefined && games.some((g) => g.key === start.game) ? fromRequest(start) : first === undefined ? null : defaultForm(first),
+  );
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const game = games.find((g) => g.key === form?.game);

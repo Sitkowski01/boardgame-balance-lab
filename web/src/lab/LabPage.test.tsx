@@ -249,9 +249,35 @@ describe("LabPage", () => {
     expect(items[0]).toHaveClass("current");
     expect(items[0]).toHaveTextContent("Liga: Mozaika, Zachłanny · Losowy");
     expect(items[1]).toHaveTextContent("anulowany");
+    expect(items[0]?.querySelector(".recent-meta")?.textContent).toMatch(/^100 partii · 20\.10$/u);
+    expect(items[1]?.querySelector(".recent-meta")?.textContent).toMatch(/^100 partii · row=3 · /u);
     await user.click(within(items[1] ?? recent).getByRole("link"));
     expect(navigate).toHaveBeenCalledWith("/lab/00000000-0000-0000-0000-0000000000e2");
     expect(await screen.findByRole("region", { name: "Wyniki ligi" })).toBeInTheDocument();
+  });
+
+  it("starts the form from the open experiment and says it runs it again", async () => {
+    const request = { ...experiment().request, game: "klejnoty", bots: ["greedy", "random"], games: 60, seed: "5" };
+    page(fakeLab(experiment({ request })), id);
+
+    expect(await screen.findByRole("heading", { name: "Zmień ustawienia i uruchom jeszcze raz" })).toBeInTheDocument();
+    const form = await screen.findByRole("form", { name: "Nowy eksperyment" });
+    await screen.findByDisplayValue("60");
+    expect(within(form).getByLabelText("Gra")).toHaveValue("klejnoty");
+    expect(within(form).getByLabelText("Ziarno")).toHaveValue("5");
+    expect(
+      within(within(form).getByRole("list", { name: "Wybrane boty" }))
+        .getAllByRole("listitem")
+        .map((b) => b.textContent),
+    ).toEqual(["Zachłanny×", "Losowy×"]);
+  });
+
+  it("starts a fresh form without an open experiment", async () => {
+    page();
+
+    const form = await screen.findByRole("form", { name: "Nowy eksperyment" });
+    expect(within(form).getByLabelText("Gra")).toHaveValue("connectfour");
+    expect(screen.queryByRole("heading", { name: "Zmień ustawienia i uruchom jeszcze raz" })).toBeNull();
   });
 
   it("says when the games cannot be loaded and leaves for the lobby", async () => {

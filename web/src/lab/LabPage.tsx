@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameInfo } from "../api/schemas";
 import { gameTitle, playerName } from "../names";
+import { plural } from "../plural";
 import { Link } from "../Link";
 import type { LabClient } from "./client";
 import { ExperimentFormView } from "./ExperimentFormView";
 import { DefaultLimits, KindNames, type LabLimits } from "./form";
-import { finished, resultOf, type ExperimentInfo, type ExperimentRequest, type ExperimentStatus } from "./model";
+import { finished, resultOf, timeAgo, type ExperimentInfo, type ExperimentRequest, type ExperimentStatus } from "./model";
 import { Results } from "./Results";
 import { useExperiment } from "./useExperiment";
 import "./lab.css";
@@ -121,12 +122,14 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
         </section>
       )}
 
+      {experiment !== null && <h2 className="again">Zmień ustawienia i uruchom jeszcze raz</h2>}
       {typeof games === "string" ? (
         <p role="alert">{games}</p>
       ) : games === null ? (
         <p>Wczytywanie gier…</p>
       ) : (
-        <ExperimentFormView games={games} limits={limits} onSubmit={submit} />
+        // Klucz: po wczytaniu otwartego eksperymentu formularz startuje od jego ustawien ("to samo, ale...").
+        <ExperimentFormView key={info?.id ?? "new"} games={games} limits={limits} onSubmit={submit} start={info?.request} />
       )}
 
       {recent.length > 0 && (
@@ -138,6 +141,10 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
                 <Link to={`/lab/${e.id}`} navigate={navigate}>
                   {KindNames[e.request.kind]}: {gameName(e.request.game)}, {e.request.bots.map(playerName).join(" · ")}
                 </Link>
+                <span className="recent-meta">
+                  {e.request.games} {plural(e.request.games, "partia", "partie", "partii")}
+                  {e.request.variant !== null && ` · ${e.request.variant}`} · {timeAgo(e.created)}
+                </span>
                 <span className={`status ${e.status.toLowerCase()}`}>{StatusNames[e.status]}</span>
               </li>
             ))}

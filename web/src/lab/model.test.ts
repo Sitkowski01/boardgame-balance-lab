@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { experiment } from "../test/fakeLab";
 import { cards, comparison, fields, item, league, tournament } from "../test/labReports";
-import { edge, experimentInfo, finished, pairScore, percent, points, resultOf, verdictMark, verdictWord } from "./model";
+import { edge, experimentInfo, finished, pairScore, percent, points, resultOf, timeAgo, verdictMark, verdictWord } from "./model";
 
 describe("lab model", () => {
   it("reads the result with the schema of its kind", () => {
@@ -53,5 +53,16 @@ describe("lab model", () => {
     expect(["Strong", "Weak", "Dead", "None"].map((v) => verdictWord(v as never, cards))).toEqual(["za mocna", "za slaba", "martwa", ""]);
     expect(verdictWord("Dead", fields)).toBe("martwe");
     expect(["Strong", "Weak", "Dead", "None"].map((v) => verdictMark(v as never))).toEqual(["▲", "▼", "○", ""]);
+  });
+
+  it("says how long ago an experiment was ordered", () => {
+    const now = Date.parse("2026-10-23T12:00:00Z");
+    expect(timeAgo("2026-10-23T11:59:30Z", now)).toBe("przed chwilą");
+    expect(timeAgo("2026-10-23T11:59:00Z", now)).toBe("1 min temu");
+    expect(timeAgo("2026-10-23T11:01:00Z", now)).toBe("59 min temu");
+    expect(timeAgo("2026-10-23T11:00:00Z", now)).toBe("1 godz. temu");
+    expect(timeAgo("2026-10-22T12:01:00Z", now)).toBe("23 godz. temu");
+    expect(timeAgo("2026-10-05T12:00:00", now)).toBe("05.10");
+    expect(timeAgo("nie data", now)).toBe("");
   });
 });

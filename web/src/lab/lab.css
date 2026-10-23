@@ -631,6 +631,29 @@ button.primary:disabled {
 .recent li.current {
   font-weight: 600;
 }
+.recent li a {
+  flex: 1;
+  min-width: 0;
+}
+/* Liczba partii i czas odrozniaja eksperymenty o tych samych botach. */
+.recent-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.again {
+  margin: 28px 0 0;
+}
+@media (max-width: 640px) {
+  .recent li {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  .recent li a {
+    flex-basis: 100%;
+  }
+}
 
 @media (max-width: 640px) {
   .bar-row {

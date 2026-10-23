@@ -138,6 +138,17 @@ export function resultOf(info: ExperimentInfo): ExperimentResult | null {
 
 export const finished = (status: ExperimentStatus): boolean => status !== "Queued" && status !== "Running";
 
+/** Kiedy to bylo, po ludzku: "przed chwilą", "12 min temu", "3 godz. temu", a starsze datą "21.10". */
+export function timeAgo(iso: string, now: number = Date.now()): string {
+  const minutes = Math.floor((now - Date.parse(iso)) / 60_000);
+  if (Number.isNaN(minutes)) return "";
+  if (minutes < 1) return "przed chwilą";
+  if (minutes < 60) return `${String(minutes)} min temu`;
+  if (minutes < 24 * 60) return `${String(Math.floor(minutes / 60))} godz. temu`;
+  const date = new Date(iso);
+  return `${String(date.getDate()).padStart(2, "0")}.${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
 /** Liczba z przecinkiem dziesietnym, jak pisze sie po polsku ("52,3"); raport HTML z CLI zostaje przy kropce. */
 export const decimal = (value: number, digits: number): string => value.toFixed(digits).replace(".", ",");
 

@@ -123,6 +123,18 @@ export function problems(form: ExperimentForm, game: GameInfo, limits: LabLimits
   return found;
 }
 
+/** Formularz z zamowienia, ktore juz bylo: "to samo, ale..." zaczyna sie od ustawien otwartego eksperymentu. */
+export function fromRequest(request: ExperimentRequest): ExperimentForm {
+  return {
+    game: request.game,
+    kind: request.kind,
+    bots: [...request.bots],
+    games: String(request.games),
+    seed: request.seed,
+    variant: request.variant ?? "",
+  };
+}
+
 export function toRequest(form: ExperimentForm): ExperimentRequest {
   return {
     game: form.game,

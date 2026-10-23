@@ -1,7 +1,18 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { games } from "../test/labReports";
-import { botChoices, botLabel, DefaultLimits as Limits, defaultForm, grouped, problems, toRequest, weight, work } from "./form";
+import {
+  botChoices,
+  botLabel,
+  DefaultLimits as Limits,
+  defaultForm,
+  fromRequest,
+  grouped,
+  problems,
+  toRequest,
+  weight,
+  work,
+} from "./form";
 
 const [connectFour, klejnoty, mozaika] = games as [(typeof games)[0], (typeof games)[0], (typeof games)[0]];
 
@@ -109,6 +120,15 @@ describe("experiment form", () => {
       variant: "column=5",
     });
     expect(toRequest(defaultForm(mozaika)).variant).toBeNull();
+  });
+
+  it("starts a form from an order and gives the same order back", () => {
+    const request = { game: "klejnoty", kind: "Comparison" as const, bots: ["greedy", "random"], games: 60, seed: "9", variant: "win=12" };
+    const form = fromRequest(request);
+    expect(form).toEqual({ game: "klejnoty", kind: "Comparison", bots: ["greedy", "random"], games: "60", seed: "9", variant: "win=12" });
+    expect(form.bots).not.toBe(request.bots);
+    expect(toRequest(form)).toEqual(request);
+    expect(fromRequest({ ...request, variant: null }).variant).toBe("");
   });
 
   it("names every bot for people", () => {
