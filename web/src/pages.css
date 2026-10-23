@@ -538,7 +538,9 @@
   color: var(--accent-strong);
   font-weight: 650;
 }
+/* Blok, nie inline-block: numer na liscie staje przy pierwszej linii zawinietego ruchu, a nie przy ostatniej. */
 .replay .moves button {
+  display: block;
   width: 100%;
   border: none;
   box-shadow: none;
