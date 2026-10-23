@@ -198,10 +198,22 @@ export function LobbyPage({ connect, tickets, navigate, loadGames = defaultGames
   );
 }
 
-/** Ozdoba wstepu: elementy trzech gier na zielonym suknie stolu. */
+/** Ruch kursora nad ilustracja jako -0,5..0,5 w zmiennych CSS; warstwy przesuwaja sie o rozne odleglosci (paralaksa). */
+function tilt(e: React.PointerEvent<SVGSVGElement>): void {
+  const box = e.currentTarget.getBoundingClientRect();
+  e.currentTarget.style.setProperty("--px", ((e.clientX - box.left) / box.width - 0.5).toFixed(3));
+  e.currentTarget.style.setProperty("--py", ((e.clientY - box.top) / box.height - 0.5).toFixed(3));
+}
+
+function untilt(e: React.PointerEvent<SVGSVGElement>): void {
+  e.currentTarget.style.removeProperty("--px");
+  e.currentTarget.style.removeProperty("--py");
+}
+
+/** Ozdoba wstepu: elementy trzech gier na zielonym suknie stolu; karta i zetony lekko unosza sie nad suknem. */
 function HeroArt() {
   return (
-    <svg className="hero-art" viewBox="0 0 320 220" aria-hidden="true">
+    <svg className="hero-art" viewBox="0 0 320 220" aria-hidden="true" onPointerMove={tilt} onPointerLeave={untilt}>
       <rect x="6" y="10" width="308" height="200" rx="28" fill="var(--felt)" />
       <rect x="6" y="10" width="308" height="200" rx="28" fill="url(#hero-sheen)" />
       <defs>
@@ -210,18 +222,22 @@ function HeroArt() {
           <stop offset="1" stopColor="#000000" stopOpacity="0.18" />
         </radialGradient>
       </defs>
-      <g transform="rotate(-9 92 104)">
-        <rect x="52" y="48" width="80" height="112" rx="10" fill="#fffaf0" stroke="#d1a43c" strokeWidth="3" />
-        <text x="64" y="76" fontSize="22" fontWeight="700" fill="#2b2b2b" fontFamily="Inter Variable, sans-serif">
-          4
-        </text>
-        <path d="M92 84l16 12-16 28-16-28z" fill="#2f6fd1" />
-        <path d="M92 84l16 12h-32z" fill="#78a6ee" />
-        <circle cx="68" cy="144" r="7" fill="#2e9a4f" />
-        <circle cx="86" cy="144" r="7" fill="#c9353b" />
-        <circle cx="104" cy="144" r="7" fill="#2b2b2b" />
+      <g className="layer near">
+        <g className="float">
+          <g transform="rotate(-9 92 104)">
+            <rect x="52" y="48" width="80" height="112" rx="10" fill="#fffaf0" stroke="#d1a43c" strokeWidth="3" />
+            <text x="64" y="76" fontSize="22" fontWeight="700" fill="#2b2b2b" fontFamily="Inter Variable, sans-serif">
+              4
+            </text>
+            <path d="M92 84l16 12-16 28-16-28z" fill="#2f6fd1" />
+            <path d="M92 84l16 12h-32z" fill="#78a6ee" />
+            <circle cx="68" cy="144" r="7" fill="#2e9a4f" />
+            <circle cx="86" cy="144" r="7" fill="#c9353b" />
+            <circle cx="104" cy="144" r="7" fill="#2b2b2b" />
+          </g>
+        </g>
       </g>
-      <g>
+      <g className="layer far">
         {[
           [212, 52, "#1f9e94"],
           [236, 52, "#d4952a"],
@@ -236,13 +252,15 @@ function HeroArt() {
           <rect key={i} x={x} y={y} width="21" height="21" rx="4" fill={String(fill)} opacity={i % 4 === 3 ? 0.35 : 1} />
         ))}
       </g>
-      <g>
-        <circle cx="176" cy="168" r="17" fill="#d33c3c" stroke="rgb(0 0 0 / 0.25)" />
-        <circle cx="176" cy="168" r="11" fill="none" stroke="#ffd0d0" strokeWidth="2" strokeDasharray="4 3" />
-        <circle cx="214" cy="160" r="17" fill="#e8c23a" stroke="rgb(0 0 0 / 0.25)" />
-        <circle cx="214" cy="160" r="11" fill="none" stroke="#fff2c0" strokeWidth="2" strokeDasharray="4 3" />
-        <circle cx="252" cy="170" r="17" fill="#f5f3ee" stroke="rgb(0 0 0 / 0.25)" />
-        <circle cx="252" cy="170" r="11" fill="none" stroke="#b9b4a8" strokeWidth="2" strokeDasharray="4 3" />
+      <g className="layer mid">
+        <g className="float late">
+          <circle cx="176" cy="168" r="17" fill="#d33c3c" stroke="rgb(0 0 0 / 0.25)" />
+          <circle cx="176" cy="168" r="11" fill="none" stroke="#ffd0d0" strokeWidth="2" strokeDasharray="4 3" />
+          <circle cx="214" cy="160" r="17" fill="#e8c23a" stroke="rgb(0 0 0 / 0.25)" />
+          <circle cx="214" cy="160" r="11" fill="none" stroke="#fff2c0" strokeWidth="2" strokeDasharray="4 3" />
+          <circle cx="252" cy="170" r="17" fill="#f5f3ee" stroke="rgb(0 0 0 / 0.25)" />
+          <circle cx="252" cy="170" r="11" fill="none" stroke="#b9b4a8" strokeWidth="2" strokeDasharray="4 3" />
+        </g>
       </g>
     </svg>
   );

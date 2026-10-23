@@ -1,4 +1,5 @@
 import type { Connect } from "../api/connection";
+import { EmptyTable } from "../EmptyTable";
 import { GameBoard, useDescribe } from "../games";
 import { Link } from "../Link";
 import { GameArt } from "../lobby/GameArt";
@@ -40,6 +41,7 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
   if (gone) {
     return (
       <main className="missing">
+        <EmptyTable />
         <h1>Ten stół już nie istnieje</h1>
         <p className="lead">Pokój rozszedł się po partii albo adres ma literówkę.</p>
         {room !== null && room.matchId !== null && (

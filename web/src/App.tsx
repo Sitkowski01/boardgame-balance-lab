@@ -3,6 +3,7 @@ import type { Connect } from "./api/connection";
 import { api } from "./api/rest";
 import type { LabClient } from "./lab/client";
 import { LabPage } from "./lab/LabPage";
+import { EmptyTable } from "./EmptyTable";
 import { Link } from "./Link";
 import { LobbyPage } from "./lobby/LobbyPage";
 import { ReplayPage } from "./replay/ReplayPage";
@@ -74,6 +75,7 @@ function Page({ route, navigate, connect, tickets, lab }: AppProps & { route: Ro
     case "missing":
       return (
         <main className="missing">
+          <EmptyTable />
           <p className="missing-code" aria-hidden="true">
             404
           </p>

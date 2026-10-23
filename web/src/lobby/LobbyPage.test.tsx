@@ -84,6 +84,19 @@ describe("LobbyPage", () => {
     expect(localStorage.getItem("balance-lab:name")).toBe("Ala");
   });
 
+  it("moves the layers of the hero picture with the pointer and lets them settle when it leaves", async () => {
+    page();
+    await screen.findByRole("form", { name: "Nowy pokój" });
+    const art = document.querySelector<SVGSVGElement>(".hero-art");
+    if (art === null) throw new Error("brak ilustracji");
+    art.getBoundingClientRect = () => ({ left: 100, top: 50, width: 200, height: 100 }) as DOMRect;
+
+    fireEvent.pointerMove(art, { clientX: 250, clientY: 75 });
+    expect([art.style.getPropertyValue("--px"), art.style.getPropertyValue("--py")]).toEqual(["0.250", "-0.250"]);
+    fireEvent.pointerLeave(art);
+    expect([art.style.getPropertyValue("--px"), art.style.getPropertyValue("--py")]).toEqual(["", ""]);
+  });
+
   it("describes the games in the hero and on the cards to choose from", async () => {
     const mozaika: GameInfo = {
       key: "mozaika",
