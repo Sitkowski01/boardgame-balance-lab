@@ -92,6 +92,19 @@
     inset 0 -3px 0 rgb(0 0 0 / 0.18),
     0 1px 2px rgb(0 0 0 / 0.3);
 }
+/* Pole, na ktore spadnie krazek z kolumny pod kursorem: cien krazka w kolorze gracza na ruchu. */
+.connectfour .cell {
+  transition: background-color 0.12s;
+}
+.connectfour .cell.aim {
+  background: color-mix(in srgb, var(--p0) 60%, var(--c4-hole));
+  box-shadow:
+    inset 0 3px 6px rgb(0 0 0 / 0.25),
+    inset 0 0 0 3px rgb(255 255 255 / 0.55);
+}
+.turn-p1 .cell.aim {
+  background: color-mix(in srgb, var(--p1) 65%, var(--c4-hole));
+}
 .connectfour .cell.last {
   outline: 3px solid #fff;
   outline-offset: -3px;

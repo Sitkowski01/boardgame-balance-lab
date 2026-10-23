@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { newDiscs, sameRows, winningCells, type ConnectFourView } from "./model";
+import { landing, newDiscs, sameRows, winningCells, type ConnectFourView } from "./model";
 import "./connectfour.css";
 
 export interface ConnectFourBoardProps {
@@ -25,6 +25,9 @@ export function ConnectFourBoard({ view, legalMoves, names, onMove }: ConnectFou
     fresh = newDiscs(seen.rows, view.rows);
     setSeen({ rows: view.rows, fresh });
   }
+  // Kolumna pod kursorem albo fokusem: jej pole ladowania dostaje polprzezroczysty krazek gracza na ruchu.
+  const [aim, setAim] = useState<number | null>(null);
+  const target = aim !== null && legalMoves.includes(String(aim)) ? landing(view.rows, aim) : null;
   const win = view.over && view.winner !== null ? winningCells(view.rows) : new Set<number>();
   const grid = { gridTemplateColumns: `repeat(${String(columns)}, 1fr)` };
   const name = (player: number): string => names[player] ?? `gracz ${String(player + 1)}`;
@@ -41,6 +44,7 @@ export function ConnectFourBoard({ view, legalMoves, names, onMove }: ConnectFou
                 cell === null ? "" : `p${String(cell)}`,
                 fresh.has(index) ? "last" : "",
                 win.has(index) ? "win" : "",
+                index === target ? "aim" : "",
               ];
               return (
                 <div
@@ -62,6 +66,18 @@ export function ConnectFourBoard({ view, legalMoves, names, onMove }: ConnectFou
               disabled={!legalMoves.includes(String(column))}
               onClick={() => {
                 onMove(String(column));
+              }}
+              onPointerEnter={() => {
+                setAim(column);
+              }}
+              onPointerLeave={() => {
+                setAim(null);
+              }}
+              onFocus={() => {
+                setAim(column);
+              }}
+              onBlur={() => {
+                setAim(null);
               }}
             >
               <span className="visually-hidden">Kolumna {column + 1}</span>

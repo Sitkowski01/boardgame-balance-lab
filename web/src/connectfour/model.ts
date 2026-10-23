@@ -66,3 +66,13 @@ export function newDiscs(before: Grid | null, after: Grid): Set<number> {
 export function sameRows(a: Grid, b: Grid): boolean {
   return a.length === b.length && a.every((row, r) => row.length === b[r]?.length && row.every((cell, c) => cell === b[r]?.[c]));
 }
+
+/** Pole, na ktore spadnie krazek wrzucony do kolumny (indeks w calej planszy); null, gdy kolumna jest pelna. */
+export function landing(rows: Grid, column: number): number | null {
+  const width = rows[0]?.length ?? 0;
+  for (let r = rows.length - 1; r >= 0; r--) {
+    if (rows[r]?.[column] === null) return r * width + column;
+  }
+
+  return null;
+}

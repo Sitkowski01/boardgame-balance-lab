@@ -3,12 +3,25 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { connectFour } from "../test/boards";
 import { ConnectFourBoard } from "./ConnectFourBoard";
-import { connectFourView, describeColumn } from "./model";
+import { connectFourView, describeColumn, landing } from "./model";
 
 describe("Connect Four model", () => {
   it("accepts the board the server sends and names a column", () => {
     expect(connectFourView.parse(connectFour())).toEqual(connectFour());
     expect(describeColumn("0")).toBe("wrzuca do kolumny 1");
+  });
+
+  it("finds the cell a disc falls to and nothing in a full column", () => {
+    const rows = connectFour().rows.map((row, r) => (r === 5 ? [0, null, null, null, null, null, null] : row));
+    expect(landing(rows, 0)).toBe(28);
+    expect(landing(rows, 1)).toBe(36);
+    expect(
+      landing(
+        rows.map((row) => row.map((cell, c) => (c === 2 ? 1 : cell))),
+        2,
+      ),
+    ).toBeNull();
+    expect(landing([], 0)).toBeNull();
   });
 });
 
@@ -38,6 +51,23 @@ describe("ConnectFourBoard", () => {
 
     rerender(<ConnectFourBoard view={connectFour({ over: true })} legalMoves={[]} names={[]} onMove={vi.fn()} />);
     expect(screen.getByText("Remis.")).toBeInTheDocument();
+  });
+
+  it("shows where the disc would land under the pointer or the focus, only in a legal column", () => {
+    const rows = connectFour().rows.map((row, r) => (r === 5 ? [0, 1, null, null, null, null, null] : row));
+    render(<ConnectFourBoard view={connectFour({ rows })} legalMoves={["0", "3"]} names={["Ala", "Bot"]} onMove={vi.fn()} />);
+    const aimed = (): number[] => [...document.querySelectorAll(".cell")].flatMap((cell, i) => (cell.classList.contains("aim") ? [i] : []));
+
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "Kolumna 1" }));
+    expect(aimed()).toEqual([28]);
+    fireEvent.pointerLeave(screen.getByRole("button", { name: "Kolumna 1" }));
+    expect(aimed()).toEqual([]);
+    fireEvent.focus(screen.getByRole("button", { name: "Kolumna 4" }));
+    expect(aimed()).toEqual([38]);
+    fireEvent.blur(screen.getByRole("button", { name: "Kolumna 4" }));
+    expect(aimed()).toEqual([]);
+    fireEvent.pointerEnter(screen.getByRole("button", { name: "Kolumna 2" }));
+    expect(aimed()).toEqual([]);
   });
 
   it("names a disc of an unnamed player", () => {
