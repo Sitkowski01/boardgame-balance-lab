@@ -103,7 +103,7 @@ describe("LabPage", () => {
     for (let i = 0; i < 4; i++) await user.click(add);
 
     expect(add).toBeDisabled();
-    expect(screen.getByText(/ConnectFour to gra dla 2–2 graczy/u)).toBeInTheDocument();
+    expect(screen.getByText(/^Czwórki to gra dla 2 graczy — tylu botów potrzeba przy stole\.$/u)).toBeInTheDocument();
   });
 
   it("follows a running experiment, shows its progress and can cancel it", async () => {

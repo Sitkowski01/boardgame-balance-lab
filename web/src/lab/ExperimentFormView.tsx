@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import type { GameInfo } from "../api/schemas";
+import { gameTitle } from "../names";
 import { BotsField } from "./BotsField";
 import {
   DefaultLimits,
@@ -25,8 +26,8 @@ export interface ExperimentFormProps {
 
 const kinds: ExperimentKind[] = ["Tournament", "League", "Comparison"];
 
-/** Skladnia wariantu z serwera ("zmiany po srednikach: win=N; ...") z polskim wstepem; sam zapis zostaje jak w CLI. */
-const syntaxHint = (syntax: string): string => `Zmiany oddzielaj średnikami: ${syntax.replace(/^zmiany po srednikach: /u, "")}`;
+/** Skladnia wariantu z serwera ("zmiany po średnikach: win=N; ...") z polskim wstepem; sam zapis zostaje jak w CLI. */
+const syntaxHint = (syntax: string): string => `Zmiany oddzielaj średnikami: ${syntax.replace(/^zmiany po średnikach: /u, "")}`;
 
 /** Zamowienie eksperymentu: gra, rodzaj, boty, liczba partii, ziarno i wariant zasad. */
 export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit }: ExperimentFormProps) {
@@ -80,7 +81,7 @@ export function ExperimentFormView({ games, limits = DefaultLimits, onSubmit }: 
           >
             {games.map((g) => (
               <option key={g.key} value={g.key}>
-                {g.name}
+                {gameTitle(g.name)}
               </option>
             ))}
           </select>

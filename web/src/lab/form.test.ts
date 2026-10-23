@@ -67,7 +67,7 @@ describe("experiment form", () => {
       "Co jeśli potrzebuje wariantu zasad — to on jest zmianą.",
     ]);
     expect(problems({ ...form, kind: "Comparison", variant: "win=13" }, klejnoty)).toEqual([]);
-    expect(problems({ ...defaultForm(connectFour), variant: "x=1" }, connectFour)).toEqual(["ConnectFour nie ma wariantów zasad."]);
+    expect(problems({ ...defaultForm(connectFour), variant: "x=1" }, connectFour)).toEqual(["Gra Czwórki nie ma wariantów zasad."]);
   });
 
   it("follows the limits of the server", () => {

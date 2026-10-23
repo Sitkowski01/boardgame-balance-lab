@@ -41,6 +41,17 @@ describe("ExperimentFormView", () => {
     expect(within(form).getByLabelText("Turniej")).not.toBeChecked();
   });
 
+  it("lists the games under their names from the lobby", () => {
+    const { form } = view();
+
+    const options = within(within(form).getByLabelText("Gra")).getAllByRole("option");
+    expect(options.map((o) => [o.getAttribute("value"), o.textContent])).toEqual([
+      ["connectfour", "Czwórki"],
+      ["klejnoty", "Klejnoty"],
+      ["mozaika", "Mozaika"],
+    ]);
+  });
+
   it("drops spaces typed around the numbers", async () => {
     const { user, form } = view();
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { GameInfo } from "../api/schemas";
+import { gameTitle } from "../names";
 import { plural } from "../plural";
 import type { ExperimentKind, ExperimentRequest } from "./model";
 
@@ -87,6 +88,10 @@ export function defaultForm(game: GameInfo, kind: ExperimentKind = "Tournament")
  * Co jest nie tak z formularzem (pusta lista = mozna wyslac). Te same zasady sprawdza serwer; tu tylko po to,
  * zeby powiedziec o nich od razu, przy polu, a nie po wyslaniu.
  */
+/** Liczba graczy gry: "2" albo "2–4". */
+const seats = (game: GameInfo): string =>
+  game.minPlayers === game.maxPlayers ? String(game.minPlayers) : `${String(game.minPlayers)}–${String(game.maxPlayers)}`;
+
 export function problems(form: ExperimentForm, game: GameInfo, limits: LabLimits = DefaultLimits): string[] {
   const found: string[] = [];
   const games = Number(form.games);
@@ -95,7 +100,7 @@ export function problems(form: ExperimentForm, game: GameInfo, limits: LabLimits
     found.push(
       form.kind === "League"
         ? "Liga potrzebuje co najmniej dwóch botów."
-        : `${game.name} to gra dla ${String(game.minPlayers)}–${String(game.maxPlayers)} graczy — tylu botów potrzeba przy stole.`,
+        : `${gameTitle(game.name)} to gra dla ${seats(game)} graczy — tylu botów potrzeba przy stole.`,
     );
   }
 
@@ -109,7 +114,7 @@ export function problems(form: ExperimentForm, game: GameInfo, limits: LabLimits
 
   if (!/^\d{1,20}$/.test(form.seed) || BigInt(form.seed) > 18446744073709551615n) found.push("Ziarno to liczba całkowita od 0 do 2^64−1.");
   if (form.kind === "Comparison" && form.variant.trim() === "") found.push("Co jeśli potrzebuje wariantu zasad — to on jest zmianą.");
-  if (form.variant.trim() !== "" && !game.hasVariants) found.push(`${game.name} nie ma wariantów zasad.`);
+  if (form.variant.trim() !== "" && !game.hasVariants) found.push(`Gra ${gameTitle(game.name)} nie ma wariantów zasad.`);
   if (found.length === 0 && work(form) > limits.maxWork) {
     found.push(
       `Za duży eksperyment dla laboratorium: ${grouped(work(form))} jednostek pracy, najwyżej ${grouped(limits.maxWork)} — mniej partii, botów albo iteracji MCTS.`,

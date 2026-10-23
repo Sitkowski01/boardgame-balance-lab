@@ -103,7 +103,7 @@ export const games: GameInfo[] = [
     minPlayers: 2,
     maxPlayers: 4,
     hasVariants: true,
-    variantSyntax: "zmiany po srednikach: win=N",
+    variantSyntax: "zmiany po średnikach: win=N",
     profiles: ["punkty", "silnik"],
   },
   {
@@ -112,7 +112,7 @@ export const games: GameInfo[] = [
     minPlayers: 2,
     maxPlayers: 4,
     hasVariants: true,
-    variantSyntax: "zmiany po srednikach: tiles=N",
+    variantSyntax: "zmiany po średnikach: tiles=N",
     profiles: ["kolumny", "ostrozny"],
   },
 ];

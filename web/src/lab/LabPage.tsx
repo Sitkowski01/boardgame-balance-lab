@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameInfo } from "../api/schemas";
+import { gameTitle } from "../names";
 import { Link } from "../Link";
 import type { LabClient } from "./client";
 import { ExperimentFormView } from "./ExperimentFormView";
@@ -90,7 +91,7 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
     };
   }, [busy, refresh]);
 
-  const gameName = (key: string): string => (Array.isArray(games) ? games.find((g) => g.key === key)?.name : undefined) ?? key;
+  const gameName = (key: string): string => gameTitle((Array.isArray(games) ? games.find((g) => g.key === key)?.name : undefined) ?? key);
   const submit = async (request: ExperimentRequest): Promise<void> => {
     const accepted = await client.submit(request);
     navigate(`/lab/${accepted.id}`);
