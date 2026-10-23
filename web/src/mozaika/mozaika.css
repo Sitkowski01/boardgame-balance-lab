@@ -366,6 +366,13 @@
     height: 108px;
     padding: 10px;
   }
+  /* Na telefonie pusty warsztat naprawde zwalnia miejsce: piec pelnych kregow to dwa rzedy przewijania. */
+  .factory.empty .source {
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    transform: none;
+  }
   .mozaika .table {
     gap: 8px;
     justify-content: center;
