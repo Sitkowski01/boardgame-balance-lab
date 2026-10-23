@@ -96,6 +96,11 @@ jobs:
           path: ~/.nuget/packages
           key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'dotnet-tools.json', 'global.json') }}
       - name: Mutation testing (Stryker, prog 90%)
+        # Mutant, po ktorym gra sie nie konczy, potrafi zajac kilka GB w kilka sekund i zabic
+        # caly runner. Z limitem sterty proces testow dostaje OutOfMemoryException i mutant
+        # pada jako zabity; zwykle przebiegi testow mieszcza sie ponizej 0,7 GB.
+        env:
+          DOTNET_GCHeapHardLimit: "0x80000000"
         run: |
           dotnet tool restore
           dotnet stryker -f ${{ matrix.config }}
