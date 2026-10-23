@@ -287,7 +287,8 @@ i wariant zasad. Serwer liczy eksperyment w tle, strona pokazuje postęp i wynik
 - **Co jeśli:** różnice wariant − oryginał z przedziałami, liczone z tych samych rozdań; istotne zmiany wyraźne,
   w granicach przypadku — przygaszone.
 
-Każdy wykres ma podpowiedź po najechaniu i przy fokusie z klawiatury oraz tabelę z liczbami; oceny niosą znak
+Liczby z każdego wykresu są też w tabeli (macierz ma wartość w każdej komórce), a punkty wykresu kart i pól
+opisują się po najechaniu i przy fokusie z klawiatury; oceny niosą znak
 i słowo, nie tylko kolor; kolory mają osobne wartości dla trybu ciemnego. Wykres punktowy rysuje się w
 szerokości ekranu, więc na telefonie napisy mają normalną wielkość.
 
