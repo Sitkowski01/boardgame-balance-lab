@@ -301,3 +301,25 @@ describe("ReplayPage details", () => {
     });
   });
 });
+
+describe("ReplayPage move list", () => {
+  it("follows the current move when it leaves the visible part of the list", async () => {
+    // jsdom nie ma ukladu strony: pozycje elementow i przewijanie podstawiamy.
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLOListElement.prototype, "scrollTo", { configurable: true, value: scrollTo });
+    vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(function (this: HTMLElement) {
+      return this.tagName === "LI" ? 400 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(20);
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    const { user } = page();
+    await user.click(await screen.findByRole("button", { name: /^Następny/u }));
+
+    await waitFor(() => {
+      expect(scrollTo).toHaveBeenCalledWith({ top: 410, behavior: "smooth" });
+    });
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    delete (HTMLOListElement.prototype as { scrollTo?: unknown }).scrollTo;
+  });
+});

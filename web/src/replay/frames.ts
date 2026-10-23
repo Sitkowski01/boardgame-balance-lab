@@ -38,3 +38,12 @@ export function frameCache<T>(load: (moves: number) => Promise<T>): Frames<T> {
 export function clampPosition(position: number, last: number): number {
   return Math.min(Math.max(0, Math.trunc(position)), last);
 }
+
+/**
+ * Gdzie przewinac liste ruchow, zeby biezacy ruch byl widoczny: srodek listy, gdy wypadl poza okno; null, gdy
+ * jest widoczny (lista nie skacze przy kazdym kroku). Liczby w pikselach wzgledem poczatku listy.
+ */
+export function scrollToShow(item: { top: number; height: number }, list: { scrollTop: number; height: number }): number | null {
+  const visible = item.top >= list.scrollTop && item.top + item.height <= list.scrollTop + list.height;
+  return visible ? null : Math.max(0, item.top - list.height / 2 + item.height / 2);
+}

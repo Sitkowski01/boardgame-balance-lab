@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api/rest";
 import type { MatchReplay, ReplayFrame } from "../api/schemas";
 import { GameBoard, useDescribe } from "../games";
@@ -7,7 +7,7 @@ import { GameArt } from "../lobby/GameArt";
 import { gameTitle, playerName } from "../names";
 import { winners } from "../table/table";
 import { Controls } from "./Controls";
-import { clampPosition, frameCache } from "./frames";
+import { clampPosition, frameCache, scrollToShow } from "./frames";
 
 export interface ReplayPageProps {
   match: string;
@@ -98,6 +98,22 @@ export function ReplayPage({
     setPosition(clampPosition(to, last));
   };
 
+  // Biezacy ruch zostaje widoczny w przewijanej liscie: przy odtwarzaniu i skokach lista plynnie za nim idzie.
+  const list = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    const ol = list.current;
+    const li = ol?.querySelector<HTMLElement>("li.current") ?? null;
+    if (ol === null || li === null) return;
+    const top = scrollToShow(
+      { top: li.offsetTop - ol.offsetTop, height: li.offsetHeight },
+      { scrollTop: ol.scrollTop, height: ol.clientHeight },
+    );
+    if (top !== null) {
+      const calm = typeof window.matchMedia !== "function" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      ol.scrollTo({ top, behavior: calm ? "auto" : "smooth" });
+    }
+  }, [position]);
+
   if (error !== null) {
     return (
       <main>
@@ -163,7 +179,7 @@ export function ReplayPage({
         <aside className="table-side">
           <section className="moves panel" aria-label="Lista ruchów">
             <h2>Ruchy</h2>
-            <ol aria-label="Ruchy partii">
+            <ol aria-label="Ruchy partii" ref={list}>
               {match.moves.map((move, i) => {
                 // Bez autora (dziennik niezgodny z zasadami) zostaje sam ruch.
                 const who = players[match.movers[i] ?? -1];

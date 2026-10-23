@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { clampPosition, frameCache } from "./frames";
+import { clampPosition, frameCache, scrollToShow } from "./frames";
 
 describe("frames", () => {
   it("loads each frame once and prefetches the neighbours inside the match", async () => {
@@ -21,6 +21,15 @@ describe("frames", () => {
 
     await expect(frames.get(1)).rejects.toThrow("siec");
     await expect(frames.get(1)).resolves.toBe("ok");
+  });
+
+  it("scrolls the move list only when the current move is out of sight, to its middle", () => {
+    const list = { scrollTop: 100, height: 200 };
+    expect(scrollToShow({ top: 100, height: 20 }, list)).toBeNull();
+    expect(scrollToShow({ top: 280, height: 20 }, list)).toBeNull();
+    expect(scrollToShow({ top: 281, height: 20 }, list)).toBe(191);
+    expect(scrollToShow({ top: 99, height: 20 }, list)).toBe(9);
+    expect(scrollToShow({ top: 10, height: 20 }, list)).toBe(0);
   });
 
   it("keeps the slider between the deal and the last move", () => {
