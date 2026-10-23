@@ -3,15 +3,16 @@
   --viz-surface: #fcfcfb;
   --viz-ink: #0b0b0b;
   --viz-ink-2: #52514e;
-  --viz-muted: #898781;
+  /* Znaki ocen (▲ ▼ ○ ●) stoja w tekscie legendy i tabel, wiec trzymaja kontrast tekstu 4,5:1 z panelem. */
+  --viz-muted: #6f6d68;
   --viz-grid: #e1e0d9;
   --viz-axis: #c3c2b7;
   --series-1: #2a78d6;
   --win: #2a78d6;
   --loss: #e34948;
   --neutral: #f0efec;
-  --critical: #d03b3b;
-  --serious: #ec835a;
+  --critical: #c22f2f;
+  --serious: #b9531f;
   --good: #0ca30c;
 }
 @media (prefers-color-scheme: dark) {
@@ -26,6 +27,9 @@
     --win: #3987e5;
     --loss: #e66767;
     --neutral: #383835;
+    --critical: #f07a7a;
+    --serious: #f0a274;
+    --good: #5ccf5c;
   }
 }
 :root[data-theme="dark"] .lab {
@@ -38,6 +42,10 @@
   --win: #3987e5;
   --loss: #e66767;
   --neutral: #383835;
+  --viz-muted: #898781;
+  --critical: #f07a7a;
+  --serious: #f0a274;
+  --good: #5ccf5c;
 }
 
 .lab-head {
@@ -143,12 +151,31 @@
   border-radius: 999px;
   background: var(--bg);
 }
+/* Krzyzyk usuwania: okragly cel 28 px (32 px na telefonie), czerwienieje pod kursorem. */
 .bots li button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
-  padding: 0 6px;
+  box-shadow: none;
+  padding: 0;
   font-size: 1.1rem;
   line-height: 1;
+  color: var(--muted);
+}
+.bots li button:hover:not(:disabled) {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+@media (max-width: 640px) {
+  .bots li button {
+    width: 32px;
+    height: 32px;
+  }
 }
 .add-bot {
   display: flex;
@@ -222,6 +249,43 @@ button.primary:disabled {
   /* minmax(0, ...): wykres i tabela moga sie zwezic do ekranu telefonu, zamiast rozpychac strone. */
   grid-template-columns: minmax(0, 1fr);
   gap: 4px;
+}
+/*
+ * Wejscie wynikow: kafelki i wykresy wjezdzaja po kolei, a slupki rosna od osi — oko idzie od liczb do wykresow.
+ * Raz, przy pokazaniu wyniku; odswiezanie listy eksperymentow nie montuje wynikow od nowa.
+ */
+.results > * {
+  animation: result-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.results > :nth-child(2) {
+  animation-delay: 80ms;
+}
+.results > :nth-child(3) {
+  animation-delay: 160ms;
+}
+.results > :nth-child(n + 4) {
+  animation-delay: 240ms;
+}
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.results .fill {
+  transform-origin: left center;
+  animation: bar-grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both;
+}
+.results .diverging .fill.down {
+  transform-origin: right center;
+}
+.results .whisker {
+  animation: result-in 0.3s ease-out 0.7s both;
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
 }
 .stats {
   display: grid;
