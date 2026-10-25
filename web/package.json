@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "pnpm typecheck && vite build",
+    "build:demo": "pnpm typecheck && dotnet publish ../demo/BalanceLab.Demo.Wasm -c Release -o ../artifacts/demo-wasm && vite build --mode demo",
     "typecheck": "tsc --noEmit && tsc --noEmit -p e2e",
     "lint": "eslint .",
     "arch": "depcruise src --config .dependency-cruiser.cjs",

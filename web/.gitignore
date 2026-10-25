@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist-demo/
+playwright-report-demo/
 coverage/
 reports/
 .stryker-tmp/
