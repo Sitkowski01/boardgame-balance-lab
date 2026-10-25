@@ -41,6 +41,12 @@ internal sealed partial class Room<TState, TMove, TGame>
 
         _state = _rules.Setup(setup);
         _status = RoomStatus.Playing;
+        // Kto wyszedl przed startem, gra dalej jako rozlaczony (za niego zagra bot) — miejsca juz sie nie zwalnia.
+        for (var seat = 0; seat < _seats.Length; seat++)
+        {
+            StopLeaving(seat);
+        }
+
         BeginTurn();
     });
 

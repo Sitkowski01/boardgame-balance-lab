@@ -7,11 +7,16 @@ internal sealed partial class Room<TState, TMove, TGame>
 {
     private void Send(Func<IRoomNotifier, Task> send) => _queue.Send(() => send(_notifier));
 
-    private void PublishRoom()
+    /// <param name="active">Czy to ruch w pokoju; zmiana z samego uplywu czasu nie odsuwa sprzatania lobby.</param>
+    private void PublishRoom(bool active = true)
     {
         _version++;
         var info = _info = BuildInfo();
-        Interlocked.Exchange(ref _lastActivity, _clock.GetUtcNow().UtcTicks);
+        if (active)
+        {
+            Interlocked.Exchange(ref _lastActivity, _clock.GetUtcNow().UtcTicks);
+        }
+
         Send(n => n.RoomChangedAsync(info));
     }
 

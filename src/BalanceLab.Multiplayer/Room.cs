@@ -127,5 +127,8 @@ internal sealed partial class Room<TState, TMove, TGame> : IRoom
 
         /// <summary>Bot miejsca albo, u czlowieka, bot grajacy za niego.</summary>
         public Contestant<TState, TMove>? Bot { get; set; }
+
+        /// <summary>Odliczanie do zwolnienia miejsca czlowieka, ktory wyszedl przed startem.</summary>
+        public CancellationTokenSource? Leaving { get; set; }
     }
 }

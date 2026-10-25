@@ -28,6 +28,7 @@ internal sealed partial class Room<TState, TMove, TGame>
     {
         var seat = SeatOf(token);
         _seats[seat].Connections.Add(connection);
+        StopLeaving(seat);
         // Wrocil na swoim ruchu, zanim minal mu czas: bot, ktory gral za rozlaczonego, juz nie zagra.
         if (_status == RoomStatus.Playing && seat == _rules.CurrentPlayer(_state) && _botTurn == _moves && !_timedOut)
         {
@@ -98,7 +99,51 @@ internal sealed partial class Room<TState, TMove, TGame>
         {
             ScheduleBot(left, _options.DisconnectGrace);
         }
+        else if (_status == RoomStatus.Waiting && _seats[left].Connections.Count == 0)
+        {
+            ReleaseLater(left);
+        }
 
         PublishRoom();
     });
+
+    /// <summary>Kto wyszedl z czekajacego pokoju i nie wrocil przez <see cref="RoomOptions.WaitingSeatHold"/>, zwalnia miejsce.</summary>
+    /// <remarks>
+    /// Jeden odliczany czas na miejsce: powrot go odwoluje, a kolejne wyjscie zaczyna liczyc od nowa — miejsce
+    /// zwalnia dopiero nieprzerwana nieobecnosc. Kontynuacja synchronicznie wrzuca zwolnienie do kolejki pokoju,
+    /// wiec po uplywie czasu (takze na podstawionym zegarze) jest ono w kolejce przed nastepna prosba.
+    /// </remarks>
+    private void ReleaseLater(int seat)
+    {
+        StopLeaving(seat);
+        var leaving = _seats[seat].Leaving = CancellationTokenSource.CreateLinkedTokenSource(_queue.Closing);
+        _ = Task.Delay(_options.WaitingSeatHold, _clock, leaving.Token).ContinueWith(
+            _ => _queue.Fire(() => Release(seat, leaving)),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+    }
+
+    private void StopLeaving(int seat)
+    {
+        _seats[seat].Leaving?.Cancel();
+        _seats[seat].Leaving?.Dispose();
+        _seats[seat].Leaving = null;
+    }
+
+    private void Release(int seat, CancellationTokenSource leaving)
+    {
+        // Partia ruszyla albo czas odwolano (powrot, kolejne wyjscie) w chwili, gdy zwolnienie bylo juz w drodze.
+        if (_status != RoomStatus.Waiting || !ReferenceEquals(_seats[seat].Leaving, leaving))
+        {
+            return;
+        }
+
+        StopLeaving(seat);
+        _seats[seat] = new Seat();
+        // Gospodarz wyszedl: start i boty przechodza na nastepnego czlowieka (albo na pierwszego, ktory usiadzie).
+        _host = _host == seat ? Array.FindIndex(_seats, s => s.Kind == SeatKind.Human) : _host;
+
+        PublishRoom(active: false);
+    }
 }

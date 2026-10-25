@@ -86,6 +86,12 @@ public sealed record RoomOptions
     /// </summary>
     public TimeSpan DisconnectGrace { get; init; } = TimeSpan.FromSeconds(10);
 
+    /// <summary>
+    /// Ile czeka miejsce czlowieka rozlaczonego przed startem partii. Potem miejsce jest wolne, a gospodarzem zostaje
+    /// nastepny czlowiek przy stole: zamknieta karta nie blokuje stolu w lobby ani startu.
+    /// </summary>
+    public TimeSpan WaitingSeatHold { get; init; } = TimeSpan.FromMinutes(1);
+
     /// <summary>Po nieudanym zapisie ruchu bota (np. baza chwilowo niedostepna) — tyle czekamy przed kolejna proba.</summary>
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(2);
 
