@@ -86,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty-zasady.json, stryker-klejnoty-reszta.json, stryker-mozaika.json, stryker-experiments.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
+        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty-zasady.json, stryker-klejnoty-reszta.json, stryker-mozaika.json, stryker-experiments.json, stryker-demo.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0

@@ -103,6 +103,16 @@ public sealed class ArchitectureTests
             "BalanceLab.Reporting", "Microsoft.EntityFrameworkCore");
     }
 
+    [Fact]
+    public void Demo_is_the_same_server_without_network_and_writes_matches_only_to_memory()
+    {
+        // Demo w przegladarce sklada te same pokoje i laboratorium; zamiast SignalR ma wywolania z JavaScriptu, a zasady
+        // gier i boty zna tylko przez katalog. Kod dziennika w bazie przychodzi z Multiplayer, ale demo go nie uzywa:
+        // samo nie siega ani do EF Core, ani do Npgsql (partie trzyma MemoryMatches).
+        AssertNoDependency("BalanceLab.Demo", "BalanceLab.Games", "BalanceLab.Bots", "BalanceLab.Api", "BalanceLab.Cli",
+            "BalanceLab.Reporting", "Microsoft.AspNetCore", "Microsoft.EntityFrameworkCore", "Npgsql");
+    }
+
     [Theory]
     [MemberData(nameof(DeterministicCore))]
     public void Randomness_comes_only_from_the_engine_generator(string project)

@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\BalanceLab.Multiplayer\BalanceLab.Multiplayer.csproj" />
     <ProjectReference Include="..\..\src\BalanceLab.Api\BalanceLab.Api.csproj" />
     <ProjectReference Include="..\..\src\BalanceLab.Experiments\BalanceLab.Experiments.csproj" />
+    <ProjectReference Include="..\..\src\BalanceLab.Demo\BalanceLab.Demo.csproj" />
   </ItemGroup>
 
 </Project>
