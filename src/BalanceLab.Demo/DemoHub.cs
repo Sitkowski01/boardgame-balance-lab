@@ -11,9 +11,10 @@ public delegate void DemoSend(string connection, string kind, object payload);
 
 /// <summary>
 /// Hub gry bez SignalR: te same metody i te same zasady co <c>GameHub</c> (jedno polaczenie siedzi w jednym
-/// pokoju, bilet zostaje w polaczeniu), a grupy to slownik polaczen.
+/// pokoju, bilet zostaje w polaczeniu), a grupy to slownik polaczen. Jest tez odbiorca zmian z pokoi —
+/// kieruje je do polaczen tak, jak HubNotifier do grup.
 /// </summary>
-public sealed class DemoHub
+public sealed class DemoHub : IRoomNotifier
 {
     private readonly ConcurrentDictionary<string, Binding?> _connections = new();
     private readonly ConcurrentDictionary<string, byte> _lobbyWatchers = new();
@@ -118,6 +119,51 @@ public sealed class DemoHub
     {
         var (room, token) = Seat(connection);
         return room.MoveAsync(token, number, move);
+    }
+
+    Task IRoomNotifier.RoomChangedAsync(RoomInfo room)
+    {
+        foreach (var (connection, binding) in _connections)
+        {
+            if (binding is { Joined: true } && binding.Room == room.Id)
+            {
+                _send(connection, "room", room);
+            }
+        }
+
+        foreach (var connection in _lobbyWatchers.Keys)
+        {
+            _send(connection, "lobby", room);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    Task IRoomNotifier.ViewChangedAsync(Guid room, int? seat, TableView view)
+    {
+        // Widok miejsca tylko dla tego miejsca, widok widza tylko dla widzow — jak grupy Seat i Watchers.
+        foreach (var (connection, binding) in _connections)
+        {
+            if (binding is { Joined: true } && binding.Room == room && binding.Seat == seat)
+            {
+                _send(connection, "view", view);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    Task IRoomNotifier.MovePlayedAsync(MovePlayed move)
+    {
+        foreach (var (connection, binding) in _connections)
+        {
+            if (binding is { Joined: true } && binding.Room == move.Room)
+            {
+                _send(connection, "move", move);
+            }
+        }
+
+        return Task.CompletedTask;
     }
 
     private async Task<SeatTicket> SitAsync(string connection, Guid room, Func<IRoom, Task<SeatTicket>> sit)
