@@ -115,7 +115,8 @@ jobs:
   web:
     # Front: typy, format, lint, reguly architektury, testy z pokryciem, testy mutacyjne i build.
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    # StrykerJS na calym froncie (z demo) liczy sie juz dluzej niz godzine.
+    timeout-minutes: 120
     defaults:
       run:
         working-directory: web
