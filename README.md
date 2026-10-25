@@ -446,7 +446,8 @@ dotnet test                 # jednostkowe, właściwości (FsCheck), statystyczn
 dotnet tool restore
 dotnet stryker              # mutation testing silnika, próg 90%
 dotnet stryker -f stryker-connectfour.json
-dotnet stryker -f stryker-klejnoty.json
+dotnet stryker -f stryker-klejnoty-zasady.json   # Klejnoty w dwóch częściach: zasady i reszta
+dotnet stryker -f stryker-klejnoty-reszta.json
 dotnet stryker -f stryker-mozaika.json
 dotnet stryker -f stryker-experiments.json
 dotnet stryker -f stryker-bots.json

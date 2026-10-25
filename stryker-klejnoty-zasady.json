@@ -1,0 +1,10 @@
+{
+  "stryker-config": {
+    "project": "BalanceLab.Games.Klejnoty.csproj",
+    "mutate": [ "**/KlejnotyRules*.cs", "**/KlejnotyState.cs", "**/Cards.cs" ],
+    "test-projects": [ "tests/BalanceLab.Games.Klejnoty.Tests/BalanceLab.Games.Klejnoty.Tests.csproj" ],
+    "test-case-filter": "Category!=Strength",
+    "reporters": [ "html", "progress", "cleartext", "json" ],
+    "thresholds": { "high": 90, "low": 90, "break": 90 }
+  }
+}

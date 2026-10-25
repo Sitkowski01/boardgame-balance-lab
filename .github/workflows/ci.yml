@@ -80,12 +80,13 @@ jobs:
   mutation:
     # Kazdy projekt w osobnym, rownoleglym zadaniu: CI trwa tyle, co najwolniejszy, a nie suma.
     runs-on: ubuntu-24.04
-    # Klejnoty licza sie ok. 3,5 h; limit lapie zawieszony przebieg dlugo przed domyslnymi 6 h.
+    # Klejnoty w calosci liczyly sie 3,5-4 h, wiec sa w dwoch zadaniach (zasady i reszta, po ok. 330 mutantow);
+    # limit lapie zawieszony przebieg dlugo przed domyslnymi 6 h.
     timeout-minutes: 270
     strategy:
       fail-fast: false
       matrix:
-        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty.json, stryker-mozaika.json, stryker-experiments.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
+        config: [stryker-config.json, stryker-connectfour.json, stryker-klejnoty-zasady.json, stryker-klejnoty-reszta.json, stryker-mozaika.json, stryker-experiments.json, stryker-bots.json, stryker-simulation.json, stryker-reporting.json, stryker-cli.json, stryker-persistence.json, stryker-catalog.json, stryker-multiplayer.json, stryker-api.json]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -97,7 +98,8 @@ jobs:
           key: nuget-${{ hashFiles('Directory.Packages.props', '**/*.csproj', 'dotnet-tools.json', 'global.json') }}
       - name: Mutation testing (Stryker, prog 90%)
         # Mutant, po ktorym gra sie nie konczy, potrafi zajac kilka GB w kilka sekund i zabic
-        # caly runner. Z limitem sterty proces testow dostaje OutOfMemoryException i mutant
+        # caly runner (np. f-- w petli warsztatow Mozaiki: rozdanie dokleja puste warsztaty bez konca).
+        # Z limitem sterty proces testow dostaje OutOfMemoryException i mutant
         # pada jako zabity; zwykle przebiegi testow mieszcza sie ponizej 0,7 GB.
         env:
           DOTNET_GCHeapHardLimit: "0x80000000"
