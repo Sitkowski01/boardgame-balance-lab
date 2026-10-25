@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Connect } from "../api/connection";
 import { EmptyTable } from "../EmptyTable";
-import { GameBoard, useDescribe } from "../games";
+import { GameBoard, hasPlayerPanels, useDescribe } from "../games";
 import { Link } from "../Link";
 import { GameArt } from "../lobby/GameArt";
 import { gameRules, gameTitle, seatName } from "../names";
@@ -137,15 +137,17 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
                     legalMoves={pending ? [] : view.legalMoves}
                     seat={role.seat}
                     names={names}
+                    seats={room.seats}
                     onMove={(m) => void move(m)}
                   />
                 )}
               </div>
               <aside className="table-side">
-                <Seats room={room} names={names} host={role.host} onAddBot={addBot} />
-                {moves.length > 0 && (
+                {!hasPlayerPanels(room.game) && <Seats room={room} names={names} host={role.host} onAddBot={addBot} />}
+                {(moves.length > 0 || (hasPlayerPanels(room.game) && room.status === "Playing")) && (
                   <section aria-label="Ostatnie ruchy" className="moves panel">
                     <h2>Ostatnie ruchy</h2>
+                    {moves.length === 0 && <p className="muted">Jeszcze nikt nie zagrał.</p>}
                     <ol>
                       {moves.map((m) => (
                         <li key={m.number} value={m.number} className={`seat-${String(m.seat)}`}>

@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { klejnoty, openingMoves, player, sheet } from "../test/boards";
+import { seat } from "../test/fixtures";
 import { KlejnotyBoard, type KlejnotyBoardProps } from "./KlejnotyBoard";
 
 function board(patch: Partial<KlejnotyBoardProps> = {}) {
@@ -13,6 +14,14 @@ function board(patch: Partial<KlejnotyBoardProps> = {}) {
 const bank = (color: string): HTMLElement => screen.getByRole("button", { name: new RegExp(`^Bank: ${color}`, "u") });
 
 describe("KlejnotyBoard", () => {
+  it("marks bots and disconnected players in their panels at a live table", () => {
+    board({ seats: [seat(0, { name: "Ala", connected: false }), seat(1, { kind: "Bot", name: "greedy", connected: false })] });
+
+    expect(within(screen.getByLabelText("Gracz Ala")).getByText("rozłączony")).toHaveClass("badge", "warn");
+    expect(within(screen.getByLabelText("Gracz Ola")).getByText("bot")).toHaveClass("badge");
+    expect(within(screen.getByLabelText("Gracz Ola")).queryByText("rozłączony")).not.toBeInTheDocument();
+  });
+
   it("shows the market from the top tier, decks, patrons and players", () => {
     board({ view: klejnoty({ players: [player({ points: 4 }), player()] }) });
 

@@ -1,3 +1,4 @@
+import type { SeatInfo } from "../api/schemas";
 import { plural } from "../plural";
 import { Bank } from "./Bank";
 import { Card } from "./Card";
@@ -14,6 +15,8 @@ export interface KlejnotyBoardProps {
   /** Miejsce odbiorcy; null = widz. */
   seat: number | null;
   names: readonly string[];
+  /** Miejsca przy stole na zywo; panele graczy pokazuja z nich boty i rozlaczonych. */
+  seats?: readonly SeatInfo[] | undefined;
   onMove: (move: string) => void;
 }
 
@@ -21,7 +24,7 @@ export interface KlejnotyBoardProps {
  * Plansza Klejnotow. Wszystko, co mozna kliknac, wynika z listy legalnych ruchow: przycisk "Kup" jest
  * tylko przy karcie, na ktora gracza stac, a zeton da sie wybrac tylko, jesli prowadzi do legalnego ruchu.
  */
-export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, onMove }: KlejnotyBoardProps) {
+export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, seats, onMove }: KlejnotyBoardProps) {
   return (
     <div className="klejnoty">
       <section aria-label="Patroni" className="patrons">
@@ -88,6 +91,7 @@ export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, onMove }: 
             name={names[index] ?? `Gracz ${String(index + 1)}`}
             me={index === seat}
             toMove={!view.over && index === view.toMove}
+            status={seats?.[index]}
             sheet={sheet}
             legalMoves={index === seat ? legalMoves : []}
             onMove={onMove}

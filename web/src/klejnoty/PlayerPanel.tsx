@@ -1,6 +1,8 @@
 import { Bump } from "../Bump";
 import { Card } from "./Card";
 import { Gem } from "./Gem";
+import type { SeatInfo } from "../api/schemas";
+import { SeatStatus } from "../SeatStatus";
 import { gemName, totalTokens, type KlejnotySheet, type PlayerView } from "./model";
 
 export interface PlayerPanelProps {
@@ -8,6 +10,8 @@ export interface PlayerPanelProps {
   name: string;
   me: boolean;
   toMove: boolean;
+  /** Miejsce przy stole na zywo (bot, rozlaczony); w powtorce brak. */
+  status?: SeatInfo | undefined;
   sheet: KlejnotySheet;
   /** Legalne ruchy, jesli to panel odbiorcy (kupno z rezerwy); u innych graczy puste. */
   legalMoves: readonly string[];
@@ -15,13 +19,14 @@ export interface PlayerPanelProps {
 }
 
 /** Stan gracza: punkty, zetony, rabaty z kupionych kart i rezerwa (cudze karty wziete w ciemno — tylko rewers). */
-export function PlayerPanel({ player, name, me, toMove, sheet, legalMoves, onMove }: PlayerPanelProps) {
+export function PlayerPanel({ player, name, me, toMove, status, sheet, legalMoves, onMove }: PlayerPanelProps) {
   return (
     <article className={`player${me ? " me" : ""}${toMove ? " to-move" : ""}`} aria-label={`Gracz ${name}`}>
       <header>
         <strong>{name}</strong>
         {me && <span className="badge">ty</span>}
         {toMove && <span className="badge">na ruchu</span>}
+        <SeatStatus seat={status} />
         <span className="points" aria-label="Punkty">
           <Bump value={player.points}>{player.points}</Bump> pkt
         </span>

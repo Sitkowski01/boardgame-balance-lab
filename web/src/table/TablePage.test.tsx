@@ -188,6 +188,19 @@ describe("TablePage", () => {
     expect(screen.queryByText("Twoje imię")).not.toBeInTheDocument();
   });
 
+  it("leaves the players to the board panels in games that have them", async () => {
+    const { links } = page();
+    await waitFor(() => {
+      expect(links).toHaveLength(1);
+    });
+    send(last(links), (e) => {
+      e.room(room({ game: "klejnoty", gameName: "Klejnoty", status: "Playing", toMove: 0 }));
+    });
+
+    expect(screen.queryByRole("list", { name: "Miejsca" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Ostatnie ruchy" })).getByText("Jeszcze nikt nie zagrał.")).toBeInTheDocument();
+  });
+
   it("shows a server refusal of a move", async () => {
     const { links, user } = page({
       tickets: memoryTickets([host]),

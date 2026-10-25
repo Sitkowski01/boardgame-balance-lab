@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { SeatInfo } from "../api/schemas";
 import { tileName, total, type MozaikaSheet, type MozaikaView } from "./model";
 import { canTake, placements, type Source } from "./moves";
 import { PlayerBoard } from "./PlayerBoard";
@@ -13,6 +14,8 @@ export interface MozaikaBoardProps {
   /** Miejsce odbiorcy; null = widz. */
   seat: number | null;
   names: readonly string[];
+  /** Miejsca przy stole na zywo; plansze graczy pokazuja z nich boty i rozlaczonych. */
+  seats?: readonly SeatInfo[] | undefined;
   onMove: (move: string) => void;
 }
 
@@ -25,7 +28,7 @@ interface Picked {
  * Stol Mozaiki. Ruch to dwa klikniecia: kolor w warsztacie albo na srodku, potem rzad na wlasnej planszy
  * (albo podloga). Kafelki da sie wybrac i polozyc tylko tam, gdzie prowadzi to do legalnego ruchu serwera.
  */
-export function MozaikaBoard({ view, sheet, legalMoves, seat, names, onMove }: MozaikaBoardProps) {
+export function MozaikaBoard({ view, sheet, legalMoves, seat, names, seats, onMove }: MozaikaBoardProps) {
   // Wybor nalezy do jednej listy legalnych ruchow: nowy widok (np. bot zagral za gracza po czasie) zaczyna od nowa.
   const [state, setState] = useState<{ moves: readonly string[]; picked: Picked | null }>({ moves: legalMoves, picked: null });
   const picked = state.moves === legalMoves ? state.picked : null;
@@ -93,6 +96,7 @@ export function MozaikaBoard({ view, sheet, legalMoves, seat, names, onMove }: M
             name={names[index] ?? `Gracz ${String(index + 1)}`}
             me={index === seat}
             toMove={!view.over && index === view.toMove}
+            status={seats?.[index]}
             sheet={sheet}
             placements={index === seat ? targets : new Map()}
             onMove={play}

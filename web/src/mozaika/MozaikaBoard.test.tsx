@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { mozaika, mozaikaMoves, mozaikaPlayer, mozaikaRules } from "../test/boards";
+import { seat } from "../test/fixtures";
 import { MozaikaBoard, type MozaikaBoardProps } from "./MozaikaBoard";
 
 function board(patch: Partial<MozaikaBoardProps> = {}) {
@@ -21,6 +22,13 @@ const tile = (name: string): HTMLElement => screen.getByRole("button", { name: n
 const ala = (): HTMLElement => screen.getByLabelText("Gracz Ala");
 
 describe("MozaikaBoard", () => {
+  it("marks bots and players a bot plays for on their boards at a live table", () => {
+    board({ seats: [seat(0, { name: "Ala", autopilot: true }), seat(1, { kind: "Bot", name: "greedy", connected: false })] });
+
+    expect(within(ala()).getByText("gra za niego bot")).toHaveClass("badge", "warn");
+    expect(within(screen.getByLabelText("Gracz Ola")).getByText("bot")).toHaveClass("badge");
+  });
+
   it("shows the factories, the center with the marker, the round and both players", () => {
     board({ view: mozaika({ players: [mozaikaPlayer({ score: 12 }), mozaikaPlayer()], center: [0, 0, 3, 0, 0], round: 3 }) });
 

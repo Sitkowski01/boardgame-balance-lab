@@ -1,4 +1,6 @@
+import type { SeatInfo } from "../api/schemas";
 import { Bump } from "../Bump";
+import { SeatStatus } from "../SeatStatus";
 import { floorCount, floorPenalty, tileName, WallSize, type MozaikaPlayerView, type MozaikaSheet } from "./model";
 import type { Line } from "./moves";
 import { Tile } from "./Tile";
@@ -8,6 +10,8 @@ export interface PlayerBoardProps {
   name: string;
   me: boolean;
   toMove: boolean;
+  /** Miejsce przy stole na zywo (bot, rozlaczony); w powtorce brak. */
+  status?: SeatInfo | undefined;
   sheet: MozaikaSheet;
   /** Ruchy dla wybranych kafelkow po rzedzie docelowym; pusta mapa, gdy nic nie wybrano albo to cudza plansza. */
   placements: ReadonlyMap<Line, string>;
@@ -15,7 +19,7 @@ export interface PlayerBoardProps {
 }
 
 /** Plansza gracza: rzedy wzoru (od 1 do 5 pol), sciana z wzorem kolorow i podloga z karami. */
-export function PlayerBoard({ player, name, me, toMove, sheet, placements, onMove }: PlayerBoardProps) {
+export function PlayerBoard({ player, name, me, toMove, status, sheet, placements, onMove }: PlayerBoardProps) {
   const wall = new Set(player.wall);
   const place = (line: Line, label: string, name: string) => {
     const move = placements.get(line);
@@ -39,6 +43,7 @@ export function PlayerBoard({ player, name, me, toMove, sheet, placements, onMov
         <strong>{name}</strong>
         {me && <span className="badge">ty</span>}
         {toMove && <span className="badge">na ruchu</span>}
+        <SeatStatus seat={status} />
         <span className="points" aria-label="Punkty">
           <Bump value={player.score}>{player.score}</Bump> pkt
         </span>

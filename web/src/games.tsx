@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { z } from "zod";
 import { api } from "./api/rest";
+import type { SeatInfo } from "./api/schemas";
 import { ConnectFourBoard } from "./connectfour/ConnectFourBoard";
 import { connectFourView, describeColumn } from "./connectfour/model";
 import { KlejnotyBoard } from "./klejnoty/KlejnotyBoard";
@@ -18,6 +19,8 @@ export interface BoardProps {
   legalMoves: readonly string[];
   seat: number | null;
   names: readonly string[];
+  /** Miejsca przy stole na zywo (w powtorce brak). */
+  seats?: readonly SeatInfo[] | undefined;
   onMove: (move: string) => void;
   /** Pobieranie tabeli zasad (testy podstawiaja wlasne); sprawdza ja dopiero schemat planszy tej gry. */
   loadSheet?: (game: string, variant: string | null) => Promise<unknown>;
@@ -106,7 +109,10 @@ export function GameBoard(props: BoardProps) {
   );
 }
 
-const boardOf = ({ legalMoves, seat, names, onMove }: BoardProps) => ({ legalMoves, seat, names, onMove });
+const boardOf = ({ legalMoves, seat, names, seats, onMove }: BoardProps) => ({ legalMoves, seat, names, seats, onMove });
+
+/** Gry, ktorych plansza ma wlasny panel kazdego gracza — lista miejsc obok stolu powtarzalaby go w trakcie partii. */
+export const hasPlayerPanels = (game: string): boolean => game === "klejnoty" || game === "mozaika";
 
 /** Tabela zasad wariantu partii (np. karta tansza o 1 w wariancie) — bez niej plansza nie wie, co znacza numery. */
 export function useSheet<T>(

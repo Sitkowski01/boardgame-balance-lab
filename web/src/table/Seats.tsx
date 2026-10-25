@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RoomInfo, SeatInfo } from "../api/schemas";
 import { botsFor } from "../games";
+import { SeatStatus } from "../SeatStatus";
 
 export interface SeatsProps {
   room: RoomInfo;
@@ -46,10 +47,8 @@ function SeatLabel({ seat, name, host, toMove }: { seat: SeatInfo; name: string;
       <strong>{name}</strong>
       {/* Kolor ramki mowi to samo, ale nie kazdy go widzi (np. Czworki nie maja innego znaku kolejki). */}
       {toMove && <span className="badge accent">na ruchu</span>}
-      {seat.kind === "Bot" && <span className="badge">bot</span>}
       {host && <span className="badge">gospodarz</span>}
-      {seat.kind === "Human" && !seat.connected && <span className="badge warn">rozłączony</span>}
-      {seat.autopilot && <span className="badge warn">gra za niego bot</span>}
+      <SeatStatus seat={seat} />
     </span>
   );
 }
