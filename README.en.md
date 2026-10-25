@@ -2,6 +2,9 @@
 
 [Polski](README.md) · **English**
 
+**▶ [Live demo in the browser](https://sitekmikolaj.pl/balance-lab/)** — lobby, games against bots, replays and the
+balance lab with nothing to install: the same game server compiled to WebAssembly runs in your tab.
+
 A balance lab for board games. Game rules plug in as a module, bots (MCTS) play thousands of games, and the
 report shows what is unbalanced: first-player advantage, dominant strategies, overpowered and dead cards,
 and what a rule change actually does. The same engine runs a live multiplayer table in the browser.
@@ -45,6 +48,11 @@ the `pnpm dev` proxy expects :5080) and `Web__Root=web/dist` after `cd web && pn
 - **Live play** over SignalR: each room is an actor with one queue (no locks), the server is the referee,
   each seat gets its own view of hidden information, bots take over after a timeout or disconnect, and a
   page reload rejoins the same seat.
+- **Browser demo without a server**: the same rooms, bots, match journal and lab projects compiled to WebAssembly
+  and run in Web Workers (one for the table, one for the lab, so a running experiment never freezes a game).
+  `BalanceLab.Demo` replaces SignalR and PostgreSQL with a hub of the same methods and rules, REST with the same
+  routes and status codes, and an in-memory journal — the React front end is unchanged; it only gets another
+  `GameServer` and a `fetch` that answers `/api` from the worker. `cd web && pnpm build:demo` builds the static site.
 - **Front end** (React 19 + TypeScript): lobby, three boards, replay player with a slider (frames computed by
   the server), the balance lab dashboard with charts, light and dark theme. The front end does not know the
   rules — every button comes from the server's list of legal moves (a fast-check property test proves no click
@@ -59,7 +67,7 @@ project and StrykerJS on the front end, all with a 90% break threshold in CI.
 
 ```bash
 dotnet test
-cd web && pnpm check && pnpm mutation && pnpm e2e
+cd web && pnpm check && pnpm mutation && pnpm e2e && pnpm e2e:demo
 ```
 
 ## Stack

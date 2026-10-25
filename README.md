@@ -6,6 +6,9 @@ przy stole, dominujące strategie, za mocne i martwe karty oraz skutki zmian w z
 
 **Polski** · [English](README.en.md)
 
+**▶ [Demo w przeglądarce](https://sitekmikolaj.pl/balance-lab/)** — lobby, partie z botami, powtórki i laboratorium
+bez instalowania czegokolwiek: ten sam serwer gry skompilowany do WebAssembly działa w Twojej karcie.
+
 Trzy gry: Czwórki (ConnectFour), Klejnoty (gra karciana w stylu Splendora) i Mozaika (kafelki w stylu Azula);
 boty: losowy, heurystyczny (z profilami strategii), MCTS i ISMCTS; symulator turniejów, liga z rankingiem Elo,
 porównanie wariantów zasad (A/B), raport HTML, dziennik partii w PostgreSQL z powtórkami i migawkami, serwer gry
@@ -41,7 +44,9 @@ src/BalanceLab.Multiplayer         pokoje gry (serwer jest sędzią), lobby, arc
 src/BalanceLab.Experiments         laboratorium: kolejka eksperymentów (turniej, liga, A/B) z limitami i postępem — bez sieci
 src/BalanceLab.Api                 hub SignalR /hubs/game + REST /api — sam transport, bez zasad gier
 src/BalanceLab.Cli                 simulate | league | compare | play | replay
-web/                               React + TypeScript: lobby, plansze, powtórki (Vite, SignalR)
+src/BalanceLab.Demo                ten sam serwer bez sieci i bazy: hub, REST i partie w pamięci (dla demo)
+demo/BalanceLab.Demo.Wasm          BalanceLab.Demo w WebAssembly dla Web Workera w przeglądarce
+web/                               React + TypeScript: lobby, plansze, powtórki (Vite, SignalR albo demo)
 ```
 
 Gra to czyste funkcje na niemutowalnym stanie: `Setup(gracze, ziarno)`, `LegalMoves`, `Apply`
@@ -373,6 +378,33 @@ stać gracza, jest wyróżniona, a nowa karta na rynku wjeżdża animacją. Anim
 - **Architektura** (dependency-cruiser): logika (stan stołu, ruchy, powtórka, kontrakt z serwerem) nie importuje
   Reacta; klient SignalR zna tylko `api/hub.ts`, a reszta rozmawia przez interfejs, który testy podmieniają.
 
+## Demo bez serwera (WebAssembly)
+
+```bash
+cd web && pnpm build:demo        # dotnet publish do WebAssembly + strona statyczna w web/dist-demo
+pnpm exec vite preview --mode demo   # http://localhost:4173/balance-lab/
+```
+
+Demo to nie makieta: lobby, pokoje, boty, dziennik partii i laboratorium to te same projekty co na serwerze
+(`Multiplayer`, `Experiments`, `Catalog`), skompilowane do WebAssembly i uruchomione w Web Workerze.
+Zamiast SignalR i PostgreSQL jest `BalanceLab.Demo`: hub z tymi samymi metodami i zasadami (jedno połączenie
+w jednym pokoju, bilet w połączeniu), REST z tymi samymi adresami i kodami (404/405 jak routing ASP.NET Core)
+i dziennik partii w pamięci z tym samym licznikiem ruchów i powtórkami.
+
+- **Front się nie zmienił.** Strony rozmawiają z kontraktem `GameServer` i z `fetch`; w demo `main.tsx`
+  podstawia połączenie z workerem, a `fetch` dla `/api` odpowiada z workera. Odmowa pokoju wygląda jak
+  `HubException` z klienta SignalR, więc komunikaty i obsługa błędów są te same.
+- **Dwa workery.** Boty liczą poza wątkiem strony, więc plansza się nie zacina. Eksperyment zajmuje jedyny
+  wątek workera aż do końca, dlatego laboratorium ma osobny worker z własnym .NET — stół w tym czasie gra dalej.
+- **Pokaz na start.** Zanim ktoś założy stół, Ala gra z botami w trzy gry przez ten sam hub co gracz w przeglądarce
+  (swój ruch liczy botem na stanie odtworzonym z ziarna), a laboratorium ma gotową ligę profili Klejnotów.
+- **Strona statyczna** pod `/balance-lab/`: trasy aplikacji działają pod ścieżką bazową, `404.html` i `.htaccess`
+  oddają stronę dla adresów otwartych wprost, a runtime .NET (2,3 MB po brotli) jest przycięty, z zachowanymi
+  bibliotekami gry, bo widoki i raporty idą do JSON-a przez refleksję.
+- **Testy:** xUnit dla huba, REST, dziennika i pokazu (Stryker 94%), Vitest dla rozmowy z workerem (StrykerJS 94%),
+  Playwright na zbudowanej stronie statycznej (`pnpm e2e:demo`), reguła architektury: demo nie zna sieci ani bazy.
+  CI zostawia gotową stronę jako artefakt `demo-site`.
+
 ## Bot MCTS
 
 `MctsBot` to Monte Carlo Tree Search z wyborem UCT. Nie zna strategii żadnej gry — tylko zasady:
@@ -450,6 +482,7 @@ dotnet stryker -f stryker-klejnoty-zasady.json   # Klejnoty w dwóch częściach
 dotnet stryker -f stryker-klejnoty-reszta.json
 dotnet stryker -f stryker-mozaika.json
 dotnet stryker -f stryker-experiments.json
+dotnet stryker -f stryker-demo.json
 dotnet stryker -f stryker-bots.json
 dotnet stryker -f stryker-simulation.json
 dotnet stryker -f stryker-reporting.json
@@ -464,6 +497,7 @@ cd web
 pnpm check                  # typy, format, lint, architektura, testy (Vitest + Testing Library + fast-check)
 pnpm mutation               # Stryker, próg 90%
 pnpm e2e                    # Playwright: prawdziwy serwer gry + PostgreSQL (Testcontainers albo BALANCE_LAB_DB)
+pnpm e2e:demo               # Playwright: zbudowane demo (WebAssembly) bez serwera gry
 ```
 
 Na Windowsie z Visual Studio 2022 Stryker może wybrać MSBuild bez .NET 10 — wtedy
