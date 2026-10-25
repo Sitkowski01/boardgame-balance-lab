@@ -7,6 +7,7 @@
     <Project Path="src/BalanceLab.Bots/BalanceLab.Bots.csproj" />
     <Project Path="src/BalanceLab.Catalog/BalanceLab.Catalog.csproj" />
     <Project Path="src/BalanceLab.Cli/BalanceLab.Cli.csproj" />
+    <Project Path="src/BalanceLab.Demo/BalanceLab.Demo.csproj" />
     <Project Path="src/BalanceLab.Engine/BalanceLab.Engine.csproj" />
     <Project Path="src/BalanceLab.Experiments/BalanceLab.Experiments.csproj" />
     <Project Path="src/BalanceLab.Games.ConnectFour/BalanceLab.Games.ConnectFour.csproj" />
@@ -23,6 +24,7 @@
     <Project Path="tests/BalanceLab.Bots.Tests/BalanceLab.Bots.Tests.csproj" />
     <Project Path="tests/BalanceLab.Catalog.Tests/BalanceLab.Catalog.Tests.csproj" />
     <Project Path="tests/BalanceLab.Cli.Tests/BalanceLab.Cli.Tests.csproj" />
+    <Project Path="tests/BalanceLab.Demo.Tests/BalanceLab.Demo.Tests.csproj" />
     <Project Path="tests/BalanceLab.Engine.Tests/BalanceLab.Engine.Tests.csproj" />
     <Project Path="tests/BalanceLab.Experiments.Tests/BalanceLab.Experiments.Tests.csproj" />
     <Project Path="tests/BalanceLab.Games.ConnectFour.Tests/BalanceLab.Games.ConnectFour.Tests.csproj" />

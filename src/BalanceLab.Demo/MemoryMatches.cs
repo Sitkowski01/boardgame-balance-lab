@@ -27,6 +27,11 @@ public sealed class MemoryMatches(TimeProvider clock) : IMatchRecorderFactory
     public MatchReplay? Load(Guid match) =>
         _matches.TryGetValue(match, out var entry) ? GameCatalog.Find(entry.Game).Accept(new Loader(entry.Snapshot())) : null;
 
+    /// <summary>Widok widza po tylu ruchach (0 = rozdanie) albo null, gdy partii nie ma.</summary>
+    /// <exception cref="ArgumentOutOfRangeException">Partia ma mniej ruchow niz <paramref name="moves"/>.</exception>
+    public ReplayFrame? Frame(Guid match, int moves) =>
+        _matches.TryGetValue(match, out var entry) ? GameCatalog.Find(entry.Game).Accept(new Framer(entry.Snapshot(), moves)) : null;
+
     /// <summary>Partia w dzienniku. Pokoj zapisuje ze swojej kolejki, powtorka czyta z innego watku — stad blokada.</summary>
     private sealed class Entry(Guid id, string game, string? variant, GameSetup setup, ImmutableArray<string> players, DateTimeOffset started)
     {
@@ -164,6 +169,22 @@ public sealed class MemoryMatches(TimeProvider clock) : IMatchRecorderFactory
                 m.Id, m.Game, rules.Name, m.Variant, secret ? null : m.Setup.Seed.ToString(CultureInfo.InvariantCulture), m.Players, m.Status,
                 m.Moves, secret ? [] : hashes.MoveToImmutable(), MatchArchive.Movers(rules, m.Setup, moves), m.Scores, m.StartedAt, m.FinishedAt,
                 Verified: true, FirstBadMove: null, Problem: null);
+        }
+    }
+
+    private sealed class Framer(Saved m, int moves) : IGameVisitor<ReplayFrame>
+    {
+        public ReplayFrame Visit<TState, TMove, TGame>(GameDefinition<TState, TMove, TGame> definition)
+            where TState : notnull
+            where TMove : notnull
+            where TGame : IGame<TState, TMove>, IMoveCodec<TMove>, IStateCodec<TState>, IPlayerView<TState, object>
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(moves);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(moves, m.Moves.Length);
+            var rules = definition.Rules(m.Variant);
+            var state = m.Moves.Take(moves).Select(rules.DecodeMove).Aggregate(rules.Setup(m.Setup), rules.Apply);
+            var hash = m.Status == MatchStatus.InProgress ? null : MatchArchive.Hex(rules.Hash(state));
+            return new ReplayFrame(m.Id, moves, hash, rules.View(state, null));
         }
     }
 }
