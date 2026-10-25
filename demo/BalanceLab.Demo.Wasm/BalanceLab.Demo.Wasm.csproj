@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+
+  <!--
+    Serwer demo skompilowany do WebAssembly: front laduje go w Web Workerze i rozmawia z nim zamiast z SignalR
+    i REST. Cala logika jest w BalanceLab.Demo (testowana w xUnit); tutaj tylko granica z JavaScriptem.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <SupportedPlatform>browser</SupportedPlatform>
+    <PublishTrimmed>true</PublishTrimmed>
+    <!-- Widoki gier i raporty laboratorium ida do JSON-a jako object, wiec serializacja potrzebuje refleksji. -->
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <!--
+      Ostrzezenia przycinania dotycza wlasnie tej refleksji: nasze biblioteki sa ponizej zachowane w calosci
+      (TrimmerRootAssembly), a EF Core z dziennika w bazie nie jest w demo w ogole wolany.
+    -->
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BalanceLab.Demo\BalanceLab.Demo.csproj" />
+  </ItemGroup>
+
+  <!-- Typy czytane tylko przez refleksje (JSON) przycinanie by usunelo; nasze biblioteki zostaja w calosci. -->
+  <ItemGroup>
+    <TrimmerRootAssembly Include="BalanceLab.Engine" />
+    <TrimmerRootAssembly Include="BalanceLab.Games.ConnectFour" />
+    <TrimmerRootAssembly Include="BalanceLab.Games.Klejnoty" />
+    <TrimmerRootAssembly Include="BalanceLab.Games.Mozaika" />
+    <TrimmerRootAssembly Include="BalanceLab.Simulation" />
+    <TrimmerRootAssembly Include="BalanceLab.Catalog" />
+    <TrimmerRootAssembly Include="BalanceLab.Multiplayer" />
+    <TrimmerRootAssembly Include="BalanceLab.Experiments" />
+    <TrimmerRootAssembly Include="BalanceLab.Demo" />
+  </ItemGroup>
+
+</Project>
