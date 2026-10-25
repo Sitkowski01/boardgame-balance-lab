@@ -3,16 +3,18 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeConnect, last, memoryTickets, type FakeLink } from "../test/fakeServer";
 import { matchId, played, room, roomId, seat, table } from "../test/fixtures";
+import { DemoContext } from "../demo/DemoBanner";
 import { connectFour } from "../test/boards";
 import { TablePage } from "./TablePage";
 
 const now = Date.parse("2026-10-19T10:00:00Z");
 
-function page(options: { tickets?: ReturnType<typeof memoryTickets>; setup?: (server: FakeLink["server"]) => void } = {}) {
+function page(options: { tickets?: ReturnType<typeof memoryTickets>; setup?: (server: FakeLink["server"]) => void; demo?: boolean } = {}) {
   const tickets = options.tickets ?? memoryTickets();
   const { connect, links } = fakeConnect(options.setup);
   const navigate = vi.fn<(path: string) => void>();
-  const view = render(<TablePage room={roomId} connect={connect} tickets={tickets} navigate={navigate} now={() => now} />);
+  const table = <TablePage room={roomId} connect={connect} tickets={tickets} navigate={navigate} now={() => now} />;
+  const view = render(options.demo === true ? <DemoContext value={{ ready: Promise.resolve() }}>{table}</DemoContext> : table);
   return { tickets, connect, links, navigate, view, user: userEvent.setup() };
 }
 
@@ -98,6 +100,23 @@ describe("TablePage", () => {
 
     expect(last(links).server.addBot).toHaveBeenCalledWith(1, "random");
     expect(last(links).server.start).toHaveBeenCalled();
+  });
+
+  it("offers the host a link for friends on a real server but not in the demo", async () => {
+    for (const demo of [false, true]) {
+      const { links, view } = page({ tickets: memoryTickets([host]), demo });
+      await waitFor(() => {
+        expect(links[0]?.server.rejoin).toHaveBeenCalled();
+      });
+      send(last(links), (e) => {
+        e.room(room());
+      });
+
+      await screen.findByRole("button", { name: "Zacznij partię" });
+      expect(screen.queryByRole("button", { name: "Kopiuj link do stołu" }) !== null).toBe(!demo);
+      expect(screen.getByText(demo ? /puste dostaną bota ISMCTS/u : /wyślij link znajomym/u)).toBeInTheDocument();
+      view.unmount();
+    }
   });
 
   it("plays a move with the number of moves already made and shows the result", async () => {

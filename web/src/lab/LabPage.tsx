@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameInfo } from "../api/schemas";
+import { useDemo } from "../demo/DemoBanner";
 import { gameTitle, playerName } from "../names";
 import { plural } from "../plural";
 import { Link } from "../Link";
@@ -157,6 +158,8 @@ export function LabPage({ client, loadGames, experiment, navigate }: LabPageProp
 
 function Progress({ info, game, onCancel }: { info: ExperimentInfo; game: string; onCancel: () => void }) {
   const share = info.total === 0 ? 0 : info.done / info.total;
+  // W demo eksperyment zajmuje caly watek laboratorium az do konca: anulowanie i postep dotarlyby dopiero po wyniku.
+  const demo = useDemo();
   return (
     <div className="progress-panel">
       <div className="progress-head">
@@ -165,7 +168,7 @@ function Progress({ info, game, onCancel }: { info: ExperimentInfo; game: string
           {info.request.variant !== null && ` (${info.request.variant})`}
         </strong>
         <span className={`status ${info.status.toLowerCase()}`}>{StatusNames[info.status]}</span>
-        {!finished(info.status) && (
+        {!finished(info.status) && !demo && (
           <button type="button" onClick={onCancel}>
             Anuluj
           </button>
@@ -182,6 +185,9 @@ function Progress({ info, game, onCancel }: { info: ExperimentInfo; game: string
       >
         <span style={{ width: `${String(Math.round(share * 100))}%` }} />
       </div>
+      {demo && !finished(info.status) && (
+        <p className="note">Demo liczy w Twojej przeglądarce, w osobnym wątku — wynik pojawi się w całości, gdy liczenie się skończy.</p>
+      )}
       <p className="note">
         {info.done} z {info.total} partii · boty: {info.request.bots.map(playerName).join(", ")} · ziarno {info.request.seed}
       </p>

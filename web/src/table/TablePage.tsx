@@ -5,6 +5,7 @@ import { GameBoard, hasPlayerPanels, useDescribe } from "../games";
 import { Link } from "../Link";
 import { GameArt } from "../lobby/GameArt";
 import { gameRules, gameTitle, seatName } from "../names";
+import { useDemo } from "../demo/DemoBanner";
 import { CopyLink } from "./CopyLink";
 import { freeSeats, statusLabel } from "../lobby/lobby";
 import { Clock } from "./Clock";
@@ -35,6 +36,8 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
   const { table, link, error, gone, pending, join, addBot, start, move, clearError } = useTable(id, connect, tickets);
   const { room, view, moves } = table;
   const role = myRole(table);
+  // W demo stol jest tylko w tej karcie: link dla znajomych nikogo by nie posadzil.
+  const demo = useDemo();
   const names = room?.seats.map((s) => seatName(s) ?? `Miejsce ${String(s.seat + 1)}`) ?? [];
   const describe = useDescribe(room?.game ?? null, room?.variant ?? null);
   // Partia trwala na oczach gracza: jej koniec dostaje konfetti; wejscie na stol juz po partii nie (wzorzec
@@ -97,11 +100,13 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
                   <h2>Poczekalnia</h2>
                   <p className="muted">
                     {role.host
-                      ? "Posadź boty na wolnych miejscach albo wyślij link znajomym — partia rusza, gdy klikniesz „Zacznij partię”."
+                      ? demo
+                        ? "Posadź boty na wolnych miejscach (puste dostaną bota ISMCTS) — partia rusza, gdy klikniesz „Zacznij partię”."
+                        : "Posadź boty na wolnych miejscach albo wyślij link znajomym — partia rusza, gdy klikniesz „Zacznij partię”."
                       : "Stół czeka na graczy. Usiądź na wolnym miejscu albo oglądaj, aż gospodarz zacznie."}
                   </p>
                 </div>
-                <CopyLink />
+                {!demo && <CopyLink />}
               </div>
               <Seats room={room} names={names} host={role.host} onAddBot={addBot} />
               {role.seat === null && freeSeats(room) > 0 && <JoinForm onJoin={join} />}

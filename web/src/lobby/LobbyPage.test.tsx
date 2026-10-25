@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GameInfo, SeatTicket } from "../api/schemas";
 import { fakeConnect, last, memoryTickets, type FakeLink } from "../test/fakeServer";
+import { DemoContext } from "../demo/DemoBanner";
 import { matchId, room, roomId, seat } from "../test/fixtures";
 import { LobbyPage } from "./LobbyPage";
 
@@ -24,6 +25,18 @@ beforeEach(() => {
 });
 
 describe("LobbyPage", () => {
+  it("in the demo says the table lives only in this tab instead of inviting friends", async () => {
+    const { connect } = fakeConnect();
+    render(
+      <DemoContext value={{ ready: Promise.resolve() }}>
+        <LobbyPage connect={connect} tickets={memoryTickets()} navigate={vi.fn()} loadGames={() => Promise.resolve(games)} />
+      </DemoContext>,
+    );
+
+    expect(await screen.findByText(/W demo stół jest tylko w tej karcie/u)).toBeInTheDocument();
+    expect(screen.queryByText(/wysłać link znajomym/u)).not.toBeInTheDocument();
+  });
+
   it("lists rooms from the server and their later changes", async () => {
     const { links } = page((s) =>
       s.watchLobby.mockResolvedValue([room({ id: "a", seats: [seat(0, { name: "Ala" }), seat(1, { kind: "Empty", name: null })] })]),

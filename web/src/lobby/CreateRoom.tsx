@@ -1,5 +1,6 @@
 import { useState, type SyntheticEvent } from "react";
 import type { GameInfo } from "../api/schemas";
+import { useDemo } from "../demo/DemoBanner";
 import { gameBlurbs, gameTitle } from "../names";
 import { loadName, saveName } from "../table/tickets";
 import { GameArt } from "./GameArt";
@@ -20,6 +21,7 @@ export function CreateRoom({
   const [variant, setVariant] = useState("");
   const [name, setName] = useState(loadName);
   const [busy, setBusy] = useState(false);
+  const demo = useDemo();
   const game = games.find((g) => g.key === key) ?? games[0];
   if (game === undefined) {
     return null;
@@ -105,7 +107,11 @@ export function CreateRoom({
           {busy ? "Zakładam…" : "Załóż pokój"}
         </button>
       </div>
-      <p className="hint">Przy stole posadzisz boty na wolnych miejscach — możesz zagrać sam albo wysłać link znajomym.</p>
+      <p className="hint">
+        {demo
+          ? "Przy stole posadzisz boty na wolnych miejscach. W demo stół jest tylko w tej karcie — boty liczą w Twojej przeglądarce."
+          : "Przy stole posadzisz boty na wolnych miejscach — możesz zagrać sam albo wysłać link znajomym."}
+      </p>
     </form>
   );
 }
