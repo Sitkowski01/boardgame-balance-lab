@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="BalanceLab.Multiplayer.Tests" />
+    <!-- Powtorki partii z pamieci (demo) licza autorow ruchow i hashe tak samo jak archiwum dziennika. -->
+    <InternalsVisibleTo Include="BalanceLab.Demo" />
   </ItemGroup>
 
 </Project>

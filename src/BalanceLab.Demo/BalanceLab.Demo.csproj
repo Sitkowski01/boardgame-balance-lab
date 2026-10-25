@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Serwer gry bez sieci i bez bazy: lobby, pokoje i laboratorium z tych samych projektow co API,
+    a zamiast SignalR i PostgreSQL — wywolania z przegladarki (WebAssembly) i partie w pamieci.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\BalanceLab.Multiplayer\BalanceLab.Multiplayer.csproj" />
+    <ProjectReference Include="..\BalanceLab.Experiments\BalanceLab.Experiments.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BalanceLab.Demo.Tests" />
+  </ItemGroup>
+
+</Project>

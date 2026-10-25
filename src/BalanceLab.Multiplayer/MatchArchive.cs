@@ -68,13 +68,13 @@ public sealed class MatchArchive(JournalDb db)
             return new StoredGame<TState, TMove>(rules, rules, rules);
         });
 
-    private static string Hex(ulong hash) => hash.ToString("x16", CultureInfo.InvariantCulture);
+    internal static string Hex(ulong hash) => hash.ToString("x16", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Kto zagral kazdy ruch: gracz na ruchu tuz przed nim. Dziennik tego nie trzyma — wynika z zasad, wiec
     /// liczymy to z powtorki (tylko sprawdzonej, inaczej ruchy moglyby byc nielegalne).
     /// </summary>
-    private static ImmutableArray<int> Movers<TState, TMove>(IGame<TState, TMove> rules, GameSetup setup, ImmutableArray<TMove> moves)
+    internal static ImmutableArray<int> Movers<TState, TMove>(IGame<TState, TMove> rules, GameSetup setup, ImmutableArray<TMove> moves)
         where TState : notnull
         where TMove : notnull
     {
