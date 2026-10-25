@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { DemoBanner } from "./demo/DemoBanner";
 import { Link } from "./Link";
 import type { Route } from "./route";
 import { applyTheme, currentTheme, loadTheme, saveTheme, type Theme } from "./theme";
@@ -75,6 +76,7 @@ export function Shell({ route, navigate, children, systemDark = prefersDark, sys
           </button>
         </div>
       </header>
+      <DemoBanner />
       {children}
       <footer className="footer">
         <div className="footer-inner">

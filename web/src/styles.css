@@ -455,3 +455,51 @@ select:focus {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Demo w przegladarce: pasek pod naglowkiem z tym, co dzieje sie w tle. */
+.demo-banner {
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.88rem;
+}
+.demo-banner.failed {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+.demo-banner-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.demo-banner strong {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: var(--bg);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.demo-banner .spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo-banner .spinner {
+    animation: none;
+  }
+}

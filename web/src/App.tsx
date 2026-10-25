@@ -5,6 +5,7 @@ import { fromUrl, toUrl } from "./base";
 import type { LabClient } from "./lab/client";
 import { LabPage } from "./lab/LabPage";
 import { EmptyTable } from "./EmptyTable";
+import { DemoContext, type DemoInfo } from "./demo/DemoBanner";
 import { Link } from "./Link";
 import { LobbyPage } from "./lobby/LobbyPage";
 import { ReplayPage } from "./replay/ReplayPage";
@@ -17,12 +18,14 @@ export interface AppProps {
   connect: Connect;
   tickets: Tickets;
   lab: LabClient;
+  /** Demo w przegladarce (serwer w workerze); bez niego zwykla strona. */
+  demo?: DemoInfo | null;
 }
 
 /** Strony pod zwyklymi adresami; przejscia przez historie przegladarki (dziala "wstecz"). */
 const loadGames = () => api.games();
 
-export function App({ connect, tickets, lab }: AppProps) {
+export function App({ connect, tickets, lab, demo = null }: AppProps) {
   const [route, setRoute] = useState<Route>(() => parseRoute(fromUrl(window.location.pathname)));
   useEffect(() => {
     const back = (): void => {
@@ -57,9 +60,11 @@ export function App({ connect, tickets, lab }: AppProps) {
   }, [route]);
 
   return (
-    <Shell route={route} navigate={navigate}>
-      <Page route={route} navigate={navigate} connect={connect} tickets={tickets} lab={lab} />
-    </Shell>
+    <DemoContext value={demo}>
+      <Shell route={route} navigate={navigate}>
+        <Page route={route} navigate={navigate} connect={connect} tickets={tickets} lab={lab} />
+      </Shell>
+    </DemoContext>
   );
 }
 
