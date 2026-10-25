@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from "react";
+import { toUrl } from "./base";
 
 /**
  * Link w aplikacji: zwykly adres (da sie otworzyc w nowej karcie), ale klik zmienia strone bez
@@ -18,7 +19,7 @@ export function Link({
 }) {
   return (
     <a
-      href={to}
+      href={toUrl(to)}
       className={className}
       onClick={(e: MouseEvent<HTMLAnchorElement>) => {
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {

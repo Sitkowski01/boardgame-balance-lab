@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Connect } from "./api/connection";
 import { api } from "./api/rest";
+import { fromUrl, toUrl } from "./base";
 import type { LabClient } from "./lab/client";
 import { LabPage } from "./lab/LabPage";
 import { EmptyTable } from "./EmptyTable";
@@ -22,10 +23,10 @@ export interface AppProps {
 const loadGames = () => api.games();
 
 export function App({ connect, tickets, lab }: AppProps) {
-  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
+  const [route, setRoute] = useState<Route>(() => parseRoute(fromUrl(window.location.pathname)));
   useEffect(() => {
     const back = (): void => {
-      setRoute(parseRoute(window.location.pathname));
+      setRoute(parseRoute(fromUrl(window.location.pathname)));
     };
     window.addEventListener("popstate", back);
     return () => {
@@ -36,7 +37,7 @@ export function App({ connect, tickets, lab }: AppProps) {
   // czytnik ekranu i klawiatura zaczynaly od tresci, a nie od linku, ktory wlasnie zniknal.
   const moved = useRef(false);
   const navigate = useCallback((path: string): void => {
-    window.history.pushState(null, "", path);
+    window.history.pushState(null, "", toUrl(path));
     moved.current = true;
     setRoute(parseRoute(path));
   }, []);
