@@ -59,6 +59,24 @@ public sealed class RoomLeaveTests
     }
 
     [Fact]
+    public async Task Host_role_goes_to_a_player_who_is_still_at_the_table()
+    {
+        await using var table = new Table();
+        var (room, _) = await table.CreateAsync("klejnoty", 3);
+        await room.JoinAsync("Ola", "c-ola");
+        await room.JoinAsync("Ela", "c-ela");
+        await room.DisconnectAsync("c-ala");
+        table.Clock.Advance(TimeSpan.FromSeconds(1));
+        await room.DisconnectAsync("c-ola");
+
+        // Gospodyni Ala znika pierwsza; Ola tez juz wyszla, wiec stol przejmuje Ela, ktora jest przy nim.
+        table.Clock.Advance(table.Options.WaitingSeatHold - TimeSpan.FromSeconds(1));
+        await Settle(room);
+
+        Assert.Equal((SeatKind.Empty, SeatKind.Human, 2), (room.Info.Seats[0].Kind, room.Info.Seats[1].Kind, room.Info.Host));
+    }
+
+    [Fact]
     public async Task Host_who_left_hands_the_table_to_the_next_player()
     {
         await using var table = new Table();

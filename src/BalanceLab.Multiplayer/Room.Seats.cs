@@ -141,8 +141,13 @@ internal sealed partial class Room<TState, TMove, TGame>
 
         StopLeaving(seat);
         _seats[seat] = new Seat();
-        // Gospodarz wyszedl: start i boty przechodza na nastepnego czlowieka (albo na pierwszego, ktory usiadzie).
-        _host = _host == seat ? Array.FindIndex(_seats, s => s.Kind == SeatKind.Human) : _host;
+        // Gospodarz wyszedl: start i boty przechodza na czlowieka, ktory jest przy stole (a gdy nikogo nie ma —
+        // na rozlaczonego, a potem na pierwszego, ktory usiadzie).
+        if (_host == seat)
+        {
+            var present = Array.FindIndex(_seats, s => s.Kind == SeatKind.Human && s.Connections.Count > 0);
+            _host = present >= 0 ? present : Array.FindIndex(_seats, s => s.Kind == SeatKind.Human);
+        }
 
         PublishRoom(active: false);
     }
