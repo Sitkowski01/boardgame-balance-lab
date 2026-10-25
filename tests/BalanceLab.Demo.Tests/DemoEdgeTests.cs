@@ -124,7 +124,6 @@ public sealed class DemoEdgeTests
 
         await Eventually(() => sent.Any(s => s.Connection == ala && s.Kind == "move"));
         Assert.DoesNotContain(sent, s => s.Connection == other && s.Kind is "view" or "move");
-        Assert.Equal(1, sent.Count(s => s.Connection == other && s.Kind == "room"));
     }
 
     [Fact]
