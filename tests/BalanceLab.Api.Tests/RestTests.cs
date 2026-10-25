@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BalanceLab.Catalog;
 using BalanceLab.Multiplayer;
 using Microsoft.AspNetCore.SignalR.Client;
 
