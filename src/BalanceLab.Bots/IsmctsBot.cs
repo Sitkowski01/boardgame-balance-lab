@@ -41,6 +41,33 @@ public sealed class IsmctsBot<TState, TMove> : IPlayer<TState, TMove>
     /// <summary>Przeszukuje z punktu widzenia gracza na ruchu; <paramref name="state"/> moze byc jego widokiem.</summary>
     public MctsSearch<TMove> Search(IGame<TState, TMove> game, TState state)
     {
+        var (root, iterations) = Grow(game, state);
+
+        // Ruchy w korzeniu pochodza z determinizacji; zostawiamy tylko legalne naprawde —
+        // gra, ktora zlamie kontrakt, nie przemyci ruchu z wyobrazonego ukladu.
+        var legal = game.LegalMoves(state);
+        ImmutableArray<MctsMoveStats<TMove>> moves =
+        [
+            .. root.Children!.Values
+                .Where(c => legal.Contains(c.Move))
+                .Select(c => new MctsMoveStats<TMove>(c.Move, c.Visits, c.Reward / c.Visits))
+                .OrderByDescending(s => s.Visits)
+                .ThenByDescending(s => s.MeanScore),
+        ];
+        return moves.IsEmpty
+            ? throw new InvalidOperationException("Zadna determinizacja nie dala legalnego ruchu - gra lamie kontrakt Determinize.")
+            : new MctsSearch<TMove>(moves[0].Move, iterations, moves);
+    }
+
+    /// <summary>
+    /// Dla testow: szuka jak <see cref="Search"/> i podaje, ile razy ruch byl dostepny i odwiedzony
+    /// po zagraniu <paramref name="move"/> w korzeniu. Drzewo nie zostaje w bocie po szukaniu.
+    /// </summary>
+    internal IReadOnlyDictionary<TMove, (int Visits, int Availability)> ChildrenAfter(IGame<TState, TMove> game, TState state, TMove move) =>
+        Grow(game, state).Root.Children![move].Children!.ToDictionary(c => c.Key, c => (c.Value.Visits, c.Value.Availability));
+
+    private (Node Root, int Iterations) Grow(IGame<TState, TMove> game, TState state)
+    {
         ArgumentNullException.ThrowIfNull(game);
         if (game.IsTerminal(state))
         {
@@ -58,34 +85,18 @@ public sealed class IsmctsBot<TState, TMove> : IPlayer<TState, TMove>
         }
         while (iterations < _options.IterationLimit && (clock is null || clock.Elapsed < _options.TimeLimit));
 
-        // Ruchy w korzeniu pochodza z determinizacji; zostawiamy tylko legalne naprawde —
-        // gra, ktora zlamie kontrakt, nie przemyci ruchu z wyobrazonego ukladu.
-        var legal = game.LegalMoves(state);
-        ImmutableArray<MctsMoveStats<TMove>> moves =
-        [
-            .. root.Children!.Values
-                .Where(c => legal.Contains(c.Move))
-                .Select(c => new MctsMoveStats<TMove>(c.Move, c.Visits, c.Reward / c.Visits))
-                .OrderByDescending(s => s.Visits)
-                .ThenByDescending(s => s.MeanScore),
-        ];
-        LastRoot = root;
-        return moves.IsEmpty
-            ? throw new InvalidOperationException("Zadna determinizacja nie dala legalnego ruchu - gra lamie kontrakt Determinize.")
-            : new MctsSearch<TMove>(moves[0].Move, iterations, moves);
+        return (root, iterations);
     }
-
-    /// <summary>Dla testow: ile razy ruch byl dostepny i odwiedzony po zagraniu ruchu <paramref name="move"/> w korzeniu.</summary>
-    internal IReadOnlyDictionary<TMove, (int Visits, int Availability)> ChildrenAfter(TMove move) =>
-        LastRoot!.Children![move].Children!.ToDictionary(c => c.Key, c => (c.Value.Visits, c.Value.Availability));
-
-    private Node? LastRoot { get; set; }
 
     private void Iterate(IGame<TState, TMove> game, Node root, TState state)
     {
+        // Zejscie po drzewie i symulacja dziela jeden limit ruchow: w grze bez konca drzewo rosnie
+        // o poziom na iteracje, wiec bez tego samo zejscie wydluzaloby sie z kazda iteracja.
         var node = root;
-        while (!game.IsTerminal(state))
+        var depth = 0;
+        while (!game.IsTerminal(state) && depth < _options.MaxPlayoutMoves)
         {
+            depth++;
             var moves = game.LegalMoves(state);
             var player = game.CurrentPlayer(state);
             node.Children ??= [];
@@ -116,7 +127,7 @@ public sealed class IsmctsBot<TState, TMove> : IPlayer<TState, TMove>
             state = game.Apply(state, node.Move);
         }
 
-        var scores = Rollout.Play(game, state, ref _rng, _options.MaxPlayoutMoves);
+        var scores = Rollout.Play(game, state, ref _rng, _options.MaxPlayoutMoves - depth);
         var players = game.PlayerCount(state);
         for (var n = node; n.Parent is not null; n = n.Parent)
         {

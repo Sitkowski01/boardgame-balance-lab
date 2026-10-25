@@ -13,8 +13,7 @@ public sealed class IsmctsAvailabilityTests
     {
         var bot = new IsmctsBot<AmbushState, int>(1, new MctsOptions { Iterations = 3_000 });
 
-        bot.Search(new AmbushGame(), new AmbushState(0, 2, null));
-        var children = bot.ChildrenAfter(Risky);
+        var children = bot.ChildrenAfter(new AmbushGame(), new AmbushState(0, 2, null), Risky);
 
         var (passVisits, passAvailable) = children[Pass];
         var (ambushVisits, ambushAvailable) = children[Ambush];

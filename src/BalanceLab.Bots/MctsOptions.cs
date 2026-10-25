@@ -23,7 +23,10 @@ public sealed record MctsOptions
     /// <summary>Stala eksploracji w UCB1; sqrt(2) to wartosc z teorii dla wynikow z [0, 1].</summary>
     public double Exploration { get; init; } = Math.Sqrt(2);
 
-    /// <summary>Bezpiecznik na symulacje gier, ktore moga sie zapetlic; taka symulacja liczy sie jak remis.</summary>
+    /// <summary>
+    /// Bezpiecznik na symulacje gier, ktore moga sie zapetlic; taka symulacja liczy sie jak remis.
+    /// W ISMCTS limit obejmuje tez zejscie po drzewie: w grze bez konca drzewo rosnie z kazda iteracja.
+    /// </summary>
     public int MaxPlayoutMoves { get; init; } = 1_000;
 
     internal int IterationLimit => Iterations ?? (TimeLimit is null ? DefaultIterations : int.MaxValue);

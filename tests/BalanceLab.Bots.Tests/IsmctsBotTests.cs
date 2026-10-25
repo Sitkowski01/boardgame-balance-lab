@@ -186,4 +186,52 @@ public sealed class IsmctsBotTests
 
         Assert.InRange(wins, 260, 400);
     }
+
+    [Fact]
+    public void Tree_descent_and_playout_share_one_move_limit()
+    {
+        // W grze bez konca drzewo rosnie o poziom na iteracje; bez wspolnego limitu 50 iteracji
+        // zrobiloby ok. 1500 ruchow, z limitem najwyzej 5 na iteracje.
+        var game = new EndlessGame();
+        var bot = new IsmctsBot<int, int>(3, new MctsOptions { Iterations = 50, MaxPlayoutMoves = 5 });
+
+        var search = bot.Search(game, 0);
+
+        Assert.Equal(0.5, search.Moves.Single().MeanScore);
+        Assert.InRange(game.Applied, 50, 50 * 5);
+    }
+
+    /// <summary>Gra bez konca z licznikiem zagranych ruchow.</summary>
+    private sealed class EndlessGame : IGame<int, int>
+    {
+        public int Applied { get; private set; }
+
+        public string Name => "Endless";
+
+        public int MinPlayers => 2;
+
+        public int MaxPlayers => 2;
+
+        public int Setup(GameSetup setup) => 0;
+
+        public int PlayerCount(int state) => 2;
+
+        public int CurrentPlayer(int state) => 0;
+
+        public IReadOnlyList<int> LegalMoves(int state) => [0];
+
+        public int Apply(int state, int move)
+        {
+            Applied++;
+            return state;
+        }
+
+        public bool IsTerminal(int state) => false;
+
+        public System.Collections.Immutable.ImmutableArray<double> Scores(int state) => throw new InvalidOperationException();
+
+        public ulong Hash(int state) => 0;
+
+        public int Determinize(int state, int observer, ulong seed) => state;
+    }
 }
