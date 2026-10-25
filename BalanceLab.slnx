@@ -2,6 +2,9 @@
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/BalanceLab.Benchmarks/BalanceLab.Benchmarks.csproj" />
   </Folder>
+  <Folder Name="/demo/">
+    <Project Path="demo/BalanceLab.Demo.Wasm/BalanceLab.Demo.Wasm.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/BalanceLab.Api/BalanceLab.Api.csproj" />
     <Project Path="src/BalanceLab.Bots/BalanceLab.Bots.csproj" />
