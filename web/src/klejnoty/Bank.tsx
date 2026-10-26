@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Gem } from "./Gem";
 import { gemName } from "./model";
 import { canPick, parseMove, takeMove, toggleGem } from "./moves";
@@ -23,6 +23,15 @@ export function Bank({ bank, legalMoves, onMove }: BankProps) {
   };
   const take = takeMove(selection, legalMoves);
   const returns = legalMoves.filter((m) => m.startsWith("return:"));
+  // Prosba o oddanie zetonu lezy pod rynkiem, czesto pod krawedzia ekranu: bez niej nic sie nie da kliknac,
+  // wiec strona sama ja pokazuje (gladko, chyba ze gracz wylaczyl ruch w systemie).
+  const returnsBox = useRef<HTMLDivElement>(null);
+  const mustReturn = returns.length > 0;
+  useEffect(() => {
+    if (!mustReturn) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    returnsBox.current?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
+  }, [mustReturn]);
   const play = (move: string): void => {
     setSelection([]);
     onMove(move);
@@ -76,7 +85,7 @@ export function Bank({ bank, legalMoves, onMove }: BankProps) {
         )}
       </div>
       {returns.length > 0 && (
-        <div className="returns" role="group" aria-label="Oddaj żeton">
+        <div ref={returnsBox} className="returns" role="group" aria-label="Oddaj żeton">
           <span>Masz ponad 10 żetonów — oddaj jeden:</span>
           {returns.map((move) => {
             const parsed = parseMove(move);

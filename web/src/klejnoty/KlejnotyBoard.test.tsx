@@ -108,9 +108,24 @@ describe("KlejnotyBoard", () => {
     expect(within(screen.getByLabelText("Gracz Ola")).getByLabelText("Zakryta karta poziomu 2")).toBeInTheDocument();
   });
 
-  it("asks to give back a token over the limit", async () => {
+  it("asks to give back a token over the limit and scrolls the request into view", async () => {
+    // jsdom nie ma ukladu strony: przewijanie i preferencje ruchu podstawiamy.
+    const scroll = vi.fn();
+    Element.prototype.scrollIntoView = scroll;
+    for (const reduced of [false, true]) {
+      vi.stubGlobal("matchMedia", () => ({ matches: reduced }));
+      const view = klejnoty({ players: [player({ tokens: [3, 3, 3, 2, 0, 0] }), player()] });
+      const shown = render(
+        <KlejnotyBoard view={view} sheet={sheet()} legalMoves={["return:W"]} seat={0} names={["Ala", "Ola"]} onMove={vi.fn()} />,
+      );
+      expect(scroll).toHaveBeenLastCalledWith({ block: "nearest", behavior: reduced ? "auto" : "smooth" });
+      shown.unmount();
+    }
+
+    scroll.mockClear();
     const view = klejnoty({ players: [player({ tokens: [3, 3, 3, 2, 0, 0] }), player()] });
     const { onMove, user } = board({ view, legalMoves: ["return:W", "return:R"] });
+    expect(scroll).toHaveBeenCalledOnce();
 
     const returns = screen.getByRole("group", { name: "Oddaj żeton" });
     expect(within(returns).getAllByRole("button")).toHaveLength(2);
@@ -118,6 +133,7 @@ describe("KlejnotyBoard", () => {
     await user.click(within(returns).getByRole("button", { name: "Oddaj: czerwony" }));
 
     expect(onMove).toHaveBeenCalledWith("return:R");
+    vi.unstubAllGlobals();
   });
 
   it("passes when nothing else is possible", async () => {
