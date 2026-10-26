@@ -17,9 +17,9 @@ AddType application/wasm .wasm
 /**
  * Apache, runtime .NET: brakujacy plik to 404 (a nie strona, ktora loader .NET probowalby czytac jako modul),
  * a przegladarka z obsluga brotli dostaje gotowe pliki .br — tylko gdy serwer umie dopisac naglowek kompresji.
- * Typ pliku ustawia ta sama regula, ktora podmienia plik: LiteSpeed nie robi drugiego przebiegu regul, wiec
- * osobna regula [T=...] dla .js.br nie dzialala i skrypty szly jako application/octet-stream — przegladarka
- * odmawia uruchomienia takiego modulu. ForceType to drugi bezpiecznik na ten sam typ.
+ * Typ pliku ustawia ta sama regula, ktora podmienia plik: LiteSpeed nie robi drugiego przebiegu regul, a
+ * ForceType to drugi bezpiecznik. Tylko .wasm i .dat: skrypty serwer kompresuje sam, a gotowe .js.br
+ * LiteSpeed kompresowal drugi raz (przegladarka rozpakowywala raz i dostawala bajty brotli zamiast JS).
  */
 const runtimeHtaccess = String.raw`FallbackResource disabled
 <IfModule mod_headers.c>
@@ -31,9 +31,6 @@ const runtimeHtaccess = String.raw`FallbackResource disabled
     RewriteRule ^(.+)\.wasm$ $1.wasm.br [T=application/wasm,L]
     RewriteCond %{HTTP:Accept-Encoding} br
     RewriteCond %{REQUEST_FILENAME}.br -f
-    RewriteRule ^(.+)\.js$ $1.js.br [T=text/javascript,L]
-    RewriteCond %{HTTP:Accept-Encoding} br
-    RewriteCond %{REQUEST_FILENAME}.br -f
     RewriteRule ^(.+)\.dat$ $1.dat.br [T=application/octet-stream,L]
   </IfModule>
   <FilesMatch "\.br$">
@@ -42,9 +39,6 @@ const runtimeHtaccess = String.raw`FallbackResource disabled
   </FilesMatch>
   <FilesMatch "\.wasm\.br$">
     ForceType application/wasm
-  </FilesMatch>
-  <FilesMatch "\.js\.br$">
-    ForceType text/javascript
   </FilesMatch>
   <FilesMatch "\.dat\.br$">
     ForceType application/octet-stream
