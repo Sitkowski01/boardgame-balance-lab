@@ -45,8 +45,12 @@ export function DemoBanner() {
         )}
         {status === "ready" && (
           <>
-            <strong>Demo</strong> Serwer gry działa w tej karcie: te same pokoje, boty i laboratorium co na serwerze, tylko bez sieci. Gra z
-            innymi ludźmi — po <code>docker compose up</code>.
+            <strong>Demo</strong>
+            {/* Jeden element flex: inaczej kod lamal sie do osobnego wiersza, a kropka odstawala za nim. */}
+            <span>
+              Serwer gry działa w tej karcie: te same pokoje, boty i laboratorium co na serwerze, tylko bez sieci. Gra z innymi ludźmi — po{" "}
+              <code>docker compose up</code>.
+            </span>
           </>
         )}
         {status === "failed" && <>Nie udało się uruchomić serwera w przeglądarce. Odśwież stronę albo spróbuj w nowszej przeglądarce.</>}
