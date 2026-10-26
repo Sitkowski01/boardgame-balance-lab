@@ -150,6 +150,66 @@ describe("TablePage", () => {
     expect(screen.queryByLabelText("Czas na ruch")).not.toBeInTheDocument();
   });
 
+  it("keeps the turn line on the board while the bot moves, so the board does not jump", async () => {
+    const { links } = page({ tickets: memoryTickets([host]) });
+    await waitFor(() => {
+      expect(links[0]?.server.rejoin).toHaveBeenCalled();
+    });
+    const seats = [seat(0, { name: "Ala" }), seat(1, { kind: "Bot", name: "mcts:500" })];
+    send(last(links), (e) => {
+      e.room(room({ status: "Playing", seats, toMove: 1, moves: 1 }));
+      e.view(table(connectFour(), { moves: 1 }));
+    });
+
+    expect(screen.getByText("Na ruchu: MCTS 500")).toHaveClass("turn-wait");
+    expect(screen.queryByText("Twój ruch!")).toBeNull();
+    send(last(links), (e) => {
+      e.room(room({ version: 2, status: "Playing", seats, toMove: null, moves: 1 }));
+    });
+    expect(screen.getByText("Czekamy…")).toHaveClass("turn-wait");
+  });
+
+  it("starts a rematch from the result: a new table with the same bots, then goes there", async () => {
+    const again = { room: "22222222-2222-3333-4444-555555555555", seat: 0, token: "rewanz" };
+    const { links, tickets, navigate, user } = page({
+      tickets: memoryTickets([host]),
+      setup: (server) => {
+        server.createRoom.mockResolvedValue(again);
+      },
+    });
+    await waitFor(() => {
+      expect(links[0]?.server.rejoin).toHaveBeenCalled();
+    });
+    const seats = [seat(0, { name: "Ala" }), seat(1, { kind: "Bot", name: "random" })];
+    send(last(links), (e) => {
+      e.room(room({ status: "Finished", seats, scores: [1, 0], matchId }));
+    });
+
+    await user.click(screen.getByRole("button", { name: "Zagraj jeszcze raz" }));
+
+    await waitFor(() => {
+      expect(navigate).toHaveBeenCalledWith(`/rooms/${again.room}`);
+    });
+    const rematchLink = last(links).server;
+    expect(rematchLink.createRoom).toHaveBeenCalledWith({ game: "connectfour", seats: 2, variant: null, name: "Ala" });
+    expect(rematchLink.addBot).toHaveBeenCalledWith(1, "random");
+    expect(rematchLink.start).toHaveBeenCalled();
+    expect(tickets.all.get(again.room)).toEqual(again);
+  });
+
+  it("offers no rematch to a spectator", async () => {
+    const { links } = page();
+    await waitFor(() => {
+      expect(links[0]?.server.watch).toHaveBeenCalled();
+    });
+    send(last(links), (e) => {
+      e.room(room({ status: "Finished", scores: [1, 0], matchId }));
+    });
+
+    expect(screen.getByRole("heading", { name: "Koniec partii" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Zagraj jeszcze raz" })).toBeNull();
+  });
+
   it("throws confetti only for a game that ended while the player watched", async () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false }));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({} as CanvasRenderingContext2D);

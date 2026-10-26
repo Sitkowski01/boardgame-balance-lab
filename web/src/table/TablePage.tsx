@@ -12,6 +12,7 @@ import { Clock } from "./Clock";
 import { JoinForm } from "./JoinForm";
 import { Result } from "./Result";
 import { Seats } from "./Seats";
+import { rematch } from "./rematch";
 import { myRole } from "./table";
 import type { Tickets } from "./tickets";
 import { useTable, type Connection } from "./useTable";
@@ -36,6 +37,7 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
   const { table, link, error, gone, pending, join, addBot, start, move, clearError } = useTable(id, connect, tickets);
   const { room, view, moves } = table;
   const role = myRole(table);
+  const mySeat = role.seat;
   // W demo stol jest tylko w tej karcie: link dla znajomych nikogo by nie posadzil.
   const demo = useDemo();
   const names = room?.seats.map((s) => seatName(s) ?? `Miejsce ${String(s.seat + 1)}`) ?? [];
@@ -130,9 +132,28 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
           ) : (
             <div className="table-layout">
               <div className="board-area">
-                {role.myTurn && !pending && <p className="your-turn">Twój ruch!</p>}
+                {/* Wiersz kolejki stoi przez cala partie: znikajacy "Twoj ruch!" przesuwal plansze co ruch. */}
+                {room.status === "Playing" && (
+                  <p className={role.myTurn && !pending ? "your-turn" : "turn-wait"}>
+                    {role.myTurn && !pending ? "Twój ruch!" : room.toMove === null ? "Czekamy…" : `Na ruchu: ${names[room.toMove] ?? ""}`}
+                  </p>
+                )}
                 {(room.status === "Finished" || room.status === "Abandoned") && (
-                  <Result room={room} names={names} navigate={navigate} celebrate={sawPlay} />
+                  <Result
+                    room={room}
+                    names={names}
+                    navigate={navigate}
+                    celebrate={sawPlay}
+                    onRematch={
+                      mySeat === null
+                        ? undefined
+                        : async () => {
+                            const ticket = await rematch(connect, room, mySeat);
+                            tickets.save(ticket);
+                            navigate(`/rooms/${ticket.room}`);
+                          }
+                    }
+                  />
                 )}
                 {view !== null && (
                   <GameBoard

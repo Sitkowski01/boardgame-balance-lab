@@ -570,6 +570,17 @@
   color: var(--accent-ink);
   animation: pulse 1.6s ease-in-out infinite;
 }
+/* Ruch rywala: ten sam ksztalt co "Twoj ruch!", tylko cichy, zeby plansza nie skakala przy zmianie kolejki. */
+.turn-wait {
+  margin: 0;
+  justify-self: start;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-weight: 600;
+}
 @keyframes pulse {
   50% {
     box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent);
