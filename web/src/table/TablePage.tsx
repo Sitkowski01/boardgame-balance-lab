@@ -9,10 +9,12 @@ import { useDemo } from "../demo/DemoBanner";
 import { CopyLink } from "./CopyLink";
 import { freeSeats, statusLabel } from "../lobby/lobby";
 import { Clock } from "./Clock";
+import { FollowingList } from "./FollowingList";
 import { JoinForm } from "./JoinForm";
 import { Result } from "./Result";
 import { Seats } from "./Seats";
 import { rematch } from "./rematch";
+import { TurnBar } from "./TurnBar";
 import { myRole } from "./table";
 import type { Tickets } from "./tickets";
 import { useTable, type Connection } from "./useTable";
@@ -134,9 +136,11 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
               <div className="board-area">
                 {/* Wiersz kolejki stoi przez cala partie: znikajacy "Twoj ruch!" przesuwal plansze co ruch. */}
                 {room.status === "Playing" && (
-                  <p className={role.myTurn && !pending ? "your-turn" : "turn-wait"}>
-                    {role.myTurn && !pending ? "Twój ruch!" : room.toMove === null ? "Czekamy…" : `Na ruchu: ${names[room.toMove] ?? ""}`}
-                  </p>
+                  <TurnBar>
+                    <p className={role.myTurn && !pending ? "your-turn" : "turn-wait"}>
+                      {role.myTurn && !pending ? "Twój ruch!" : room.toMove === null ? "Czekamy…" : `Na ruchu: ${names[room.toMove] ?? ""}`}
+                    </p>
+                  </TurnBar>
                 )}
                 {(room.status === "Finished" || room.status === "Abandoned") && (
                   <Result
@@ -174,14 +178,14 @@ export function TablePage({ room: id, connect, tickets, navigate, now = Date.now
                   <section aria-label="Ostatnie ruchy" className="moves panel">
                     <h2>Ostatnie ruchy</h2>
                     {moves.length === 0 && <p className="muted">Jeszcze nikt nie zagrał.</p>}
-                    <ol>
+                    <FollowingList count={moves.length}>
                       {moves.map((m) => (
                         <li key={m.number} value={m.number} className={`seat-${String(m.seat)}`}>
                           <strong>{names[m.seat]}</strong>
                           {m.byBot && room.seats[m.seat]?.kind === "Human" ? " (bot za gracza)" : ""}: {describe(m.move)}
                         </li>
                       ))}
-                    </ol>
+                    </FollowingList>
                   </section>
                 )}
               </aside>

@@ -1,6 +1,8 @@
 /* Wspolne style: kolory jako role (jasny i ciemny motyw), typografia, rama strony, przyciski i pola. */
 :root {
   color-scheme: light;
+  /* Wysokosc przyklejonego naglowka bez dolnej kreski: pod nim przyklejaja sie paski stron. */
+  --topbar-height: 56px;
   --bg: #f3efe6;
   --bg-deep: #e9e3d6;
   --panel: #fffdf8;
@@ -413,6 +415,9 @@ select:focus {
 }
 
 @media (max-width: 640px) {
+  :root {
+    --topbar-height: 64px;
+  }
   main {
     padding: 20px 16px 40px;
   }
