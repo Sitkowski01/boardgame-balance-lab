@@ -69,6 +69,9 @@
   opacity: 0.85;
   transform: translateY(0);
 }
+/* Miejsce na krazek nad kolumna. Przy stole stale, nie tylko w moim ruchu: inaczej plansza skakala o 30 px przy
+   kazdej zmianie kolejki. W powtorce nikt nie rzuca, wiec tam tylko, gdy kolumny sa aktywne. */
+.table-page .connectfour .c4-frame,
 .connectfour:has(.drops button:not(:disabled)) .c4-frame {
   margin-top: 30px;
 }
