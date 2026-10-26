@@ -355,17 +355,34 @@
   font-weight: 700;
   color: var(--warn);
 }
-.floor .place {
-  width: auto;
-  padding: 0 10px;
-  font-size: 0.8rem;
+/* Strzalka podlogi rowno z polami (nie ze srodkiem pol i kar pod nimi); bez ruchu puste miejsce tej samej szerokosci. */
+.floor .place,
+.place-gap {
+  align-self: flex-start;
+  flex: none;
+  /* Odstep do pol jak w rzedach (7 px), mimo wiekszego odstepu w wierszu podlogi. */
+  margin-right: -5px;
+}
+.place-gap {
+  width: 26px;
+  height: 26px;
 }
 
 @media (max-width: 640px) {
+  /* Po wybraniu plytek wiersz rundy dostaje podpowiedz i na telefonie ma dwie linie: miejsce na nie zawsze. */
+  .mozaika .round {
+    min-height: 2lh;
+  }
+  /* Rozmiar tez plynnie: skokowe kurczenie przesuwalo plansze gracza pod warsztatami w jednej klatce. */
   .factory .source {
     width: 108px;
     height: 108px;
     padding: 10px;
+    transition:
+      width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+      height 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+      padding 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.35s;
   }
   /* Na telefonie pusty warsztat naprawde zwalnia miejsce: piec pelnych kregow to dwa rzedy przewijania. */
   .factory.empty .source {

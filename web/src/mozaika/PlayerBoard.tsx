@@ -21,6 +21,13 @@ export interface PlayerBoardProps {
 /** Plansza gracza: rzedy wzoru (od 1 do 5 pol), sciana z wzorem kolorow i podloga z karami. */
 export function PlayerBoard({ player, name, me, toMove, status, sheet, placements, onMove }: PlayerBoardProps) {
   const wall = new Set(player.wall);
+  // Na podlodze rysujemy najwyzej tyle kafelkow, ile ma pol: nadmiar nic nie kosztuje, a dokladal wiersz siatki
+  // i plansza rosla. Opis grupy dla czytnika nadal podaje pelna liczbe.
+  const room = sheet.floorPenalties.length - (player.marker ? 1 : 0);
+  const shown = player.floor.map((n, tile) => {
+    const before = player.floor.slice(0, tile).reduce((sum, m) => sum + m, 0);
+    return Math.max(0, Math.min(n, room - before));
+  });
   const place = (line: Line, label: string, name: string) => {
     const move = placements.get(line);
     return move === undefined ? null : (
@@ -73,6 +80,9 @@ export function PlayerBoard({ player, name, me, toMove, status, sheet, placement
         </div>
       </div>
       <div className="floor" aria-label="Podłoga">
+        {/* Jak przy rzedach: strzalka przed podloga, a bez ruchu puste miejsce tej samej szerokosci. Przycisk
+            doklejany na koncu zawijal sie do nowej linii i plansza rosla w kazdym moim ruchu. */}
+        {place("floor", "→", "Połóż na podłogę") ?? <span className="place-gap" aria-hidden="true" />}
         <div className="floor-slots" style={{ ["--slots" as string]: String(sheet.floorPenalties.length) }}>
           {player.marker && (
             <span className="marker" role="img" aria-label="Znacznik pierwszego gracza">
@@ -82,7 +92,7 @@ export function PlayerBoard({ player, name, me, toMove, status, sheet, placement
           {player.floor.map((n, tile) =>
             n > 0 ? (
               <span key={tile} className="floor-group" role="img" aria-label={`${tileName(tile)}: ${String(n)}`}>
-                {Array.from({ length: n }, (_, i) => (
+                {Array.from({ length: shown[tile] ?? 0 }, (_, i) => (
                   <Tile key={i} tile={tile} decorative />
                 ))}
               </span>
@@ -98,7 +108,6 @@ export function PlayerBoard({ player, name, me, toMove, status, sheet, placement
           ))}
         </div>
         {floorCount(player) > 0 && <span className="floor-penalty">−{floorPenalty(player, sheet)} pkt</span>}
-        {place("floor", "Na podłogę", "Połóż na podłogę")}
       </div>
     </article>
   );

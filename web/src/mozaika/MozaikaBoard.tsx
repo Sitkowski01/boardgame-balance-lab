@@ -84,7 +84,7 @@ export function MozaikaBoard({ view, sheet, legalMoves, seat, names, seats, onMo
         ))}
         {sourceTiles("center", view.center, "Środek")}
       </section>
-      <p className="note" aria-label="Runda">
+      <p className="note round" aria-label="Runda">
         Runda {view.round} · w worku {total(view.bag)} · w pudełku {total(view.box)}
         {picked !== null && ` · wybrano: ${tileName(picked.color)} — wskaż rząd na swojej planszy`}
       </p>

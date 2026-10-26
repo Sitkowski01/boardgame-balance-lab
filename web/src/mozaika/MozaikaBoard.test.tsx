@@ -182,6 +182,18 @@ describe("Mozaika floor and workshops drawing", () => {
     expect(within(ala()).getByLabelText("grafit: 1")).toBeInTheDocument();
   });
 
+  it("draws no more floor tiles than slots, but still names them all", () => {
+    // Znacznik + 9 kafelkow przy 7 polach: rysujemy 6 kafelkow, wiec siatka nie dostaje trzeciego wiersza.
+    board({ view: mozaika({ players: [mozaikaPlayer({ floor: [4, 0, 3, 0, 2], marker: true }), mozaikaPlayer()] }) });
+
+    const floor = within(ala()).getByLabelText("Podłoga");
+    const slots = floor.querySelector(".floor-slots");
+    expect(Array.from(slots?.querySelectorAll(".floor-group") ?? []).map((g) => g.querySelectorAll(".tile").length)).toEqual([4, 2, 0]);
+    expect(slots?.querySelectorAll(".slot")).toHaveLength(0);
+    expect(within(floor).getByLabelText("turkus: 4")).toBeInTheDocument();
+    expect(within(floor).getByLabelText("perła: 2")).toBeInTheDocument();
+  });
+
   it("shows every tile in a workshop and a count in the center", () => {
     board({ view: mozaika({ factories: [[2, 1, 0, 1, 0]], center: [0, 0, 5, 0, 0] }) });
 
