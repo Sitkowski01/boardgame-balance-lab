@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RoomInfo, SeatInfo } from "../api/schemas";
 import { botsFor } from "../games";
+import { botStyle } from "../names";
 import { SeatStatus } from "../SeatStatus";
 
 export interface SeatsProps {
@@ -49,6 +50,9 @@ function SeatLabel({ seat, name, host, toMove }: { seat: SeatInfo; name: string;
       {toMove && <span className="badge accent">na ruchu</span>}
       {host && <span className="badge">gospodarz</span>}
       <SeatStatus seat={seat} />
+      {seat.kind === "Bot" && seat.name !== null && botStyle(seat.name) !== null && (
+        <span className="seat-note">{botStyle(seat.name)}</span>
+      )}
     </span>
   );
 }

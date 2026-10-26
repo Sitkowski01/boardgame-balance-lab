@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gameBlurbs, gameRules, gamesFact, gameTitle, itemName, playerName, seatName } from "./names";
+import { gameBlurbs, gameRules, gamesFact, gameTitle, itemName, playerName, seatName, botStyle } from "./names";
 
 describe("names for people", () => {
   it("names Connect Four in Polish and leaves other games and variants alone", () => {
@@ -15,6 +15,17 @@ describe("names for people", () => {
   it("explains every game of the catalog in exactly three steps", () => {
     expect(Object.keys(gameRules).sort()).toEqual(["connectfour", "klejnoty", "mozaika"]);
     expect(Object.values(gameRules).every((steps) => steps.length === 3 && steps.every((s) => s.endsWith(".")))).toBe(true);
+  });
+
+  it("says in one sentence how each bot plays, and nothing for people", () => {
+    expect(botStyle("random")).toBe("Bot: wybiera ruchy na chybił trafił.");
+    expect(botStyle("greedy")).toBe("Bot: bierze ruch, który od razu daje najwięcej.");
+    expect(botStyle("greedy:silnik")).toBe("Bot: bierze ruch, który od razu daje najwięcej (styl: silnik).");
+    expect(botStyle("mcts:500")).toBe("Bot: przed każdym ruchem rozgrywa w pamięci 500 szybkich partii.");
+    expect(botStyle("mcts")).toBe("Bot: przed każdym ruchem rozgrywa w pamięci 1000 szybkich partii.");
+    expect(botStyle("ismcts:300")).toBe("Bot: zgaduje ukryte karty i rozgrywa w pamięci 300 partii na ruch.");
+    expect(botStyle("ismcts")).toBe("Bot: zgaduje ukryte karty i rozgrywa w pamięci 1000 partii na ruch.");
+    expect(botStyle("Ala")).toBeNull();
   });
 
   it("translates bot names with their settings and keeps people's names", () => {

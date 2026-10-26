@@ -43,6 +43,15 @@ describe("Seats", () => {
     expect(items.map((li) => li.querySelector(".avatar")?.textContent)).toEqual(["O", "⚙", "+", "?"]);
   });
 
+  it("tells under a bot's name how it plays, and nothing under a person", () => {
+    const seats = [seat(0, { name: "Ala" }), seat(1, { kind: "Bot", name: "random" })];
+    render(<Seats room={room({ seats })} names={["Ala", "Losowy"]} host={false} onAddBot={vi.fn()} />);
+
+    const [ala, bot] = within(screen.getByRole("list", { name: "Miejsca" })).getAllByRole("listitem");
+    expect(bot).toHaveTextContent("Bot: wybiera ruchy na chybił trafił.");
+    expect(ala?.querySelector(".seat-note")).toBeNull();
+  });
+
   it("offers a bot only to the host, only before the start and only on a free seat", () => {
     const free = [seat(0, { name: "Ala" }), seat(1, { kind: "Empty", name: null })];
 

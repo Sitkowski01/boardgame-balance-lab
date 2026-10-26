@@ -62,6 +62,26 @@ export function playerName(name: string): string {
   return /^\d+$/u.test(detail) ? `${kind} ${detail}` : `${kind}: ${detail}`;
 }
 
+/** Jak gra bot (z opisu, np. "mcts:500"), jednym zdaniem dla gracza; null dla innych imion. */
+export function botStyle(name: string): string | null {
+  const match = botName.exec(name);
+  const detail = match?.[2];
+  switch (match?.[1]) {
+    case "random":
+      return "Bot: wybiera ruchy na chybił trafił.";
+    case "greedy":
+      return detail === undefined
+        ? "Bot: bierze ruch, który od razu daje najwięcej."
+        : `Bot: bierze ruch, który od razu daje najwięcej (styl: ${detail}).`;
+    case "mcts":
+      return `Bot: przed każdym ruchem rozgrywa w pamięci ${detail ?? "1000"} szybkich partii.`;
+    case "ismcts":
+      return `Bot: zgaduje ukryte karty i rozgrywa w pamięci ${detail ?? "1000"} partii na ruch.`;
+    default:
+      return null;
+  }
+}
+
 /** Kolory klejnotow w zapisie serwera (Gems.ToString): przymiotnik karty i formy liczby przy koszcie. */
 const gems: Record<string, { card: string; forms: [string, string, string] }> = {
   W: { card: "biała", forms: ["biały", "białe", "białych"] },

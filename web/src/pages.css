@@ -524,7 +524,16 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 0;
+  /* Reszta wiersza obok awatara: dlugi opis bota zawija sie w nazwie, zamiast spychac ja pod awatar. */
+  flex: 1 1 0;
   min-width: 0;
+}
+/* Jak gra bot na miejscu: sama nazwa ("Losowy", "MCTS 500") nie mowi tego, kto siada do stolu pierwszy raz. */
+.seat-note {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 .bot-picker {
   display: flex;
