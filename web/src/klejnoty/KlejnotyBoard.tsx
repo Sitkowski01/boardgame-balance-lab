@@ -40,6 +40,8 @@ export function KlejnotyBoard({ view, sheet, legalMoves, seat, names, seats, onM
             </div>
           );
         })}
+        {/* Bez tego sekcja znikala po ostatnim patronie i cala plansza podjezdzala do gory. */}
+        {view.patrons.length === 0 && <p className="patrons-gone">Wszyscy patroni już odwiedzili graczy.</p>}
       </section>
 
       <section aria-label="Rynek" className="market">

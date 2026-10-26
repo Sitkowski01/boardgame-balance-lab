@@ -74,13 +74,17 @@ export function Bank({ bank, legalMoves, onMove }: BankProps) {
           Weź żetony
         </button>
         {selection.length > 0 && (
+          // Ikona zamiast slowa: z napisem przycisk nie miescil sie na telefonie obok "Wez zetony" i bank rosl o wiersz.
           <button
             type="button"
+            className="clear"
+            aria-label="Wyczyść"
+            title="Wyczyść wybór"
             onClick={() => {
               setSelection([]);
             }}
           >
-            Wyczyść
+            ✕
           </button>
         )}
       </div>

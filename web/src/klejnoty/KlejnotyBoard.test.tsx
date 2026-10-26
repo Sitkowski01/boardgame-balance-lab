@@ -32,6 +32,7 @@ describe("KlejnotyBoard", () => {
     expect(within(screen.getByLabelText("Karta #41")).getByLabelText("rabat: niebieski")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Karta #41")).getByLabelText("zielony: 3")).toBeInTheDocument();
     expect(within(screen.getByRole("region", { name: "Patroni" })).getAllByLabelText(/^Patron/u)).toHaveLength(3);
+    expect(screen.queryByText(/patroni już odwiedzili/u)).not.toBeInTheDocument();
     expect(within(screen.getByLabelText("Gracz Ala")).getByLabelText("Punkty")).toHaveTextContent("4 pkt");
     expect(within(screen.getByLabelText("Gracz Ala")).getByText("ty")).toBeInTheDocument();
     expect(within(screen.getByLabelText("Gracz Ala")).getByText("na ruchu")).toBeInTheDocument();
@@ -157,6 +158,14 @@ describe("KlejnotyBoard", () => {
     expect(within(first).getByText("patroni: 1")).toBeInTheDocument();
     expect(within(first).getByLabelText("rabat biały: 1")).toBeInTheDocument();
     expect(screen.queryByText("ty")).not.toBeInTheDocument();
+  });
+
+  it("keeps the patrons place once all of them are gone", () => {
+    board({ view: klejnoty({ patrons: [] }) });
+
+    const patrons = screen.getByRole("region", { name: "Patroni" });
+    expect(within(patrons).queryAllByLabelText(/^Patron/u)).toHaveLength(0);
+    expect(within(patrons).getByText("Wszyscy patroni już odwiedzili graczy.")).toHaveClass("patrons-gone");
   });
 
   it("does not mark anyone to move after the end", () => {
