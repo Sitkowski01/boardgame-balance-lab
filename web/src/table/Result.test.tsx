@@ -1,4 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { matchId, room } from "../test/fixtures";
 import { Result } from "./Result";
@@ -20,6 +21,24 @@ describe("Result", () => {
     ]);
     expect(within(result).getByRole("link", { name: "Obejrzyj powtórkę" })).toHaveAttribute("href", `/matches/${matchId}`);
     expect(result).toHaveTextContent("🏆");
+  });
+
+  it("offers a rematch only when asked, blocks a double click and shows why it failed", async () => {
+    const user = userEvent.setup();
+    let refuse: (error: Error) => void = () => undefined;
+    const onRematch = vi.fn(() => new Promise<void>((_, reject) => (refuse = reject)));
+    const finished = room({ status: "Finished", scores: [1, 0], matchId });
+    const { rerender } = render(<Result room={finished} names={["Ala", "Ola"]} navigate={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Zagraj jeszcze raz" })).toBeNull();
+
+    rerender(<Result room={finished} names={["Ala", "Ola"]} navigate={vi.fn()} onRematch={onRematch} />);
+    await user.click(screen.getByRole("button", { name: "Zagraj jeszcze raz" }));
+    expect(screen.getByRole("button", { name: "Zakładam stół…" })).toBeDisabled();
+    expect(onRematch).toHaveBeenCalledOnce();
+
+    refuse(new Error("An unexpected error occurred invoking 'CreateRoom' on the server. HubException: Za dużo stołów."));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Za dużo stołów.");
+    expect(screen.getByRole("button", { name: "Zagraj jeszcze raz" })).toBeEnabled();
   });
 
   it("celebrates only a game that finished before the player's eyes", () => {
