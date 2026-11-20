@@ -515,4 +515,4 @@ MIT — [LICENSE](LICENSE).
 
 ---
 
-Projekt i wykonanie: **Mikołaj Sitek**, [SWN Development](https://swndevelopment.pl) · [mikolaj@swndevelopment.pl](mailto:mikolaj@swndevelopment.pl)
+Projekt i wykonanie: **[Mikołaj Sitek](https://sitekmikolaj.pl)** · [sitekmikolaj01@gmail.com](mailto:sitekmikolaj01@gmail.com)
